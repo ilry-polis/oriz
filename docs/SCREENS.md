@@ -1036,6 +1036,9 @@ DS: Card, Status Badge, Top Bar (back)
 └──────────────────────────────────┘
 ```
 
+Estados:
+- D: dados completos da comissão (carregados via lista, sem request adicional)
+
 ---
 
 ## 6. Fluxo: Configurações
@@ -1060,6 +1063,7 @@ DS: Card, Bottom Tab Bar, Top Bar
 │  │ 👥 Equipe                → ││
 │  │ 📦 Pacotes               → ││
 │  │ 🕐 Horários bloqueados   → ││
+│  │ 💬 Conversas WhatsApp    → ││
 │  ├──────────────────────────────┤│
 │  │ 🤖 Assistente IA         → ││
 │  │ 📢 Campanhas             → ││
@@ -1164,6 +1168,11 @@ DS: Input, Button Primary, Card, Top Bar (back)
 └──────────────────────────────────┘
 ```
 
+Estados:
+- L: skeleton no formulário
+- D: formulário preenchido
+- E: inline errors (409 SLUG_TAKEN)
+
 ---
 
 ### 6.4 ServicesManagementScreen — `/settings/services`
@@ -1195,6 +1204,12 @@ Ações:
 - P: Tap → `/settings/services/:id/edit`
 - S: [🗑] → confirmação → `DELETE /services/:id`
 
+Estados:
+- V: "Nenhum serviço cadastrado" + "Criar serviço"
+- L: skeleton nos cards
+- D: lista filtrada por categoria
+- E: toast (409 SERVICE_HAS_APPOINTMENTS ao excluir)
+
 ---
 
 ### 6.5 TeamManagementScreen — `/settings/team`
@@ -1224,6 +1239,12 @@ DS: Card, FAB, Top Bar (back)
 Ações:
 - S: [+] → `/settings/team/new`
 - P: Tap → `/settings/team/:id/edit`
+
+Estados:
+- V: "Apenas você no estúdio" + "Convidar profissional"
+- L: skeleton nos cards
+- D: lista de profissionais com comissão e status
+- E: toast
 
 ---
 
@@ -1269,6 +1290,11 @@ DS: Input, Button Primary, chips, Top Bar (back)
 │  [ Salvar ]                  (P) │
 └──────────────────────────────────┘
 ```
+
+Estados:
+- D: formulário (vazio em new, preenchido em edit)
+- L: spinner no botão + skeleton na lista de serviços
+- E: inline errors (409 PROFESSIONAL_HAS_APPOINTMENTS ao excluir)
 
 ---
 
@@ -1332,6 +1358,12 @@ Endpoints: `GET /public/studios/:slug/services` (§17), `GET /public/studios/:sl
 Ações:
 - P: Tap → `/book/:slug/professional`
 
+Estados:
+- V: "Nenhum serviço disponível no momento"
+- L: skeleton nos cards
+- D: lista de serviços agrupada por categoria
+- E: toast
+
 ---
 
 ### 7.3 PublicSelectProfessionalPage — `oriz.app/:slug/book/professional`
@@ -1356,6 +1388,12 @@ Endpoints: `GET /public/studios/:slug/professionals` (§17)
 
 Ações:
 - P: Tap → `/book/:slug/slot`
+
+Estados:
+- V: "Nenhum profissional disponível para este serviço"
+- L: skeleton nos cards
+- D: lista de profissionais com especialidades
+- E: toast
 
 ---
 
@@ -1645,11 +1683,12 @@ DS: Card, Button Primary, Button Danger, Top Bar (back + edit)
 │  │ Desconto    10%              ││
 │  └──────────────────────────────┘│
 │                                  │
-│  Envios recentes                 │
+│  Envios recentes (últimos 5)     │
 │  ┌──────────────────────────────┐│
 │  │ Maria Silva   12/03  Entregue││
 │  │ Ana Costa     10/03  Retorno ││
 │  └──────────────────────────────┘│
+│  Ver todos os envios →       (N) │
 │                                  │
 │  [ Excluir campanha ]    Danger  │
 │                                  │
@@ -1695,6 +1734,14 @@ DS: Input, Button Primary, radio/segmented control, Top Bar (back)
 │  [ Criar campanha ]          (P) │
 └──────────────────────────────────┘
 ```
+
+Ações:
+- P: "Criar campanha" / "Salvar" → `POST /campaigns` ou `PATCH /campaigns/:id`
+
+Estados:
+- D: formulário (vazio em new, preenchido em edit)
+- L: spinner no botão
+- E: inline errors (422 INVALID_CHANNEL, 400 campo obrigatório)
 
 ---
 
@@ -1846,7 +1893,7 @@ Ações:
 Estados:
 - V: "Configure seu estúdio para começar" + link para onboarding
 - L: skeleton shimmer nos cards de métricas e lista
-- D: métricas + agenda do dia + atividade recente
+- D: métricas + agenda do dia
 - E: toast + retry
 
 ---
@@ -1894,6 +1941,7 @@ Estados:
 
 Regras:
 - **Visão multi-profissional**: diferencial do dashboard vs mobile (que mostra 1 profissional por vez)
+- API: `GET /appointments` sem `professional_id` retorna todos do studio; frontend agrupa por `professional_id` no response
 - Cores por profissional na grade semanal
 - Split view: grade em cima, detalhes do dia selecionado embaixo
 
@@ -1980,7 +2028,7 @@ DS: Card (métricas), Table, Sidebar Navigation
 │            │  │12/03│Julia     │R$60    │Crédito │Maria    ││
 │            │  └─────┴──────────┴────────┴────────┴─────────┘│
 │            │                                                 │
-│            │  ◀ 1 2 3 ▶                                      │
+│            │  [ Carregar mais ]                               │
 └────────────┴─────────────────────────────────────────────────┘
 ```
 
@@ -2046,7 +2094,7 @@ Estados:
 
 Regras:
 - **Grid de cards** para visão geral + **tabela de performance** para métricas
-- Performance derivada de `GET /appointments` (contagem) e `GET /commissions` (valores) — aceito como N+1 trade-off no v1 (~5 profissionais por studio); considerar endpoint agregado `GET /professionals/performance` no v2
+- Performance derivada por profissional: Atendimentos via `GET /appointments?professional_id=X&date_from&date_to` (count), Receita/Comissão via `GET /commissions?professional_id=X&period_start&period_end` — aceito como N+1 trade-off no v1 (~5 profissionais por studio); considerar endpoint agregado `GET /professionals/performance` no v2
 
 ---
 
@@ -2099,7 +2147,7 @@ DS: Input, Button Primary, Card, Sidebar Navigation
 Ações:
 - P: "Salvar alterações" → `PATCH /studios/me`
 - S: Trocar logo → upload
-- N: Tabs Geral/Serviços/Categorias/Assinatura → alterna conteúdo
+- N: Tabs Geral/Serviços/Categorias/Assinatura → alterna conteúdo (Serviços reutiliza layout de 6.4, Categorias reutiliza §4 CRUD inline, Assinatura reutiliza layout de 10.2 — todos adaptados para largura desktop)
 - N: [+] fotos → `POST /studios/me/photos`
 
 Estados:
@@ -2216,6 +2264,16 @@ DS: Card, FAB, date picker, Top Bar (back)
 └──────────────────────────────────┘
 ```
 
+Ações:
+- S: [+] → bottom sheet para criar novo bloqueio (data, horário início/fim, motivo)
+- N: [×] → confirmação → `DELETE /blocked-slots/:id`
+
+Estados:
+- V: "Nenhum horário bloqueado" + "Bloquear horário"
+- L: skeleton na lista
+- D: lista agrupada por data
+- E: toast + pull-to-refresh
+
 ---
 
 ### AuditLogScreen — `/settings/audit`
@@ -2237,8 +2295,21 @@ DS: Card, filtro chips, Top Bar (back)
 │  │ 13/03 10:15                  ││
 │  └──────────────────────────────┘│
 │                                  │
+│  [ Carregar mais ]               │
+│                                  │
 └──────────────────────────────────┘
 ```
+
+Ações:
+- N: Filtro por tipo de ação (chips)
+- N: Pull-to-refresh
+- N: "Carregar mais" → próxima página via cursor
+
+Estados:
+- V: "Nenhuma atividade registrada"
+- L: skeleton na lista
+- D: lista com filtros + paginação cursor-based
+- E: toast + pull-to-refresh
 
 ---
 
@@ -2264,6 +2335,17 @@ DS: Card, FAB, Top Bar (back)
 │                                  │
 └──────────────────────────────────┘
 ```
+
+Ações:
+- S: [+] → bottom sheet ou `/settings/packages/new`
+- P: Tap no card → `/settings/packages/:id/edit`
+- N: Swipe para excluir → confirmação → `DELETE /packages/:id`
+
+Estados:
+- V: "Nenhum pacote cadastrado" + "Criar pacote"
+- L: skeleton nos cards
+- D: lista de pacotes
+- E: toast (409 PACKAGE_HAS_SUBSCRIPTIONS ao excluir)
 
 ---
 
