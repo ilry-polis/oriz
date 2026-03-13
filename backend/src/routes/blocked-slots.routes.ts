@@ -51,6 +51,7 @@ export default async function blockedSlotRoutes(app: FastifyInstance) {
 
   // DELETE /api/v1/blocked-slots/:id
   // Auth: owner+professional
+  // Ownership: professional can only delete own blocks; owner can delete any
   app.delete('/:id', {
     onRequest: [app.requireStudioMember],
     schema: { params: UuidParam },

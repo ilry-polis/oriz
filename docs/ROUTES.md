@@ -228,7 +228,7 @@ Prefix: `/api/v1/blocked-slots`
 | POST | / | owner+professional | `CreateBlockedSlotBody` (professional_id UUID, date ISO, start_time datetime, end_time datetime, reason?) | BlockedSlotController.create |
 | DELETE | /:id | owner+professional | — | BlockedSlotController.delete |
 
-**Nota:** Profissional só pode bloquear seu próprio horário (403 NOT_OWN_SCHEDULE). Owner pode bloquear qualquer profissional.
+**Nota:** Profissional só pode criar/deletar bloqueios do seu próprio horário (403 NOT_OWN_SCHEDULE). Owner pode criar/deletar bloqueios de qualquer profissional.
 
 ---
 
