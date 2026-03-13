@@ -83,6 +83,18 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **MKTG-02**: System sends reactivation message to inactive clients (>60 days, configurable)
 - [ ] **MKTG-03**: Owner can customize message templates with optional discount
 
+### LGPD & Compliance
+
+- [ ] **LGPD-01**: System logs access to sensitive client data (view, export, delete) in audit trail
+- [ ] **LGPD-02**: Marketing consent captured explicitly per client (opt-in, default false); no message sent without consent
+
+### Billing & Subscription
+
+- [ ] **BILL-01**: Studio owner can subscribe to a plan (basic, pro, premium) via payment gateway
+- [ ] **BILL-02**: System enforces feature gating based on active subscription plan
+- [ ] **BILL-03**: System processes subscription renewals and records invoices via gateway webhook
+- [ ] **BILL-04**: Studio owner can upgrade or downgrade plan from the app
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -173,12 +185,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MKTG-01 | Phase 7 | Pending |
 | MKTG-02 | Phase 7 | Pending |
 | MKTG-03 | Phase 7 | Pending |
+| LGPD-01 | Phase 2 | Pending |
+| LGPD-02 | Phase 2, 5, 7 | Pending |
+| BILL-01 | Phase 5.1 | Pending |
+| BILL-02 | Phase 5.1 | Pending |
+| BILL-03 | Phase 5.1 | Pending |
+| BILL-04 | Phase 5.1 | Pending |
 
 **Coverage:**
-- v1 requirements: 45 total
-- Mapped to phases: 45
+- v1 requirements: 51 total
+- Mapped to phases: 51
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-13*
-*Last updated: 2026-03-13 after roadmap creation — all 45 requirements mapped*
+*Last updated: 2026-03-13 — added LGPD (2) and Billing (4) requirements, all 51 mapped*
