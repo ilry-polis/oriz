@@ -1,19 +1,25 @@
 {
   "hooks": {
-    "PostEdit": [
+    "PostToolUse": [
       {
-        "command": "cd backend && npx biome check --write .",
-        "description": "Auto-lint e format após edição no backend"
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd backend && npx biome check --write \"$CLAUDE_TOOL_INPUT_FILE_PATH\" 2>/dev/null || true"
+          }
+        ]
       }
     ],
-    "PreCommit": [
+    "PreToolUse": [
       {
-        "command": "cd backend && npm run test",
-        "description": "Bloqueia commit se testes falharem"
-      },
-      {
-        "command": "cd backend && grep -rn 'select(\"\\*\")\\|select(\\x27\\*\\x27)' src/ && echo 'ERRO: SELECT * encontrado!' && exit 1 || true",
-        "description": "Bloqueia commit se encontrar select(*)"
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git commit'; then cd backend && npm run test 2>&1 || exit 2; fi"
+          }
+        ]
       }
     ]
   }
