@@ -217,4 +217,7 @@ DeviceToken não pertence a um studio — pertence a um user. RLS usa `user_id =
 A exclusion constraint em Appointment requer a extensão `btree_gist`. Habilitar via migration: `CREATE EXTENSION IF NOT EXISTS btree_gist`. A constraint garante que nenhum par de agendamentos ativos sobreponha horários para o mesmo profissional (ex: 10:00-11:00 vs 10:30-11:30). Um INDEX B-tree regular `(professional_id, date, start_time)` complementa para lookups rápidos sem atuar como constraint.
 
 ### ServiceCategory — RLS com studio_id nullable
-Categorias globais (seed) têm `studio_id = NULL`. RLS policy para SELECT deve ser: `studio_id = auth.studio_id() OR studio_id IS NULL`. INSERT/UPDATE/DELETE restritos a `studio_id = auth.studio_id()` — ninguém modifica categorias globais via API. Seeds são inseridas via migration.
+Categorias globais (seed) têm `studio_id = NULL`. SELECT é público (necessário para página de booking). INSERT/UPDATE/DELETE restritos a `studio_id IS NOT NULL AND studio_id = auth.studio_id()` — ninguém modifica categorias globais via API. Seeds são inseridas via migration.
+
+### Tabelas com SELECT público (página de booking)
+As seguintes tabelas permitem SELECT sem autenticação para suportar a página pública de agendamento (`oriz.app/:slug`): `studios`, `studio_photos`, `professionals`, `service_categories`, `services`, `professional_services`. Dados sensíveis (clients, appointments, payments, etc.) permanecem restritos via studio_id + auth. O backend deve expor apenas os campos necessários via API pública — nunca retornar `settings`, `commission_value`, ou `working_hours` para visitantes anônimos.
