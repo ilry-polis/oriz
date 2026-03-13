@@ -127,58 +127,58 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| AUTH-04 | — | Pending |
-| AUTH-05 | — | Pending |
-| SERV-01 | — | Pending |
-| SERV-02 | — | Pending |
-| SERV-03 | — | Pending |
-| SERV-04 | — | Pending |
-| SERV-05 | — | Pending |
-| SCHD-01 | — | Pending |
-| SCHD-02 | — | Pending |
-| SCHD-03 | — | Pending |
-| SCHD-04 | — | Pending |
-| SCHD-05 | — | Pending |
-| CLNT-01 | — | Pending |
-| CLNT-02 | — | Pending |
-| CLNT-03 | — | Pending |
-| CLNT-04 | — | Pending |
-| CLNT-05 | — | Pending |
-| CLNT-06 | — | Pending |
-| TEAM-01 | — | Pending |
-| TEAM-02 | — | Pending |
-| TEAM-03 | — | Pending |
-| TEAM-04 | — | Pending |
-| TEAM-05 | — | Pending |
-| FINC-01 | — | Pending |
-| FINC-02 | — | Pending |
-| FINC-03 | — | Pending |
-| FINC-04 | — | Pending |
-| FINC-05 | — | Pending |
-| PAGE-01 | — | Pending |
-| PAGE-02 | — | Pending |
-| PAGE-03 | — | Pending |
-| PAGE-04 | — | Pending |
-| PUSH-01 | — | Pending |
-| PUSH-02 | — | Pending |
-| WHAI-01 | — | Pending |
-| WHAI-02 | — | Pending |
-| WHAI-03 | — | Pending |
-| WHAI-04 | — | Pending |
-| WHAI-05 | — | Pending |
-| WHAI-06 | — | Pending |
-| MKTG-01 | — | Pending |
-| MKTG-02 | — | Pending |
-| MKTG-03 | — | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Pending |
+| AUTH-05 | Phase 1 | Pending |
+| SERV-01 | Phase 2 | Pending |
+| SERV-02 | Phase 2 | Pending |
+| SERV-03 | Phase 4 | Pending |
+| SERV-04 | Phase 4 | Pending |
+| SERV-05 | Phase 4 | Pending |
+| SCHD-01 | Phase 3 | Pending |
+| SCHD-02 | Phase 3 | Pending |
+| SCHD-03 | Phase 3 | Pending |
+| SCHD-04 | Phase 3 | Pending |
+| SCHD-05 | Phase 3 | Pending |
+| CLNT-01 | Phase 2 | Pending |
+| CLNT-02 | Phase 2 | Pending |
+| CLNT-03 | Phase 2 | Pending |
+| CLNT-04 | Phase 2 | Pending |
+| CLNT-05 | Phase 2 | Pending |
+| CLNT-06 | Phase 2 | Pending |
+| TEAM-01 | Phase 2 | Pending |
+| TEAM-02 | Phase 2 | Pending |
+| TEAM-03 | Phase 2 | Pending |
+| TEAM-04 | Phase 2 | Pending |
+| TEAM-05 | Phase 2 | Pending |
+| FINC-01 | Phase 4 | Pending |
+| FINC-02 | Phase 4 | Pending |
+| FINC-03 | Phase 4 | Pending |
+| FINC-04 | Phase 4 | Pending |
+| FINC-05 | Phase 4 | Pending |
+| PAGE-01 | Phase 5 | Pending |
+| PAGE-02 | Phase 5 | Pending |
+| PAGE-03 | Phase 5 | Pending |
+| PAGE-04 | Phase 5 | Pending |
+| PUSH-01 | Phase 5 | Pending |
+| PUSH-02 | Phase 5 | Pending |
+| WHAI-01 | Phase 6 | Pending |
+| WHAI-02 | Phase 6 | Pending |
+| WHAI-03 | Phase 6 | Pending |
+| WHAI-04 | Phase 6 | Pending |
+| WHAI-05 | Phase 6 | Pending |
+| WHAI-06 | Phase 6 | Pending |
+| MKTG-01 | Phase 7 | Pending |
+| MKTG-02 | Phase 7 | Pending |
+| MKTG-03 | Phase 7 | Pending |
 
 **Coverage:**
 - v1 requirements: 45 total
-- Mapped to phases: 0
-- Unmapped: 45
+- Mapped to phases: 45
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-13*
-*Last updated: 2026-03-13 after initial definition*
+*Last updated: 2026-03-13 after roadmap creation — all 45 requirements mapped*
