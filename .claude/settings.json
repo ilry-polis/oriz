@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "PostEdit": [
+      {
+        "command": "cd backend && npx biome check --write .",
+        "description": "Auto-lint e format após edição no backend"
+      }
+    ],
+    "PreCommit": [
+      {
+        "command": "cd backend && npm run test",
+        "description": "Bloqueia commit se testes falharem"
+      },
+      {
+        "command": "cd backend && grep -rn 'select(\"\\*\")\\|select(\\x27\\*\\x27)' src/ && echo 'ERRO: SELECT * encontrado!' && exit 1 || true",
+        "description": "Bloqueia commit se encontrar select(*)"
+      }
+    ]
+  }
+}
