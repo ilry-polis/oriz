@@ -35,3 +35,22 @@
 - **Decisão:** Paginação cursor-based como padrão
 - **Motivo:** Performance consistente independente da página, sem problemas com inserções durante navegação
 - **Alternativa descartada:** Offset/limit (degradação de performance em tabelas grandes)
+
+## 2026-03-13 — Banco acessado exclusivamente via Backend (pg driver puro)
+
+- **Contexto:** Definir como a aplicação acessa o Supabase. Opções: client direto com @supabase/supabase-js, ORM (Drizzle), ou driver puro (pg).
+- **Decisão:** Banco de dados acessado EXCLUSIVAMENTE pelo backend via pg (node-postgres)
+- **Client** (mobile/dashboard) NUNCA acessa banco diretamente
+- **@supabase/supabase-js** Usado APENAS para: Auth (client + backend), Storage signed URLs (backend), Realtime subscriptions (client)
+- **Edge Functions** Para webhooks e cron jobs
+- **Alternativas descartadas:**
+Client acessando banco via Supabase JS (bypassa lógica de negócio no backend)
+Drizzle ORM (adiciona abstração desnecessária, pg dá controle total sobre SQL)
+- **Consequências:** 
+Queries SQL escritas manualmente nos repositories — mais controle, mais responsabilidade
+Tipos TypeScript definidos manualmente por query (sem auto-generate do ORM)
+Toda lógica de negócio centralizada no Fastify — facilita teste e auditoria
+RLS funciona como segunda camada (belt-and-suspenders), não como única proteção
+- **Dependências Backend:**
+pg + @types/pg          → conexão e queries ao Postgres
+@supabase/supabase-js   → Storage (signed URLs) e Auth (validar JWT)
