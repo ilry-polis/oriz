@@ -15,6 +15,110 @@
 
 ---
 
+## Padrões Globais de UI
+
+> Regras que se aplicam a **todas** as telas. Não repetidas individualmente — cada tela herda estes padrões.
+> Fonte: `DESIGN_SYSTEM.md` seções Padrões Flutter.
+
+### Transições de Tela
+
+| Navegação | Animação | Duração | Curve |
+|-----------|----------|---------|-------|
+| Forward (push) | Slide direita → esquerda | 300ms | easeInOut |
+| Back (pop) | Slide esquerda → direita | 250ms | easeInOut |
+| Modal / Bottom Sheet | Slide baixo → cima | 300ms | easeOutCubic |
+| Tab switch | Fade | 200ms | easeIn |
+
+### Micro-interações
+
+| Elemento | Animação | Duração | Extras |
+|----------|----------|---------|--------|
+| Card tap | scale 0.98 | 80ms | — |
+| Botão press | scale 0.96 | 100ms | haptic light |
+| Toggle / switch | AnimatedAlign | 200ms | easeInOut |
+| Checkbox | scale bounce | 150ms | — |
+| FAB appear | scale + fade 0→1 | 300ms | elasticOut |
+| Badge mudança | AnimatedSwitcher fade | 200ms | — |
+| Item inserido em lista | fadeIn + slideUp | 200ms | AnimatedList |
+| Item removido de lista | fadeOut + slideDown | 150ms | AnimatedList |
+| Contador alterado | AnimatedSwitcher slideUp | 200ms | — |
+| Expansão/colapso | AnimatedContainer | 250ms | easeInOut |
+| Staggered list load | fadeIn + slideUp escalonado | 50ms delay entre itens | máx 8 itens animados |
+| Swipe direita (card) | reveal ação primária | threshold 40% largura | haptic medium, --success bg |
+| Swipe esquerda (card) | reveal ação secundária | threshold 40% largura | --warning ou --error bg |
+
+**Haptic feedback:** light = tap/press · medium = ação concluída/swipe confirmado · heavy = delete/ação destrutiva
+
+> Respeitar `AccessibilityFeatures.reduceMotion` — desabilitar animações decorativas.
+
+### Skeleton Widgets
+
+Toda tela com estado L usa skeleton shimmer (ciclo 1.5s, gradiente `--neutral-200` → `--neutral-100` e volta, direção esquerda → direita). Transição skeleton → dados reais: fadeIn 200ms. Nunca spinner fullscreen.
+
+**Spinner inline** (ações pontuais: salvar, enviar): `--brand-accent`, 24px, dentro do botão. Usado apenas quando skeleton não se aplica.
+
+| Skeleton Widget | Telas |
+|----------------|-------|
+| `AppointmentCardSkeleton` | AgendaDayScreen, AgendaWeekScreen, DashboardOverviewPage, DashboardAgendaPage, ClientDetailScreen (tab Histórico) |
+| `AppointmentDetailSkeleton` | AppointmentDetailScreen |
+| `ClientListItemSkeleton` | ClientListScreen, SelectClientScreen |
+| `ClientDetailSkeleton` | ClientDetailScreen |
+| `ServiceCardSkeleton` | SelectServiceScreen, ServicesManagementScreen, PublicSelectServicePage |
+| `SlotGridSkeleton` | SelectSlotScreen, PublicSelectSlotPage |
+| `FinancialSummarySkeleton` | FinancialDashboardScreen, DashboardOverviewPage, DashboardFinancialPage |
+| `PaymentListItemSkeleton` | PaymentsListScreen |
+| `CommissionListItemSkeleton` | CommissionsListScreen |
+| `ProfessionalCardSkeleton` | TeamManagementScreen, PublicSelectProfessionalPage, DashboardTeamPage |
+| `ConversationListItemSkeleton` | ConversationListScreen |
+| `MessageBubbleSkeleton` | ConversationDetailScreen |
+| `CampaignCardSkeleton` | CampaignListScreen, DashboardCampaignsPage |
+| `PackageCardSkeleton` | PackagesManagementScreen |
+| `BlockedSlotCardSkeleton` | BlockedSlotsScreen |
+| `AuditLogItemSkeleton` | AuditLogScreen |
+| `InvoiceListItemSkeleton` | InvoicesScreen |
+| `PlanCardSkeleton` | PlansScreen |
+| `FormFieldSkeleton` | ProfileScreen, StudioSettingsScreen, ProfessionalFormScreen, AIConfigScreen, DashboardSettingsPage |
+| `StudioPageSkeleton` | PublicStudioPage |
+| `TableRowSkeleton` | DashboardClientsPage, DashboardFinancialPage, DashboardTeamPage, DashboardCampaignsPage |
+
+### Infinite Scroll (Mobile)
+
+Paginação infinita em toda lista mobile. Nunca botão "carregar mais", nunca paginação numérica no mobile.
+
+**Comportamento padrão:** prefetch 80% do scroll · 2-3 skeleton items no final · erro = card retry inline · fim = indicador "Todos os resultados" · cache mantido no back.
+
+| Tela | Endpoint paginado |
+|------|-------------------|
+| ClientListScreen | `GET /clients` cursor |
+| SelectClientScreen | `GET /clients` search + cursor |
+| PaymentsListScreen | `GET /payments` cursor |
+| CommissionsListScreen | `GET /commissions` cursor |
+| ConversationListScreen | `GET /conversations` cursor |
+| ConversationDetailScreen | `GET /conversations/:id/messages` cursor reverso (scroll ↑ = mensagens antigas) |
+| CampaignListScreen | `GET /campaigns` cursor |
+| InvoicesScreen | `GET /billing/invoices` cursor |
+| AuditLogScreen | `GET /audit-logs` cursor |
+
+**Listas finitas (sem paginação):** SelectServiceScreen, SelectSlotScreen, TeamManagementScreen, ServicesManagementScreen, BlockedSlotsScreen, PackagesManagementScreen — datasets pequenos por studio, carregam tudo de uma vez.
+
+**Dashboard web:** botão "Carregar mais" (cursor-based) — aceitável no desktop.
+
+### Pull to Refresh
+
+Presente em **toda tela mobile com dados remotos**. Reseta para page 1, substitui lista. Coexiste com infinite scroll (`RefreshIndicator` wrapping `ListView.builder`).
+
+**Exceções** (sem pull-to-refresh): SplashScreen, OnboardingWizardScreen, OnboardingCompleteScreen, ConfirmAppointmentScreen, PublicConfirmBookingPage, bottom sheets, formulários puros (ClientFormScreen, CampaignFormScreen, ProfessionalFormScreen, AnamnesisFormScreen).
+
+### Toast / Feedback
+
+| Tipo | Comportamento | Duração |
+|------|--------------|---------|
+| Sucesso | Auto-dismiss, deslizar para fechar | 3s |
+| Erro | Persiste até fechar manualmente | — |
+| Haptic | light (tap) · medium (concluído) · heavy (delete) | — |
+
+---
+
 ## Sumário de Fluxos
 
 | # | Fluxo | Plataforma | Telas |
@@ -1085,6 +1189,11 @@ Regras de visibilidade:
 - **Professional vê:** Meu perfil, Horários bloqueados, Conversas WhatsApp, Notificações, Sair
 - Itens owner-only: Estúdio, Serviços, Equipe, Pacotes, IA, Campanhas, Assinatura, Auditoria
 
+Estados:
+- L: skeleton no perfil + lista de menu
+- D: avatar + nome + menu completo (condicional por role)
+- E: toast + pull-to-refresh
+
 ---
 
 ### 6.2 ProfileScreen — `/profile`
@@ -1113,6 +1222,11 @@ DS: Input, Button Primary, Top Bar (back)
 │                                  │
 └──────────────────────────────────┘
 ```
+
+Estados:
+- L: `FormFieldSkeleton` shimmer
+- D: formulário preenchido com dados atuais
+- E: inline errors (toast para falha de save)
 
 ---
 
@@ -1636,7 +1750,7 @@ DS: Card, Status Badge, FAB, Top Bar (back)
 ┌──────────────────────────────────┐
 │ ←  Campanhas                 [+] │
 │──────────────────────────────────│
-│  [Todas] [Aniversário] [Reativ.] │
+│  [Todas] [Aniversário] [Reativ.] [Custom]│
 │                                  │
 │  ┌──────────────────────────────┐│
 │  │ 🎂 Aniversário              ││
@@ -1653,8 +1767,14 @@ DS: Card, Status Badge, FAB, Top Bar (back)
 ```
 
 Ações:
-- S: [+] → `/campaigns/new`
 - P: Tap → `/campaigns/:id`
+- S: [+] → `/campaigns/new`
+
+Estados:
+- V: "Nenhuma campanha criada" + "Criar campanha"
+- L: `CampaignCardSkeleton` shimmer
+- D: lista filtrada por tipo com infinite scroll
+- E: toast + pull-to-refresh
 
 ---
 
@@ -1688,12 +1808,16 @@ DS: Card, Button Primary, Button Danger, Top Bar (back + edit)
 │  │ Maria Silva   12/03  Entregue││
 │  │ Ana Costa     10/03  Retorno ││
 │  └──────────────────────────────┘│
-│  Ver todos os envios →       (N) │
 │                                  │
 │  [ Excluir campanha ]    Danger  │
 │                                  │
 └──────────────────────────────────┘
 ```
+
+Estados:
+- L: skeleton nos cards de métricas + configuração
+- D: métricas + configuração + envios recentes (últimos 5)
+- E: 404 → "Campanha não encontrada" + voltar
 
 ---
 
@@ -1822,6 +1946,11 @@ DS: Card, Button Primary, Top Bar (back)
 Ações:
 - P: "Assinar" → `POST /billing/subscription` → redireciona para checkout_url do gateway
 
+Estados:
+- L: `PlanCardSkeleton` shimmer
+- D: cards dos 3 planos com botão assinar
+- E: toast "Erro ao carregar planos" + retry
+
 ---
 
 ### 10.3 InvoicesScreen — `/billing/invoices`
@@ -1848,6 +1977,16 @@ DS: Card, Status Badge, Top Bar (back)
 │                                  │
 └──────────────────────────────────┘
 ```
+
+Ações:
+- N: Filtro por status (chips)
+- N: Pull-to-refresh
+
+Estados:
+- V: "Nenhuma fatura ainda"
+- L: `InvoiceListItemSkeleton` shimmer
+- D: lista de faturas com filtro + infinite scroll
+- E: toast + pull-to-refresh
 
 ---
 
@@ -2295,20 +2434,17 @@ DS: Card, filtro chips, Top Bar (back)
 │  │ 13/03 10:15                  ││
 │  └──────────────────────────────┘│
 │                                  │
-│  [ Carregar mais ]               │
-│                                  │
 └──────────────────────────────────┘
 ```
 
 Ações:
 - N: Filtro por tipo de ação (chips)
 - N: Pull-to-refresh
-- N: "Carregar mais" → próxima página via cursor
 
 Estados:
 - V: "Nenhuma atividade registrada"
-- L: skeleton na lista
-- D: lista com filtros + paginação cursor-based
+- L: `AuditLogItemSkeleton` shimmer
+- D: lista com filtros + infinite scroll cursor-based
 - E: toast + pull-to-refresh
 
 ---
@@ -2375,6 +2511,11 @@ Estados:
 - [x] Regra dos 3 toques respeitada nos fluxos críticos
 - [x] Empty states com ação sugerida (nunca tela em branco)
 - [x] Acessibilidade: contraste, touch targets 44dp, labels
+- [x] Skeleton widget específico mapeado por domínio (seção Padrões Globais)
+- [x] Transição de tela definida para cada tipo de navegação (seção Padrões Globais)
+- [x] Micro-interações documentadas — card tap, button press, swipe (seção Padrões Globais)
+- [x] Infinite scroll em toda lista mobile paginada (seção Padrões Globais)
+- [x] Pull to refresh em toda tela mobile com dados remotos (seção Padrões Globais)
 
 ---
 
@@ -2447,7 +2588,9 @@ Estados:
 | Status Badge | Agenda, Appointments, Commissions, Invoices |
 | Bottom Tab Bar | Agenda, Clientes, Financeiro, Mais |
 | Top Bar | Todas exceto Splash |
-| Skeleton | Todas as telas com dados remotos |
+| Skeleton Widgets | Ver tabela em "Padrões Globais de UI" (21 widgets por domínio) |
+| Infinite Scroll | Todas as listas mobile paginadas (9 telas) |
+| Pull to Refresh | Todas as telas mobile com dados remotos |
 | Toast | Todas as ações de escrita |
 | Bottom Sheet | Complete Appointment, Delete Client, filtros |
 | Sidebar Navigation | Dashboard Web (todas as páginas) |
