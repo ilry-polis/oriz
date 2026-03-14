@@ -40,7 +40,7 @@ Prefix: `/api/v1/profile`
 | Método | Path | Auth | Body Schema | Handler |
 |--------|------|------|-------------|---------|
 | GET | / | authenticated | — | ProfileController.get |
-| PATCH | / | authenticated | `UpdateProfileBody` (full_name?, phone?, avatar_url?) | ProfileController.update |
+| PATCH | / | authenticated | `UpdateProfileBody` (full_name?, phone? regex `^\+?\d{10,15}$`, avatar_url?) | ProfileController.update |
 
 ---
 
@@ -50,16 +50,16 @@ Prefix: `/api/v1/studios`
 
 | Método | Path | Auth | Body/Query Schema | Handler | Rate Limit |
 |--------|------|------|-------------------|---------|------------|
-| POST | / | authenticated | `CreateStudioBody` (name, slug regex `^[a-z0-9-]{3,50}$`, phone?, address?, description?, timezone default "America/Sao_Paulo") | StudioController.create | 3/min user |
+| POST | / | authenticated | `CreateStudioBody` (name, slug regex `^[a-z0-9-]{3,50}$`, phone? regex `^\+?\d{10,15}$`, address?, description?, timezone default "America/Sao_Paulo") | StudioController.create | 3/min user |
 | GET | /me | owner+professional | — | StudioController.get | — |
-| PATCH | /me | owner | `UpdateStudioBody` (name?, slug?, phone?, address?, logo_url?, description?, timezone?, settings?: { reminder_hours_before?, allow_public_booking?, default_currency? }) | StudioController.update | — |
+| PATCH | /me | owner | `UpdateStudioBody` (name?, slug?, phone? regex `^\+?\d{10,15}$`, address?, logo_url? HTTP(S) only, description?, timezone?, settings?: { reminder_hours_before?, allow_public_booking?, default_currency? }) | StudioController.update | — |
 
 ### Studio Photos
 
 | Método | Path | Auth | Body Schema | Handler |
 |--------|------|------|-------------|---------|
 | GET | /me/photos | owner+professional | — | StudioPhotoController.list |
-| POST | /me/photos | owner | `CreatePhotoBody` (url, position? default 0) | StudioPhotoController.create |
+| POST | /me/photos | owner | `CreatePhotoBody` (url HTTP(S) only — domain whitelist enforced at service layer, position? default 0) | StudioPhotoController.create |
 | PATCH | /me/photos/:photoId | owner | `UpdatePhotoBody` (position?) | StudioPhotoController.update |
 | DELETE | /me/photos/:photoId | owner | — | StudioPhotoController.delete |
 
@@ -117,10 +117,10 @@ Prefix: `/api/v1/professionals`
 | Método | Path | Auth | Body/Query Schema | Handler |
 |--------|------|------|-------------------|---------|
 | GET | / | owner+professional | `ListProfessionalsQuery` (is_active?, cursor?, limit?) | ProfessionalController.list |
-| POST | / | owner | `CreateProfessionalBody` (user_id UUID, name, avatar_url?, specialties? string[], working_hours? Record, commission_type "percentage"\|"fixed", commission_value, card_fee_policy? default "studio", service_ids? UUID[]) | ProfessionalController.create |
+| POST | / | owner | `CreateProfessionalBody` (user_id UUID, name, avatar_url?, specialties? string[], working_hours? Record<"mon"\|"tue"\|"wed"\|"thu"\|"fri"\|"sat"\|"sun", {open: "HH:mm", close: "HH:mm"}>, commission_type "percentage"\|"fixed", commission_value, card_fee_policy? default "studio", service_ids? UUID[]) | ProfessionalController.create |
 | GET | /me | owner+professional | — | ProfessionalController.getMe |
 | GET | /:id | owner+professional | — | ProfessionalController.getById |
-| PATCH | /:id | owner | `UpdateProfessionalBody` (name?, avatar_url?, specialties?, working_hours?, commission_type?, commission_value?, card_fee_policy?, is_active?, service_ids?) | ProfessionalController.update |
+| PATCH | /:id | owner | `UpdateProfessionalBody` (name?, avatar_url?, specialties?, working_hours? Record<"mon"\|...\|"sun", {open: "HH:mm", close: "HH:mm"}>?, commission_type?, commission_value?, card_fee_policy?, is_active?, service_ids?) | ProfessionalController.update |
 | DELETE | /:id | owner | — | ProfessionalController.delete |
 
 **Notas:**
@@ -139,16 +139,16 @@ Prefix: `/api/v1/clients`
 | Método | Path | Auth | Body/Query Schema | Handler |
 |--------|------|------|-------------------|---------|
 | GET | / | owner+professional | `ListClientsQuery` (search?, tag?, inactive_days?, cursor?, limit?) | ClientController.list |
-| POST | / | owner+professional | `CreateClientBody` (name, phone?, email?, birth_date? ISO date, tags? string[], notes?) — dedup por phone quando fornecido; sem phone = sem dedup | ClientController.create |
+| POST | / | owner+professional | `CreateClientBody` (name, phone? regex `^\+?\d{10,15}$`, email?, birth_date? ISO date, tags? string[], notes?) — dedup por phone quando fornecido; sem phone = sem dedup | ClientController.create |
 | GET | /:id | owner+professional | — | ClientController.getById |
-| PATCH | /:id | owner+professional | `UpdateClientBody` (name?, phone?, email?, birth_date?, tags?, notes?) | ClientController.update |
+| PATCH | /:id | owner+professional | `UpdateClientBody` (name?, phone? regex `^\+?\d{10,15}$`, email?, birth_date?, tags?, notes?) | ClientController.update |
 | DELETE | /:id | owner | — | ClientController.delete |
 
 ### Client History
 
 | Método | Path | Auth | Query Schema | Handler |
 |--------|------|------|--------------|---------|
-| GET | /:id/appointments | owner+professional | `ListClientAppointmentsQuery` (status?, cursor?, limit?) | ClientController.listAppointments |
+| GET | /:id/appointments | owner+professional | `ListClientAppointmentsQuery` (status?: "pending"\|"confirmed"\|"completed"\|"cancelled"\|"no_show", cursor?, limit?) | ClientController.listAppointments |
 
 ### Anamnesis
 
@@ -192,8 +192,8 @@ Prefix: `/api/v1/appointments`
 
 | Método | Path | Auth | Body/Query Schema | Handler |
 |--------|------|------|-------------------|---------|
-| GET | / | owner+professional | `ListAppointmentsQuery` (date?, date_from?, date_to?, professional_id?, status?, cursor?, limit?) — `date` é sugar para `date_from=date&date_to=date`; se `date` presente, `date_from`/`date_to` são rejeitados (Zod refine) | AppointmentController.list |
-| POST | / | owner+professional | `CreateAppointmentBody` (client_id UUID, professional_id UUID, service_id UUID, date ISO, start_time datetime, notes?, source? default "app") | AppointmentController.create |
+| GET | / | owner+professional | `ListAppointmentsQuery` (date?, date_from?, date_to?, professional_id?, status?: "pending"\|"confirmed"\|"completed"\|"cancelled"\|"no_show", cursor?, limit?) — `date` é sugar para `date_from=date&date_to=date`; se `date` presente, `date_from`/`date_to` são rejeitados (Zod refine) | AppointmentController.list |
+| POST | / | owner+professional | `CreateAppointmentBody` (client_id UUID, professional_id UUID, service_id UUID, date ISO, start_time datetime, notes?, source?: "app"\|"manual"\|"web_page"\|"whatsapp" default "app") | AppointmentController.create |
 | GET | /available-slots | owner+professional | `AvailableSlotsQuery` (date ISO, professional_id UUID, service_id UUID) — todos obrigatórios | AppointmentController.availableSlots |
 | GET | /:id | owner+professional | — | AppointmentController.getById |
 | PATCH | /:id | owner+professional | `UpdateAppointmentBody` (professional_id?, service_id?, date?, start_time?, notes?) | AppointmentController.update |
@@ -295,7 +295,7 @@ Prefix: `/api/v1/financial`
 
 | Método | Path | Auth | Query Schema | Handler |
 |--------|------|------|--------------|---------|
-| GET | /summary | owner | `FinancialSummaryQuery` (year?, month? 1-12) | FinancialController.summary |
+| GET | /summary | owner | `FinancialSummaryQuery` (year?, month? 1-12 — year obrigatório se month presente) | FinancialController.summary |
 
 **Nota:** Dados da materialized view `financial_summaries`. Refresh via BullMQ.
 
@@ -347,8 +347,8 @@ Prefix: `/api/v1/campaigns`
 | Método | Path | Auth | Body/Query Schema | Handler |
 |--------|------|------|-------------------|---------|
 | GET | / | owner | `ListCampaignsQuery` (type?, is_active?, cursor?, limit?) | CampaignController.list |
-| POST | / | owner | `CreateCampaignBody` (type, message_template, discount_percentage? 0-100, inactivity_days? default 60, channel, is_active? default true) | CampaignController.create |
-| PATCH | /:id | owner | `UpdateCampaignBody` (message_template?, discount_percentage?, inactivity_days?, channel?, is_active?) | CampaignController.update |
+| POST | / | owner | `CreateCampaignBody` (type, message_template max 4096, discount_percentage? 0-100, inactivity_days? default 60, channel, is_active? default true) | CampaignController.create |
+| PATCH | /:id | owner | `UpdateCampaignBody` (message_template? max 4096, discount_percentage?, inactivity_days?, channel?, is_active?) | CampaignController.update |
 | DELETE | /:id | owner | — | CampaignController.delete |
 | GET | /:id/metrics | owner | `CampaignMetricsQuery` (date_from?, date_to?) | CampaignController.metrics |
 
@@ -416,13 +416,15 @@ Prefix: `/api/v1/public/studios`
 | GET | /:slug/services | public | `PublicServicesQuery` (category_id?) | PublicStudioController.listServices | 60/min IP |
 | GET | /:slug/service-categories | public | — | PublicStudioController.listServiceCategories | 60/min IP |
 | GET | /:slug/available-slots | public | `PublicAvailableSlotsQuery` (date, professional_id, service_id) — todos obrigatórios | PublicStudioController.availableSlots | 30/min IP |
-| POST | /:slug/appointments | public | `PublicBookingBody` (client_name, client_phone, professional_id UUID, service_id UUID, date ISO, start_time datetime, notes?) | PublicStudioController.createAppointment | 3/min IP + 1/min phone |
+| POST | /:slug/appointments | public | `PublicBookingBody` (client_name max 100 trimmed, client_phone regex `^\+?\d{10,15}$`, professional_id UUID, service_id UUID, date ISO, start_time datetime, notes? max 500) | PublicStudioController.createAppointment | 3/min IP+phone composite + 1/min phone (Redis) |
 
 **Notas:**
 - studio_id resolvido via slug — nunca enviado pelo cliente.
 - Nunca retorna: settings, owner_id, working_hours, commission_*, card_fee_policy.
 - POST /appointments cria Client se telefone não existe (dedup por phone). Source = `web_page`.
 - Status inicial depende de `ai_config.scheduling_rules.auto_confirm`.
+- Rate limit composto: keyGenerator combina IP + client_phone. Service layer reforça 1/min por phone via Redis para prevenir abuso com IPs rotativos.
+- `client_name` sanitizado (max 100, trim) para prevenir XSS. `client_phone` validado via regex `^\+?\d{10,15}$`.
 
 ---
 

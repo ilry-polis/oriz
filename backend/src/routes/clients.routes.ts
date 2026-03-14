@@ -13,7 +13,7 @@ export const ListClientsQuery = z.object({
 
 export const CreateClientBody = z.object({
   name: z.string().min(1),
-  phone: z.string().optional(),
+  phone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number format').optional(),
   email: z.string().email().optional(),
   birth_date: z.string().date().optional(),
   tags: z.array(z.string()).optional(),
@@ -22,7 +22,7 @@ export const CreateClientBody = z.object({
 
 export const UpdateClientBody = z.object({
   name: z.string().min(1).optional(),
-  phone: z.string().optional(),
+  phone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number format').optional(),
   email: z.string().email().optional(),
   birth_date: z.string().date().optional(),
   tags: z.array(z.string()).optional(),
@@ -30,7 +30,7 @@ export const UpdateClientBody = z.object({
 });
 
 export const ListClientAppointmentsQuery = z.object({
-  status: z.enum(['confirmed', 'completed', 'cancelled', 'no_show']).optional(),
+  status: z.enum(['pending', 'confirmed', 'completed', 'cancelled', 'no_show']).optional(),
   cursor: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });

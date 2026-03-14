@@ -12,7 +12,7 @@ export const ListCampaignsQuery = z.object({
 
 export const CreateCampaignBody = z.object({
   type: z.enum(['birthday', 'reactivation', 'custom']),
-  message_template: z.string().min(1),
+  message_template: z.string().min(1).max(4096),
   discount_percentage: z.number().int().min(0).max(100).optional(),
   inactivity_days: z.number().int().min(1).default(60),
   channel: z.enum(['whatsapp', 'push', 'both']),
@@ -20,7 +20,7 @@ export const CreateCampaignBody = z.object({
 });
 
 export const UpdateCampaignBody = z.object({
-  message_template: z.string().min(1).optional(),
+  message_template: z.string().min(1).max(4096).optional(),
   discount_percentage: z.number().int().min(0).max(100).optional(),
   inactivity_days: z.number().int().min(1).optional(),
   channel: z.enum(['whatsapp', 'push', 'both']).optional(),

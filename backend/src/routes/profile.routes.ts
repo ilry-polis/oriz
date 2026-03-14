@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 export const UpdateProfileBody = z.object({
   full_name: z.string().min(1).optional(),
-  phone: z.string().optional(),
+  phone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number format').optional(),
   avatar_url: z.string().url().optional(),
 });
 

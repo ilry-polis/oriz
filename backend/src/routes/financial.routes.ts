@@ -6,7 +6,10 @@ import { z } from 'zod';
 export const FinancialSummaryQuery = z.object({
   year: z.coerce.number().int().optional(),
   month: z.coerce.number().int().min(1).max(12).optional(),
-});
+}).refine(
+  (d) => !(d.month && !d.year),
+  { message: 'year is required when month is provided', path: ['year'] },
+);
 
 // ─── Route Plugin ──────────────────────────────────────────
 

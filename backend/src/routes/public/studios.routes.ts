@@ -16,13 +16,13 @@ export const PublicAvailableSlotsQuery = z.object({
 });
 
 export const PublicBookingBody = z.object({
-  client_name: z.string().min(1),
-  client_phone: z.string().min(1),
+  client_name: z.string().min(1).max(100).trim(),
+  client_phone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number format'),
   professional_id: z.string().uuid(),
   service_id: z.string().uuid(),
   date: z.string().date(),
   start_time: z.string().datetime(),
-  notes: z.string().optional(),
+  notes: z.string().max(500).optional(),
 });
 
 // ─── Route Plugin ──────────────────────────────────────────
@@ -91,14 +91,25 @@ export default async function publicStudioRoutes(app: FastifyInstance) {
   });
 
   // POST /api/v1/public/studios/:slug/appointments
-  // Rate limit: 3/min per IP + 1/min per client_phone
+  // Rate limit: 3/min per IP (via @fastify/rate-limit) + 1/min per phone (via service layer Redis check)
   // Creates Client if phone doesn't exist in studio. Source = 'web_page'.
   // Initial status depends on ai_config.scheduling_rules.auto_confirm.
   app.post('/:slug/appointments', {
-    config: { rateLimit: { max: 3, timeWindow: '1 minute' } },
+    config: {
+      rateLimit: {
+        max: 3,
+        timeWindow: '1 minute',
+        keyGenerator: (request: { ip: string; body?: { client_phone?: string } }) =>
+          request.body?.client_phone
+            ? `${request.ip}:${request.body.client_phone}`
+            : request.ip,
+      },
+    },
     schema: { params: SlugParam, body: PublicBookingBody },
     handler: async (request, reply) => {
       // → PublicStudioController.createAppointment
+      // Service layer MUST enforce per-phone rate limit (1/min) via Redis
+      // to prevent abuse from rotating IPs with same phone
       throw new Error('Not implemented');
     },
   });

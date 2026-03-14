@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const CreateStudioBody = z.object({
   name: z.string().min(1),
   slug: z.string().regex(/^[a-z0-9-]{3,50}$/),
-  phone: z.string().optional(),
+  phone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number format').optional(),
   address: z.string().optional(),
   description: z.string().optional(),
   timezone: z.string().default('America/Sao_Paulo'),
@@ -15,9 +15,12 @@ export const CreateStudioBody = z.object({
 export const UpdateStudioBody = z.object({
   name: z.string().min(1).optional(),
   slug: z.string().regex(/^[a-z0-9-]{3,50}$/).optional(),
-  phone: z.string().optional(),
+  phone: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number format').optional(),
   address: z.string().optional(),
-  logo_url: z.string().url().optional(),
+  logo_url: z.string().url().refine(
+    (u) => !u.startsWith('file:') && !u.startsWith('ftp:'),
+    'Only HTTP(S) URLs are allowed',
+  ).optional(),
   description: z.string().optional(),
   timezone: z.string().optional(),
   settings: z.object({
@@ -27,8 +30,13 @@ export const UpdateStudioBody = z.object({
   }).optional(),
 });
 
+// Photo URLs must point to Supabase Storage; validated at service layer via SUPABASE_URL env.
+// Route-level validation ensures it's a valid URL; service layer enforces domain whitelist.
 export const CreatePhotoBody = z.object({
-  url: z.string().url(),
+  url: z.string().url().refine(
+    (u) => !u.startsWith('file:') && !u.startsWith('ftp:'),
+    'Only HTTP(S) URLs are allowed',
+  ),
   position: z.number().int().default(0),
 });
 

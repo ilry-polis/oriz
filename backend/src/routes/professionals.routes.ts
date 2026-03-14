@@ -3,10 +3,12 @@ import { z } from 'zod';
 
 // ─── Zod Schemas ───────────────────────────────────────────
 
-const WorkingHoursSchema = z.record(
-  z.string(),
-  z.object({ open: z.string(), close: z.string() }),
-);
+const DayOfWeek = z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
+const TimeSlot = z.object({
+  open: z.string().regex(/^\d{2}:\d{2}$/, 'Format: HH:mm'),
+  close: z.string().regex(/^\d{2}:\d{2}$/, 'Format: HH:mm'),
+});
+const WorkingHoursSchema = z.record(DayOfWeek, TimeSlot);
 
 export const ListProfessionalsQuery = z.object({
   is_active: z.coerce.boolean().optional(),

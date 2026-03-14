@@ -10,7 +10,7 @@ export const ListAppointmentsQuery = z.object({
   date_from: z.string().date().optional(),
   date_to: z.string().date().optional(),
   professional_id: z.string().uuid().optional(),
-  status: z.enum(['confirmed', 'completed', 'cancelled', 'no_show']).optional(),
+  status: z.enum(['pending', 'confirmed', 'completed', 'cancelled', 'no_show']).optional(),
   cursor: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 }).refine(
@@ -25,7 +25,7 @@ export const CreateAppointmentBody = z.object({
   date: z.string().date(),
   start_time: z.string().datetime(),
   notes: z.string().optional(),
-  source: z.enum(['app', 'manual']).default('app'),
+  source: z.enum(['app', 'manual', 'web_page', 'whatsapp']).default('app'),
 });
 
 export const UpdateAppointmentBody = z.object({
