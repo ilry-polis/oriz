@@ -330,7 +330,7 @@ ALTER TABLE appointments
   ADD CONSTRAINT appointments_no_overlap
   EXCLUDE USING gist (
     professional_id WITH =,
-    tsrange(start_time, end_time) WITH &&
+    tstzrange(start_time, end_time) WITH &&
   ) WHERE (status != 'cancelled');
 
 -- Lookup: professional schedule for a given day
@@ -801,6 +801,14 @@ CREATE UNIQUE INDEX financial_summaries_key
   ON financial_summaries (studio_id, period_year, period_month);
 
 -- ============================================================================
+-- Fix: enable RLS on partition child tables
+ALTER TABLE notification_logs_2026_03 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notification_logs_2026_04 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notification_logs_2026_05 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs_2026_03 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs_2026_04 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs_2026_05 ENABLE ROW LEVEL SECURITY;
+
 -- Seed: global service categories
 -- ============================================================================
 INSERT INTO service_categories (id, studio_id, name, icon, position) VALUES
