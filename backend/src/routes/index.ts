@@ -20,7 +20,9 @@ import conversationRoutes from './conversations.routes';
 import campaignRoutes from './campaigns.routes';
 import billingRoutes from './billing.routes';
 import auditLogRoutes from './audit-logs.routes';
-import webhookRoutes from './webhooks.routes';
+// webhookRoutes requires validateWhatsAppSignature/validateBillingSignature
+// middlewares that are not yet implemented. Re-enable when they exist.
+// import webhookRoutes from './webhooks.routes';
 import publicStudioRoutes from './public/studios.routes';
 
 export async function registerRoutes(app: FastifyInstance) {
@@ -73,7 +75,8 @@ export async function registerRoutes(app: FastifyInstance) {
   await app.register(auditLogRoutes);
 
   // ─── Webhooks (signature-validated) ───────────────────────
-  await app.register(webhookRoutes);
+  // Disabled: webhook middleware not yet implemented
+  // await app.register(webhookRoutes);
 
   // ─── Public (no auth) ─────────────────────────────────────
   await app.register(publicStudioRoutes);
