@@ -28,6 +28,12 @@ mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/build/
 
+# Agent tooling
+.agents/
+.superpowers/
+.claude/skills/
+skills-lock.json
+
 # Coverage
 coverage/
 
