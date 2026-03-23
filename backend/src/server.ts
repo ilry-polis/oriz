@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
+import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { parseEnv } from './config/env.js';
 import { createPool } from './config/database.js';
 import { createSupabaseAdmin } from './config/supabase.js';
@@ -35,6 +36,10 @@ const app = Fastify({
     level: env.NODE_ENV === 'production' ? 'info' : 'debug',
   },
 });
+
+// ─── Zod Validation ─────────────────────────────────────────
+app.setValidatorCompiler(validatorCompiler);
+app.setSerializerCompiler(serializerCompiler);
 
 // ─── Plugins ───────────────────────────────────────────────
 await app.register(cors, {
