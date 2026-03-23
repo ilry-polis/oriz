@@ -29,9 +29,12 @@ run-backend: ## Roda o backend (Node.js)
 	@echo "$(GREEN)▶ Iniciando backend...$(RESET)"
 	cd backend && npm run dev
 
-run-mobile: ## Roda o app mobile (Flutter)
+run-mobile: ## Roda o app mobile (Flutter) com env do backend/.env
 	@echo "$(GREEN)▶ Iniciando app Flutter...$(RESET)"
-	cd mobile && flutter run
+	cd mobile && flutter run \
+		--dart-define=SUPABASE_URL=$$(grep ^SUPABASE_URL ../backend/.env | cut -d= -f2-) \
+		--dart-define=SUPABASE_ANON_KEY=$$(grep ^SUPABASE_ANON_KEY ../backend/.env | cut -d= -f2-) \
+		--dart-define=API_BASE_URL=http://localhost:3000
 
 run-web: ## Roda o dashboard web
 	@echo "$(GREEN)▶ Iniciando web dashboard...$(RESET)"
