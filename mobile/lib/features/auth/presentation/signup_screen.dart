@@ -74,7 +74,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         });
       }
       if (next is AuthAuthenticated) {
+        // Let GoRouter decide: it checks studio state and redirects
+        // to /onboarding if no studio, or /agenda if complete.
         context.go('/agenda');
+      }
+      if (next is AuthActionSuccess) {
+        setState(() {
+          _generalError = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.message),
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     });
 

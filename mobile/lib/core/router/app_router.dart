@@ -110,16 +110,17 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (hasSession && isAuthRoute) {
         final studio = ref.read(studioStateProvider);
-        if (studio is StudioNotFound) return '/onboarding';
-        if (studio is StudioExists && !studio.onboardingComplete) {
-          return '/onboarding';
+        if (studio is StudioExists && studio.onboardingComplete) {
+          return '/agenda';
         }
-        return '/agenda';
+        // Unknown, NotFound, or incomplete → onboarding (shows loading while checking)
+        return '/onboarding';
       }
 
       if (hasSession && !isAuthRoute && !isOnboardingRoute) {
         final studio = ref.read(studioStateProvider);
         if (studio is StudioNotFound) return '/onboarding';
+        if (studio is StudioUnknown) return '/onboarding';
         if (studio is StudioExists && !studio.onboardingComplete) {
           return '/onboarding';
         }
