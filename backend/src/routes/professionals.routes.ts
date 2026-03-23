@@ -3,12 +3,20 @@ import { z } from 'zod';
 
 // ─── Zod Schemas ───────────────────────────────────────────
 
-const DayOfWeek = z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
 const TimeSlot = z.object({
   open: z.string().regex(/^\d{2}:\d{2}$/, 'Format: HH:mm'),
   close: z.string().regex(/^\d{2}:\d{2}$/, 'Format: HH:mm'),
+}).refine(d => d.close > d.open, { message: 'close must be after open' });
+
+const WorkingHoursSchema = z.object({
+  monday: z.array(TimeSlot).default([]),
+  tuesday: z.array(TimeSlot).default([]),
+  wednesday: z.array(TimeSlot).default([]),
+  thursday: z.array(TimeSlot).default([]),
+  friday: z.array(TimeSlot).default([]),
+  saturday: z.array(TimeSlot).default([]),
+  sunday: z.array(TimeSlot).default([]),
 });
-const WorkingHoursSchema = z.record(DayOfWeek, TimeSlot);
 
 export const ListProfessionalsQuery = z.object({
   is_active: z.coerce.boolean().optional(),
@@ -99,8 +107,7 @@ export default async function professionalRoutes(app: FastifyInstance) {
     onRequest: [app.requireOwner],
     schema: { params: UuidParam, body: UpdateProfessionalBody },
     handler: async (request, reply) => {
-      // → ProfessionalController.update
-      throw new Error('Not implemented');
+      return app.professionalController.update(request, reply);
     },
   });
 

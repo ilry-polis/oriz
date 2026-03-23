@@ -63,18 +63,15 @@ export default async function studioRoutes(app: FastifyInstance) {
     schema: { body: CreateStudioBody },
     config: { rateLimit: { max: 3, timeWindow: '1 minute' } },
     handler: async (request, reply) => {
-      // → StudioController.create
-      throw new Error('Not implemented');
+      return app.studioController.create(request, reply);
     },
   });
 
   // GET /api/v1/studios/me
-  // Auth: owner+professional
+  // Auth: authenticated (no requireStudioMember — needed for onboarding redirect)
   app.get('/me', {
-    onRequest: [app.requireStudioMember],
     handler: async (request, reply) => {
-      // → StudioController.get
-      throw new Error('Not implemented');
+      return app.studioController.getMe(request, reply);
     },
   });
 
@@ -141,8 +138,7 @@ export default async function studioRoutes(app: FastifyInstance) {
   app.get('/me/onboarding', {
     onRequest: [app.requireOwner],
     handler: async (request, reply) => {
-      // → OnboardingController.get
-      throw new Error('Not implemented');
+      return app.onboardingController.get(request, reply);
     },
   });
 
@@ -153,8 +149,7 @@ export default async function studioRoutes(app: FastifyInstance) {
     onRequest: [app.requireOwner],
     schema: { body: UpdateOnboardingBody },
     handler: async (request, reply) => {
-      // → OnboardingController.update
-      throw new Error('Not implemented');
+      return app.onboardingController.update(request, reply);
     },
   });
 }

@@ -34,8 +34,7 @@ export default async function serviceCategoryRoutes(app: FastifyInstance) {
     onRequest: [app.requireStudioMember],
     schema: { querystring: ListCategoriesQuery },
     handler: async (request, reply) => {
-      // → ServiceCategoryController.list
-      throw new Error('Not implemented');
+      return app.serviceCategoryController.list(request, reply);
     },
   });
 

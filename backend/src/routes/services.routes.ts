@@ -52,8 +52,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
     onRequest: [app.requireOwner],
     schema: { body: CreateServiceBody },
     handler: async (request, reply) => {
-      // → ServiceController.create
-      throw new Error('Not implemented');
+      return app.serviceController.create(request, reply);
     },
   });
 
