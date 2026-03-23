@@ -7,6 +7,9 @@ import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../../features/onboarding/data/onboarding_repository.dart';
+import '../../features/onboarding/presentation/onboarding_complete_screen.dart';
+import '../../features/onboarding/presentation/onboarding_wizard_screen.dart';
 import '../shell/app_shell.dart';
 
 /// Listenable that notifies GoRouter when auth state changes.
@@ -16,21 +19,111 @@ class AuthNotifierListenable extends ChangeNotifier {
   }
 }
 
+/// Tracks studio state for routing decisions.
+sealed class StudioRouteState {
+  const StudioRouteState();
+}
+
+class StudioUnknown extends StudioRouteState {
+  const StudioUnknown();
+}
+
+class StudioNotFound extends StudioRouteState {
+  const StudioNotFound();
+}
+
+class StudioExists extends StudioRouteState {
+  final bool onboardingComplete;
+  const StudioExists({required this.onboardingComplete});
+}
+
+class StudioStateNotifier extends Notifier<StudioRouteState> {
+  @override
+  StudioRouteState build() => const StudioUnknown();
+}
+
+final studioStateProvider =
+    NotifierProvider<StudioStateNotifier, StudioRouteState>(StudioStateNotifier.new);
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final repo = ref.read(authRepositoryProvider);
+  final authRepo = ref.read(authRepositoryProvider);
   final authListenable = AuthNotifierListenable(ref);
+
+  Future<void> checkStudio() async {
+    try {
+      final onboardingRepo = ref.read(onboardingRepositoryProvider);
+      final info = await onboardingRepo.getMyStudio();
+      if (info == null) {
+        ref.read(studioStateProvider.notifier).state =
+            const StudioNotFound();
+      } else {
+        ref.read(studioStateProvider.notifier).state =
+            StudioExists(
+          onboardingComplete: info.onboardingStep == 'complete',
+        );
+      }
+    } catch (_) {
+      ref.read(studioStateProvider.notifier).state =
+          const StudioNotFound();
+    }
+  }
+
+  ref.listen(authNotifierProvider, (prev, next) {
+    if (next is AuthAuthenticated && prev is! AuthAuthenticated) {
+      checkStudio();
+    }
+    if (next is AuthUnauthenticated) {
+      ref.read(studioStateProvider.notifier).state =
+          const StudioUnknown();
+    }
+  });
+
+  ref.listen(studioStateProvider, (_, __) {
+    authListenable.notifyListeners();
+  });
+
+  if (authRepo.currentSession != null) {
+    Future.microtask(checkStudio);
+  }
 
   return GoRouter(
     initialLocation: '/agenda',
     refreshListenable: authListenable,
     redirect: (context, state) {
-      final hasSession = repo.currentSession != null;
-      final isAuthRoute = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/signup' ||
-          state.matchedLocation == '/forgot-password';
+      final hasSession = authRepo.currentSession != null;
+      final path = state.matchedLocation;
+
+      final isAuthRoute = path == '/login' ||
+          path == '/signup' ||
+          path == '/forgot-password';
+      final isOnboardingRoute = path.startsWith('/onboarding');
 
       if (!hasSession && !isAuthRoute) return '/login';
-      if (hasSession && isAuthRoute) return '/agenda';
+
+      if (hasSession && isAuthRoute) {
+        final studio = ref.read(studioStateProvider);
+        if (studio is StudioNotFound) return '/onboarding';
+        if (studio is StudioExists && !studio.onboardingComplete) {
+          return '/onboarding';
+        }
+        return '/agenda';
+      }
+
+      if (hasSession && !isAuthRoute && !isOnboardingRoute) {
+        final studio = ref.read(studioStateProvider);
+        if (studio is StudioNotFound) return '/onboarding';
+        if (studio is StudioExists && !studio.onboardingComplete) {
+          return '/onboarding';
+        }
+      }
+
+      if (hasSession && isOnboardingRoute) {
+        final studio = ref.read(studioStateProvider);
+        if (studio is StudioExists && studio.onboardingComplete) {
+          return '/agenda';
+        }
+      }
+
       return null;
     },
     routes: [
@@ -46,6 +139,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/forgot-password',
         builder: (_, __) => const ForgotPasswordScreen(),
+      ),
+
+      // Onboarding routes (no shell)
+      GoRoute(
+        path: '/onboarding',
+        builder: (_, __) => const OnboardingWizardScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding/complete',
+        builder: (_, __) => const OnboardingCompleteScreen(),
       ),
 
       // Protected routes with shell (bottom nav)
