@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { jwtVerify } from 'jose';
+import { jwtVerify, createRemoteJWKSet, type KeyLike } from 'jose';
 import type { Pool } from 'pg';
 import { UnauthorizedError, ForbiddenError } from '../utils/errors.js';
 
@@ -23,8 +23,12 @@ type HookFn = (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
  * Decorates request.authContext with { userId, studioId?, role? }.
  */
 export function buildAuthHook(pool: Pool, jwtSecret: string, supabaseUrl?: string): HookFn {
-  const secret = new TextEncoder().encode(jwtSecret);
-  // Supabase local uses issuer "supabase", cloud uses "https://<ref>.supabase.co/auth/v1"
+  const hmacSecret = new TextEncoder().encode(jwtSecret);
+
+  // Supabase cloud uses ES256 (JWKS), local uses HS256 (symmetric secret)
+  const jwksUrl = supabaseUrl ? new URL(`${supabaseUrl}/auth/v1/.well-known/jwks.json`) : null;
+  const jwks = jwksUrl ? createRemoteJWKSet(jwksUrl) : null;
+
   const allowedIssuers = ['supabase'];
   if (supabaseUrl) {
     allowedIssuers.push(`${supabaseUrl}/auth/v1`);
@@ -40,9 +44,18 @@ export function buildAuthHook(pool: Pool, jwtSecret: string, supabaseUrl?: strin
     let userId: string;
 
     try {
-      const { payload } = await jwtVerify(token, secret, {
-        issuer: allowedIssuers,
-      });
+      // Try JWKS first (Supabase cloud, ES256), fall back to HMAC (local, HS256)
+      let payload;
+      if (jwks) {
+        try {
+          ({ payload } = await jwtVerify(token, jwks, { issuer: allowedIssuers }));
+        } catch {
+          // JWKS failed — try HMAC secret as fallback (local dev or HS256 tokens)
+          ({ payload } = await jwtVerify(token, hmacSecret, { issuer: allowedIssuers }));
+        }
+      } else {
+        ({ payload } = await jwtVerify(token, hmacSecret, { issuer: allowedIssuers }));
+      }
       if (!payload.sub) {
         throw new Error('Missing sub claim');
       }
