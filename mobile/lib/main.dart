@@ -8,19 +8,33 @@ import 'features/auth/data/auth_repository.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/onboarding/data/onboarding_repository.dart';
 
+const _isRelease = bool.fromEnvironment('dart.vm.product');
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await initSupabase(
-    url: const String.fromEnvironment(
-      'SUPABASE_URL',
-      defaultValue: 'http://localhost:54321',
-    ),
-    anonKey: const String.fromEnvironment(
-      'SUPABASE_ANON_KEY',
-      defaultValue: 'dev-anon-key',
-    ),
+  const supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'http://localhost:54321',
   );
+  const supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'dev-anon-key',
+  );
+  const apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:3000',
+  );
+
+  // Fail fast in release builds if env vars are missing
+  assert(!_isRelease || supabaseUrl != 'http://localhost:54321',
+      'SUPABASE_URL must be set for release builds');
+  assert(!_isRelease || supabaseAnonKey != 'dev-anon-key',
+      'SUPABASE_ANON_KEY must be set for release builds');
+  assert(!_isRelease || apiBaseUrl != 'http://localhost:3000',
+      'API_BASE_URL must be set for release builds');
+
+  await initSupabase(url: supabaseUrl, anonKey: supabaseAnonKey);
 
   runApp(
     ProviderScope(
@@ -30,13 +44,7 @@ void main() async {
         ),
         onboardingRepositoryProvider.overrideWithValue(
           OnboardingRepository(
-            ApiClient(
-              baseUrl: const String.fromEnvironment(
-                'API_BASE_URL',
-                defaultValue: 'http://localhost:3000',
-              ),
-              auth: supabase.auth,
-            ),
+            ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth),
           ),
         ),
       ],

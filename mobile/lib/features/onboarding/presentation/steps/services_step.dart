@@ -52,7 +52,10 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
           _categoriesLoaded = true;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      // Categories are optional — templates still work without API IDs.
+      // Log for debugging but don't block the user.
+      debugPrint('Failed to load service categories: $e');
       if (mounted) setState(() => _categoriesLoaded = true);
     }
   }

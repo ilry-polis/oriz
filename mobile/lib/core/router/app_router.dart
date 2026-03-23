@@ -7,6 +7,7 @@ import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../http/api_client.dart';
 import '../../features/onboarding/data/onboarding_repository.dart';
 import '../../features/onboarding/presentation/onboarding_complete_screen.dart';
 import '../../features/onboarding/presentation/onboarding_wizard_screen.dart';
@@ -62,9 +63,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           onboardingComplete: info.onboardingStep == 'complete',
         );
       }
+    } on ApiException catch (e) {
+      // 404 = no studio; treat as no studio
+      if (e.statusCode == 404) {
+        ref.read(studioStateProvider.notifier).state =
+            const StudioNotFound();
+      }
+      // Other API errors (500, network): keep unknown so redirect doesn't
+      // falsely send user to onboarding. Router will retry on next auth change.
     } catch (_) {
-      ref.read(studioStateProvider.notifier).state =
-          const StudioNotFound();
+      // Network/timeout: keep StudioUnknown — don't assume no studio
     }
   }
 

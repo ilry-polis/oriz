@@ -56,7 +56,16 @@ class ApiClient {
   }
 
   Map<String, dynamic> _handleResponse(http.Response response) {
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(response.body) as Map<String, dynamic>;
+    } on FormatException {
+      throw ApiException(
+        statusCode: response.statusCode,
+        code: 'INVALID_RESPONSE',
+        message: 'Resposta invalida do servidor',
+      );
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return body;

@@ -105,9 +105,9 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
         professionalId: info.professionalId,
       );
     } on ApiException catch (e) {
-      state = OnboardingError(e.message, code: e.code);
-    } catch (e) {
-      state = OnboardingError(e.toString());
+      state = OnboardingError(_userMessage(e), code: e.code);
+    } catch (_) {
+      state = const OnboardingError('Erro de conexao. Verifique sua internet.');
     }
   }
 
@@ -140,14 +140,15 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
         professionalId: info.professionalId,
       );
     } on ApiException catch (e) {
-      state = OnboardingError(e.message, code: e.code);
-    } catch (e) {
-      state = OnboardingError(e.toString());
+      state = OnboardingError(_userMessage(e), code: e.code);
+    } catch (_) {
+      state = const OnboardingError('Erro de conexao. Verifique sua internet.');
     }
   }
 
   Future<void> addServices(List<ServiceInput> services) async {
-    final prev = state as OnboardingStep;
+    final prev = _requireStep();
+    if (prev == null) return;
     state = prev.copyWith(isSaving: true);
 
     try {
@@ -163,30 +164,38 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
 
       state = prev.copyWith(currentStep: 2, isSaving: false);
     } on ApiException catch (e) {
-      state = OnboardingError(e.message, code: e.code);
-    } catch (e) {
-      state = OnboardingError(e.toString());
+      // On partial failure, advance anyway — services already created are fine.
+      // User can add more services later in settings.
+      state = prev.copyWith(currentStep: 2, isSaving: false);
+      if (e.code != 'UNKNOWN') {
+        state = OnboardingError(_userMessage(e),
+            code: e.code);
+      }
+    } catch (_) {
+      state = prev.copyWith(isSaving: false);
     }
   }
 
   Future<void> skipServices() async {
-    final prev = state as OnboardingStep;
+    final prev = _requireStep();
+    if (prev == null) return;
     state = prev.copyWith(isSaving: true);
 
     try {
       await _repo.updateOnboardingStep('business_hours');
       state = prev.copyWith(currentStep: 2, isSaving: false);
     } on ApiException catch (e) {
-      state = OnboardingError(e.message, code: e.code);
-    } catch (e) {
-      state = OnboardingError(e.toString());
+      state = OnboardingError(_userMessage(e), code: e.code);
+    } catch (_) {
+      state = prev.copyWith(isSaving: false);
     }
   }
 
   Future<void> setBusinessHours(
     Map<String, List<Map<String, String>>> hours,
   ) async {
-    final prev = state as OnboardingStep;
+    final prev = _requireStep();
+    if (prev == null) return;
     state = prev.copyWith(isSaving: true);
 
     try {
@@ -194,24 +203,43 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
       await _repo.updateOnboardingStep('complete');
       state = const OnboardingComplete();
     } on ApiException catch (e) {
-      state = OnboardingError(e.message, code: e.code);
-    } catch (e) {
-      state = OnboardingError(e.toString());
+      state = OnboardingError(_userMessage(e), code: e.code);
+    } catch (_) {
+      state = prev.copyWith(isSaving: false);
     }
   }
 
   Future<void> skipBusinessHours() async {
-    final prev = state as OnboardingStep;
+    final prev = _requireStep();
+    if (prev == null) return;
     state = prev.copyWith(isSaving: true);
 
     try {
       await _repo.updateOnboardingStep('complete');
       state = const OnboardingComplete();
     } on ApiException catch (e) {
-      state = OnboardingError(e.message, code: e.code);
-    } catch (e) {
-      state = OnboardingError(e.toString());
+      state = OnboardingError(_userMessage(e), code: e.code);
+    } catch (_) {
+      state = prev.copyWith(isSaving: false);
     }
+  }
+
+  /// Safe cast: returns current OnboardingStep or null if in wrong state.
+  OnboardingStep? _requireStep() {
+    final s = state;
+    if (s is OnboardingStep) return s;
+    return null;
+  }
+
+  /// Maps API error codes to user-friendly messages.
+  String _userMessage(ApiException e) {
+    return switch (e.code) {
+      'SLUG_TAKEN' => 'Esta URL ja esta em uso. Escolha outra.',
+      'STUDIO_ALREADY_EXISTS' => 'Voce ja possui um estudio cadastrado.',
+      'NOT_FOUND' => 'Recurso nao encontrado.',
+      'VALIDATION_ERROR' => 'Dados invalidos. Verifique os campos.',
+      _ => 'Algo deu errado. Tente novamente.',
+    };
   }
 
   void goToStep(int step) {
