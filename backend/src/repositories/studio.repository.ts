@@ -77,7 +77,7 @@ export class StudioRepository {
          RETURNING id, name, slug, timezone`,
         [input.ownerId, input.name, input.slug, input.phone ?? null, input.address ?? null, input.description ?? null, input.timezone],
       );
-      const studio = studioRows[0];
+      const studio = studioRows[0]!;
 
       const { rows: onboardingRows } = await client.query<{ id: string; studio_id: string; current_step: string }>(
         `INSERT INTO onboarding_states (id, studio_id, current_step)
@@ -85,7 +85,7 @@ export class StudioRepository {
          RETURNING id, studio_id, current_step`,
         [studio.id],
       );
-      const onboarding = onboardingRows[0];
+      const onboarding = onboardingRows[0]!;
 
       const { rows: professionalRows } = await client.query<{ id: string; studio_id: string; user_id: string }>(
         `INSERT INTO professionals (id, studio_id, user_id, name, commission_type, commission_value)
@@ -93,7 +93,7 @@ export class StudioRepository {
          RETURNING id, studio_id, user_id`,
         [studio.id, input.ownerId, input.ownerName],
       );
-      const professional = professionalRows[0];
+      const professional = professionalRows[0]!;
 
       await client.query('COMMIT');
 

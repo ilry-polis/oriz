@@ -33,6 +33,6 @@ export class ServiceRepository {
        RETURNING id, studio_id, category_id, name, duration_minutes, price, buffer_minutes, is_active, created_at, updated_at`,
       [input.studioId, input.categoryId, input.name, input.durationMinutes, input.price, input.bufferMinutes, input.isActive],
     );
-    return rows[0];
+    return rows[0]!;
   }
 }
