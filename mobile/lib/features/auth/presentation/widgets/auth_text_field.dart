@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -11,6 +12,7 @@ class AuthTextField extends StatefulWidget {
   final TextInputAction? textInputAction;
   final TextEditingController? controller;
   final bool enabled;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AuthTextField({
     super.key,
@@ -21,6 +23,7 @@ class AuthTextField extends StatefulWidget {
     this.textInputAction,
     this.controller,
     this.enabled = true,
+    this.inputFormatters,
   });
 
   @override
@@ -53,6 +56,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
             obscureText: _obscured,
             keyboardType: widget.keyboardType,
             textInputAction: widget.textInputAction,
+            inputFormatters: widget.inputFormatters,
             enabled: widget.enabled,
             style: AppTypography.body,
             decoration: InputDecoration(

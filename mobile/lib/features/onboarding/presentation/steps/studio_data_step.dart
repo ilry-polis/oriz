@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/phone_formatter.dart';
 import '../../../auth/presentation/widgets/auth_text_field.dart';
 import '../../providers/onboarding_provider.dart';
 
@@ -82,9 +83,9 @@ class _StudioDataStepState extends ConsumerState<StudioDataStep> {
     await ref.read(onboardingNotifierProvider.notifier).createStudio(
           name: _nameController.text.trim(),
           slug: _slugController.text.trim(),
-          phone: _phoneController.text.trim().isEmpty
+          phone: stripPhoneMask(_phoneController.text).isEmpty
               ? null
-              : _phoneController.text.trim(),
+              : '+55${stripPhoneMask(_phoneController.text)}',
           address: _addressController.text.trim().isEmpty
               ? null
               : _addressController.text.trim(),
@@ -224,6 +225,7 @@ class _StudioDataStepState extends ConsumerState<StudioDataStep> {
             keyboardType: TextInputType.phone,
             textInputAction: TextInputAction.next,
             enabled: !isSaving,
+            inputFormatters: [BrazilPhoneFormatter()],
           ),
           const SizedBox(height: AppSpacing.md),
 
@@ -259,12 +261,12 @@ class _StudioDataStepState extends ConsumerState<StudioDataStep> {
                   ),
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'America/Sao_Paulo', child: Text('Brasilia (GMT-3)')),
-                  DropdownMenuItem(value: 'America/Manaus', child: Text('Manaus (GMT-4)')),
-                  DropdownMenuItem(value: 'America/Belem', child: Text('Belem (GMT-3)')),
-                  DropdownMenuItem(value: 'America/Cuiaba', child: Text('Cuiaba (GMT-4)')),
-                  DropdownMenuItem(value: 'America/Recife', child: Text('Recife (GMT-3)')),
+                  DropdownMenuItem(value: 'America/Sao_Paulo', child: Text('Sao Paulo / Brasilia (GMT-3)')),
+                  DropdownMenuItem(value: 'America/Recife', child: Text('Recife / Nordeste (GMT-3)')),
                   DropdownMenuItem(value: 'America/Fortaleza', child: Text('Fortaleza (GMT-3)')),
+                  DropdownMenuItem(value: 'America/Belem', child: Text('Belem (GMT-3)')),
+                  DropdownMenuItem(value: 'America/Manaus', child: Text('Manaus (GMT-4)')),
+                  DropdownMenuItem(value: 'America/Cuiaba', child: Text('Cuiaba (GMT-4)')),
                 ],
                 onChanged: isSaving
                     ? null

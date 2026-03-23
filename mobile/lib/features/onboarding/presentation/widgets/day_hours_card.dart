@@ -83,7 +83,7 @@ class DayHoursCard extends StatelessWidget {
                 Switch(
                   value: enabled,
                   onChanged: (_) => _toggleEnabled(),
-                  activeColor: AppColors.primary,
+                  activeColor: AppColors.success,
                 ),
               ],
             ),
