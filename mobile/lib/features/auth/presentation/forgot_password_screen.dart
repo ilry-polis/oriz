@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../providers/auth_provider.dart';
+import '../utils/validators.dart';
 import 'widgets/auth_text_field.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
@@ -28,18 +29,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   bool _validate() {
-    setState(() => _emailError = null);
-    final email = _emailController.text.trim();
-
-    if (email.isEmpty) {
-      setState(() => _emailError = 'Informe seu email');
-      return false;
-    }
-    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
-      setState(() => _emailError = 'Email invalido');
-      return false;
-    }
-    return true;
+    final emailErr = validateEmail(_emailController.text.trim());
+    setState(() => _emailError = emailErr);
+    return emailErr == null;
   }
 
   Future<void> _submit() async {
@@ -78,7 +70,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: AppSpacing.lg),
-
               if (_submitted) ...[
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
@@ -88,21 +79,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   ),
                   child: Text(
                     'Se o email existir, enviaremos instrucoes.',
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.success,
-                    ),
+                    style: AppTypography.body.copyWith(color: AppColors.success),
                     textAlign: TextAlign.center,
                   ),
                 ),
               ] else ...[
                 Text(
                   'Informe seu email e enviaremos instrucoes para redefinir sua senha.',
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.neutral600,
-                  ),
+                  style:
+                      AppTypography.body.copyWith(color: AppColors.neutral600),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-
                 AuthTextField(
                   label: 'Email',
                   controller: _emailController,
@@ -112,7 +99,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   enabled: !isLoading,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-
                 SizedBox(
                   height: 48,
                   child: ElevatedButton(
@@ -120,8 +106,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor:
-                          AppColors.primary.withAlpha(102),
+                      disabledBackgroundColor: AppColors.primary.withAlpha(102),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
@@ -135,10 +120,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                               color: AppColors.accent,
                             ),
                           )
-                        : Text('Enviar instrucoes',
-                            style: AppTypography.bodySemibold.copyWith(
-                              color: Colors.white,
-                            )),
+                        : Text(
+                            'Enviar instrucoes',
+                            style: AppTypography.bodySemibold
+                                .copyWith(color: Colors.white),
+                          ),
                   ),
                 ),
               ],

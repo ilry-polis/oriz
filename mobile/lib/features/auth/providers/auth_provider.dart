@@ -24,7 +24,13 @@ class AuthError extends AuthStateData {
   final String message;
   final bool rateLimited;
   final DateTime? rateLimitedUntil;
-  const AuthError(this.message, {this.rateLimited = false, this.rateLimitedUntil});
+  final int failureCount;
+  const AuthError(
+    this.message, {
+    this.rateLimited = false,
+    this.rateLimitedUntil,
+    this.failureCount = 0,
+  });
 }
 
 class AuthActionSuccess extends AuthStateData {
@@ -68,8 +74,13 @@ class AuthNotifier extends Notifier<AuthStateData> {
     try {
       final repo = ref.read(authRepositoryProvider);
       final response = await repo.signIn(email: email, password: password);
+      final session = response.session;
+      if (session == null) {
+        state = const AuthError('Falha na autenticacao. Tente novamente.');
+        return;
+      }
       _failureCount = 0;
-      state = AuthAuthenticated(response.session!);
+      state = AuthAuthenticated(session);
     } on AuthException catch (e) {
       _failureCount++;
       final limited = _failureCount >= 3;
@@ -78,6 +89,7 @@ class AuthNotifier extends Notifier<AuthStateData> {
         rateLimited: limited,
         rateLimitedUntil:
             limited ? DateTime.now().add(const Duration(seconds: 30)) : null,
+        failureCount: _failureCount,
       );
     }
   }
@@ -92,7 +104,14 @@ class AuthNotifier extends Notifier<AuthStateData> {
       final repo = ref.read(authRepositoryProvider);
       final response =
           await repo.signUp(email: email, password: password, fullName: fullName);
-      state = AuthAuthenticated(response.session!);
+      final session = response.session;
+      if (session != null) {
+        state = AuthAuthenticated(session);
+      } else {
+        state = const AuthActionSuccess(
+          'Verifique seu email para confirmar o cadastro.',
+        );
+      }
     } on AuthException catch (e) {
       state = AuthError(e.message);
     }

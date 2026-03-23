@@ -60,6 +60,21 @@ void main() {
       expect(states, [isA<AuthLoading>(), isA<AuthAuthenticated>()]);
     });
 
+    test('transitions to AuthError when session is null', () async {
+      when(() => mockRepo.signIn(
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+          )).thenAnswer((_) async => AuthResponse(session: null, user: null));
+
+      final notifier = container.read(authNotifierProvider.notifier);
+      final states = <AuthStateData>[];
+      container.listen(authNotifierProvider, (_, next) => states.add(next));
+
+      await notifier.signIn(email: 'test@example.com', password: 'pass1234');
+
+      expect(states[1], isA<AuthError>());
+    });
+
     test('transitions to AuthLoading then AuthError on failure', () async {
       when(() => mockRepo.signIn(
             email: any(named: 'email'),
@@ -111,6 +126,23 @@ void main() {
       await notifier.signUp(email: 'new@example.com', password: 'pass1234', fullName: 'Maria');
 
       expect(states, [isA<AuthLoading>(), isA<AuthAuthenticated>()]);
+    });
+
+    test('transitions to AuthActionSuccess when session is null (email confirmation)', () async {
+      when(() => mockRepo.signUp(
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+            fullName: any(named: 'fullName'),
+          )).thenAnswer((_) async => AuthResponse(session: null, user: null));
+
+      final notifier = container.read(authNotifierProvider.notifier);
+      final states = <AuthStateData>[];
+      container.listen(authNotifierProvider, (_, next) => states.add(next));
+
+      await notifier.signUp(email: 'new@example.com', password: 'pass1234', fullName: 'Maria');
+
+      expect(states[1], isA<AuthActionSuccess>());
+      expect((states[1] as AuthActionSuccess).message, contains('Verifique seu email'));
     });
 
     test('transitions to AuthError on email already exists', () async {

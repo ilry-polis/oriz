@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../providers/auth_provider.dart';
+import '../utils/validators.dart';
 import 'widgets/auth_text_field.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -33,35 +34,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   }
 
   bool _validate() {
+    final nameErr = validateName(_nameController.text.trim());
+    final emailErr = validateEmail(_emailController.text.trim());
+    final passErr = validatePassword(_passwordController.text);
+
     setState(() {
-      _nameError = null;
-      _emailError = null;
-      _passwordError = null;
+      _nameError = nameErr;
+      _emailError = emailErr;
+      _passwordError = passErr;
       _generalError = null;
     });
 
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-    var valid = true;
-
-    if (name.isEmpty) {
-      setState(() => _nameError = 'Informe seu nome');
-      valid = false;
-    }
-    if (email.isEmpty) {
-      setState(() => _emailError = 'Informe seu email');
-      valid = false;
-    } else if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
-      setState(() => _emailError = 'Email invalido');
-      valid = false;
-    }
-    if (password.length < 8) {
-      setState(() => _passwordError = 'Minimo 8 caracteres');
-      valid = false;
-    }
-
-    return valid;
+    return nameErr == null && emailErr == null && passErr == null;
   }
 
   Future<void> _submit() async {
@@ -109,7 +93,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: AppSpacing.lg),
-
               if (_generalError != null) ...[
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
@@ -119,15 +102,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ),
                   child: Text(
                     _generalError!,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.error,
-                    ),
+                    style:
+                        AppTypography.caption.copyWith(color: AppColors.error),
                     textAlign: TextAlign.center,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],
-
               AuthTextField(
                 label: 'Nome completo',
                 controller: _nameController,
@@ -136,7 +117,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 enabled: !isLoading,
               ),
               const SizedBox(height: AppSpacing.md),
-
               AuthTextField(
                 label: 'Email',
                 controller: _emailController,
@@ -146,7 +126,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 enabled: !isLoading,
               ),
               const SizedBox(height: AppSpacing.md),
-
               AuthTextField(
                 label: 'Senha',
                 controller: _passwordController,
@@ -156,7 +135,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 enabled: !isLoading,
               ),
               const SizedBox(height: AppSpacing.lg),
-
               SizedBox(
                 height: 48,
                 child: ElevatedButton(
@@ -178,22 +156,28 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             color: AppColors.accent,
                           ),
                         )
-                      : Text('Criar conta',
-                          style: AppTypography.bodySemibold.copyWith(
-                            color: Colors.white,
-                          )),
+                      : Text(
+                          'Criar conta',
+                          style: AppTypography.bodySemibold
+                              .copyWith(color: Colors.white),
+                        ),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-
               Center(
-                child: GestureDetector(
-                  onTap: isLoading ? null : () => context.go('/login'),
+                child: TextButton(
+                  onPressed: isLoading ? null : () => context.go('/login'),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.sm,
+                    ),
+                    minimumSize: const Size(44, 44),
+                  ),
                   child: Text(
                     'Ja tem conta? Entrar',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.neutral600,
-                    ),
+                    style: AppTypography.caption
+                        .copyWith(color: AppColors.neutral600),
                   ),
                 ),
               ),
