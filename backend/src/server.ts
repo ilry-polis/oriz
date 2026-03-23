@@ -61,7 +61,7 @@ app.decorate('pool', pool);
 app.decorate('supabaseAdmin', supabaseAdmin);
 
 // Auth hooks — used as onRequest hooks in routes
-const authenticate = buildAuthHook(pool, env.SUPABASE_JWT_SECRET);
+const authenticate = buildAuthHook(pool, env.SUPABASE_JWT_SECRET, env.SUPABASE_URL);
 const requireStudio = buildRequireStudio();
 const requireOwner = buildRequireRole('owner');
 const requireStudioMember = buildRequireRole('owner', 'professional');

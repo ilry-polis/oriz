@@ -22,8 +22,13 @@ type HookFn = (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
  * Verifies the Supabase JWT and looks up the user's studio membership.
  * Decorates request.authContext with { userId, studioId?, role? }.
  */
-export function buildAuthHook(pool: Pool, jwtSecret: string): HookFn {
+export function buildAuthHook(pool: Pool, jwtSecret: string, supabaseUrl?: string): HookFn {
   const secret = new TextEncoder().encode(jwtSecret);
+  // Supabase local uses issuer "supabase", cloud uses "https://<ref>.supabase.co/auth/v1"
+  const allowedIssuers = ['supabase'];
+  if (supabaseUrl) {
+    allowedIssuers.push(`${supabaseUrl}/auth/v1`);
+  }
 
   return async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
     const header = request.headers.authorization;
@@ -36,7 +41,7 @@ export function buildAuthHook(pool: Pool, jwtSecret: string): HookFn {
 
     try {
       const { payload } = await jwtVerify(token, secret, {
-        issuer: 'supabase',
+        issuer: allowedIssuers,
       });
       if (!payload.sub) {
         throw new Error('Missing sub claim');
