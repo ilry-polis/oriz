@@ -61,7 +61,7 @@ export default async function professionalRoutes(app: FastifyInstance) {
   app.get('/', {
     onRequest: [app.requireStudioMember],
     schema: { querystring: ListProfessionalsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ProfessionalController.list
       throw new Error('Not implemented');
     },
@@ -72,7 +72,7 @@ export default async function professionalRoutes(app: FastifyInstance) {
   app.post('/', {
     onRequest: [app.requireOwner],
     schema: { body: CreateProfessionalBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ProfessionalController.create
       throw new Error('Not implemented');
     },
@@ -83,7 +83,7 @@ export default async function professionalRoutes(app: FastifyInstance) {
   // Returns current professional's data in the current studio
   app.get('/me', {
     onRequest: [app.requireStudioMember],
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ProfessionalController.getMe
       throw new Error('Not implemented');
     },
@@ -94,7 +94,7 @@ export default async function professionalRoutes(app: FastifyInstance) {
   app.get('/:id', {
     onRequest: [app.requireStudioMember],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ProfessionalController.getById
       throw new Error('Not implemented');
     },
@@ -117,7 +117,7 @@ export default async function professionalRoutes(app: FastifyInstance) {
   app.delete('/:id', {
     onRequest: [app.requireOwner],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ProfessionalController.delete
       throw new Error('Not implemented');
     },

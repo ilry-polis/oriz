@@ -22,7 +22,7 @@ export default async function financialRoutes(app: FastifyInstance) {
   // Data from materialized view financial_summaries, refreshed via BullMQ
   app.get('/summary', {
     schema: { querystring: FinancialSummaryQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → FinancialController.summary
       throw new Error('Not implemented');
     },

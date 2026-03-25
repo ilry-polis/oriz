@@ -28,7 +28,7 @@ export default async function billingRoutes(app: FastifyInstance) {
   // GET /api/v1/billing/subscription
   // Auth: owner
   app.get('/subscription', {
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → BillingController.getSubscription
       throw new Error('Not implemented');
     },
@@ -39,7 +39,7 @@ export default async function billingRoutes(app: FastifyInstance) {
   // Returns { subscription, checkout_url } — checkout_url for gateway redirect
   app.post('/subscription', {
     schema: { body: CreateSubscriptionBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → BillingController.createSubscription
       throw new Error('Not implemented');
     },
@@ -50,7 +50,7 @@ export default async function billingRoutes(app: FastifyInstance) {
   // Upgrade/downgrade on next billing cycle
   app.patch('/subscription', {
     schema: { body: UpdateSubscriptionBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → BillingController.updateSubscription
       throw new Error('Not implemented');
     },
@@ -59,7 +59,7 @@ export default async function billingRoutes(app: FastifyInstance) {
   // POST /api/v1/billing/subscription/cancel
   // Auth: owner
   app.post('/subscription/cancel', {
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → BillingController.cancelSubscription
       throw new Error('Not implemented');
     },
@@ -71,7 +71,7 @@ export default async function billingRoutes(app: FastifyInstance) {
   // Auth: owner
   app.get('/invoices', {
     schema: { querystring: ListInvoicesQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → BillingController.listInvoices
       throw new Error('Not implemented');
     },

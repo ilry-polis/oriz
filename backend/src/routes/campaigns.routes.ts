@@ -44,7 +44,7 @@ export default async function campaignRoutes(app: FastifyInstance) {
   // Auth: owner
   app.get('/', {
     schema: { querystring: ListCampaignsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → CampaignController.list
       throw new Error('Not implemented');
     },
@@ -54,7 +54,7 @@ export default async function campaignRoutes(app: FastifyInstance) {
   // Auth: owner
   app.post('/', {
     schema: { body: CreateCampaignBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → CampaignController.create
       throw new Error('Not implemented');
     },
@@ -64,7 +64,7 @@ export default async function campaignRoutes(app: FastifyInstance) {
   // Auth: owner
   app.patch('/:id', {
     schema: { params: UuidParam, body: UpdateCampaignBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → CampaignController.update
       throw new Error('Not implemented');
     },
@@ -74,7 +74,7 @@ export default async function campaignRoutes(app: FastifyInstance) {
   // Auth: owner
   app.delete('/:id', {
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → CampaignController.delete
       throw new Error('Not implemented');
     },
@@ -85,7 +85,7 @@ export default async function campaignRoutes(app: FastifyInstance) {
   // Stats separated from listing to avoid N+1
   app.get('/:id/metrics', {
     schema: { params: UuidParam, querystring: CampaignMetricsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → CampaignController.metrics
       throw new Error('Not implemented');
     },

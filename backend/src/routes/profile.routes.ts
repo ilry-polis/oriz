@@ -18,7 +18,7 @@ export default async function profileRoutes(app: FastifyInstance) {
   // GET /api/v1/profile
   // Auth: authenticated
   app.get('/', {
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ProfileController.get
       throw new Error('Not implemented');
     },
@@ -28,7 +28,7 @@ export default async function profileRoutes(app: FastifyInstance) {
   // Auth: authenticated
   app.patch('/', {
     schema: { body: UpdateProfileBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ProfileController.update
       throw new Error('Not implemented');
     },

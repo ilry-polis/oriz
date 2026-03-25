@@ -80,7 +80,7 @@ export default async function studioRoutes(app: FastifyInstance) {
   app.patch('/me', {
     onRequest: [app.requireOwner],
     schema: { body: UpdateStudioBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → StudioController.update
       throw new Error('Not implemented');
     },
@@ -92,7 +92,7 @@ export default async function studioRoutes(app: FastifyInstance) {
   // Auth: owner+professional | No pagination (max ~20)
   app.get('/me/photos', {
     onRequest: [app.requireStudioMember],
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → StudioPhotoController.list
       throw new Error('Not implemented');
     },
@@ -103,7 +103,7 @@ export default async function studioRoutes(app: FastifyInstance) {
   app.post('/me/photos', {
     onRequest: [app.requireOwner],
     schema: { body: CreatePhotoBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → StudioPhotoController.create
       throw new Error('Not implemented');
     },
@@ -114,7 +114,7 @@ export default async function studioRoutes(app: FastifyInstance) {
   app.patch('/me/photos/:photoId', {
     onRequest: [app.requireOwner],
     schema: { params: UuidParam, body: UpdatePhotoBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → StudioPhotoController.update
       throw new Error('Not implemented');
     },
@@ -125,7 +125,7 @@ export default async function studioRoutes(app: FastifyInstance) {
   app.delete('/me/photos/:photoId', {
     onRequest: [app.requireOwner],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → StudioPhotoController.delete
       throw new Error('Not implemented');
     },

@@ -35,7 +35,7 @@ export const CreateSubscriptionBody = z.object({
 
 const UuidParam = z.object({ id: z.string().uuid() });
 const PackageIdParam = z.object({ packageId: z.string().uuid() });
-const SubscriptionIdParam = z.object({ id: z.string().uuid() });
+// SubscriptionIdParam removed — identical to UuidParam, use UuidParam instead
 
 // ─── Route Plugin ──────────────────────────────────────────
 
@@ -47,7 +47,7 @@ export default async function packageRoutes(app: FastifyInstance) {
   app.get('/', {
     onRequest: [app.requireStudioMember],
     schema: { querystring: ListPackagesQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PackageController.list
       throw new Error('Not implemented');
     },
@@ -58,7 +58,7 @@ export default async function packageRoutes(app: FastifyInstance) {
   app.post('/', {
     onRequest: [app.requireOwner],
     schema: { body: CreatePackageBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PackageController.create
       throw new Error('Not implemented');
     },
@@ -70,7 +70,7 @@ export default async function packageRoutes(app: FastifyInstance) {
   app.patch('/:id', {
     onRequest: [app.requireOwner],
     schema: { params: UuidParam, body: UpdatePackageBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PackageController.update
       throw new Error('Not implemented');
     },
@@ -82,7 +82,7 @@ export default async function packageRoutes(app: FastifyInstance) {
   app.delete('/:id', {
     onRequest: [app.requireOwner],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PackageController.delete
       throw new Error('Not implemented');
     },
@@ -95,7 +95,7 @@ export default async function packageRoutes(app: FastifyInstance) {
   app.get('/:packageId/subscriptions', {
     onRequest: [app.requireStudioMember],
     schema: { params: PackageIdParam, querystring: ListSubscriptionsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PackageSubscriptionController.listByPackage
       throw new Error('Not implemented');
     },
@@ -107,7 +107,7 @@ export default async function packageRoutes(app: FastifyInstance) {
   app.post('/:packageId/subscriptions', {
     onRequest: [app.requireStudioMember],
     schema: { params: PackageIdParam, body: CreateSubscriptionBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PackageSubscriptionController.create
       throw new Error('Not implemented');
     },

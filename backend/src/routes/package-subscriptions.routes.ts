@@ -15,7 +15,7 @@ export default async function packageSubscriptionRoutes(app: FastifyInstance) {
   app.get('/:id', {
     onRequest: [app.requireStudioMember],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PackageSubscriptionController.getById
       throw new Error('Not implemented');
     },

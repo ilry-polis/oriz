@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { jwtVerify, createRemoteJWKSet, type KeyLike } from 'jose';
+import { jwtVerify, createRemoteJWKSet } from 'jose';
 import type { Pool } from 'pg';
 import { UnauthorizedError, ForbiddenError } from '../utils/errors.js';
 

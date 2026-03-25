@@ -66,7 +66,7 @@ export default async function appointmentRoutes(app: FastifyInstance) {
   app.get('/', {
     onRequest: [app.requireStudioMember],
     schema: { querystring: ListAppointmentsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AppointmentController.list
       throw new Error('Not implemented');
     },
@@ -78,7 +78,7 @@ export default async function appointmentRoutes(app: FastifyInstance) {
   app.post('/', {
     onRequest: [app.requireStudioMember],
     schema: { body: CreateAppointmentBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AppointmentController.create
       throw new Error('Not implemented');
     },
@@ -89,7 +89,7 @@ export default async function appointmentRoutes(app: FastifyInstance) {
   app.get('/available-slots', {
     onRequest: [app.requireStudioMember],
     schema: { querystring: AvailableSlotsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AppointmentController.availableSlots
       throw new Error('Not implemented');
     },
@@ -100,7 +100,7 @@ export default async function appointmentRoutes(app: FastifyInstance) {
   app.get('/:id', {
     onRequest: [app.requireStudioMember],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AppointmentController.getById
       throw new Error('Not implemented');
     },
@@ -112,7 +112,7 @@ export default async function appointmentRoutes(app: FastifyInstance) {
   app.patch('/:id', {
     onRequest: [app.requireStudioMember],
     schema: { params: UuidParam, body: UpdateAppointmentBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AppointmentController.update
       throw new Error('Not implemented');
     },
@@ -125,7 +125,7 @@ export default async function appointmentRoutes(app: FastifyInstance) {
   app.post('/:id/confirm', {
     onRequest: [app.requireStudioMember],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AppointmentController.confirm
       throw new Error('Not implemented');
     },
@@ -138,7 +138,7 @@ export default async function appointmentRoutes(app: FastifyInstance) {
   app.post('/:id/complete', {
     onRequest: [app.requireStudioMember],
     schema: { params: UuidParam, body: CompleteAppointmentBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AppointmentController.complete
       throw new Error('Not implemented');
     },
@@ -149,7 +149,7 @@ export default async function appointmentRoutes(app: FastifyInstance) {
   app.post('/:id/cancel', {
     onRequest: [app.requireStudioMember],
     schema: { params: UuidParam, body: CancelAppointmentBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AppointmentController.cancel
       throw new Error('Not implemented');
     },
@@ -160,7 +160,7 @@ export default async function appointmentRoutes(app: FastifyInstance) {
   app.post('/:id/no-show', {
     onRequest: [app.requireStudioMember],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AppointmentController.noShow
       throw new Error('Not implemented');
     },

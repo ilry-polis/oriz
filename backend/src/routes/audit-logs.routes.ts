@@ -22,7 +22,7 @@ export default async function auditLogRoutes(app: FastifyInstance) {
   // Auth: owner
   app.get('/', {
     schema: { querystring: ListAuditLogsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AuditLogController.list
       throw new Error('Not implemented');
     },

@@ -37,7 +37,7 @@ export default async function publicStudioRoutes(app: FastifyInstance) {
   app.get('/:slug', {
     config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
     schema: { params: SlugParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PublicStudioController.getBySlug
       throw new Error('Not implemented');
     },
@@ -49,7 +49,7 @@ export default async function publicStudioRoutes(app: FastifyInstance) {
   app.get('/:slug/professionals', {
     config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
     schema: { params: SlugParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PublicStudioController.listProfessionals
       throw new Error('Not implemented');
     },
@@ -61,7 +61,7 @@ export default async function publicStudioRoutes(app: FastifyInstance) {
   app.get('/:slug/services', {
     config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
     schema: { params: SlugParam, querystring: PublicServicesQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PublicStudioController.listServices
       throw new Error('Not implemented');
     },
@@ -73,7 +73,7 @@ export default async function publicStudioRoutes(app: FastifyInstance) {
   app.get('/:slug/service-categories', {
     config: { rateLimit: { max: 60, timeWindow: '1 minute' } },
     schema: { params: SlugParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PublicStudioController.listServiceCategories
       throw new Error('Not implemented');
     },
@@ -84,7 +84,7 @@ export default async function publicStudioRoutes(app: FastifyInstance) {
   app.get('/:slug/available-slots', {
     config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
     schema: { params: SlugParam, querystring: PublicAvailableSlotsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PublicStudioController.availableSlots
       throw new Error('Not implemented');
     },
@@ -106,7 +106,7 @@ export default async function publicStudioRoutes(app: FastifyInstance) {
       },
     },
     schema: { params: SlugParam, body: PublicBookingBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PublicStudioController.createAppointment
       // Service layer MUST enforce per-phone rate limit (1/min) via Redis
       // to prevent abuse from rotating IPs with same phone

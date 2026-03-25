@@ -43,7 +43,7 @@ export default async function serviceCategoryRoutes(app: FastifyInstance) {
   app.post('/', {
     onRequest: [app.requireOwner],
     schema: { body: CreateCategoryBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ServiceCategoryController.create
       throw new Error('Not implemented');
     },
@@ -55,7 +55,7 @@ export default async function serviceCategoryRoutes(app: FastifyInstance) {
   app.patch('/:id', {
     onRequest: [app.requireOwner],
     schema: { params: UuidParam, body: UpdateCategoryBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ServiceCategoryController.update
       throw new Error('Not implemented');
     },
@@ -67,7 +67,7 @@ export default async function serviceCategoryRoutes(app: FastifyInstance) {
   app.delete('/:id', {
     onRequest: [app.requireOwner],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ServiceCategoryController.delete
       throw new Error('Not implemented');
     },

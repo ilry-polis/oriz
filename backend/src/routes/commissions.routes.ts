@@ -26,7 +26,7 @@ export default async function commissionRoutes(app: FastifyInstance) {
   // Auth: owner
   app.get('/', {
     schema: { querystring: ListCommissionsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → CommissionController.list
       throw new Error('Not implemented');
     },
@@ -36,7 +36,7 @@ export default async function commissionRoutes(app: FastifyInstance) {
   // Auth: owner
   app.post('/pay', {
     schema: { body: PayCommissionsBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → CommissionController.pay
       throw new Error('Not implemented');
     },

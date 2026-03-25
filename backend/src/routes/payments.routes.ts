@@ -22,7 +22,7 @@ export default async function paymentRoutes(app: FastifyInstance) {
   // Auth: owner
   app.get('/', {
     schema: { querystring: ListPaymentsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PaymentController.list
       throw new Error('Not implemented');
     },

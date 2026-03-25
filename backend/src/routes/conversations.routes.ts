@@ -26,7 +26,7 @@ export default async function conversationRoutes(app: FastifyInstance) {
   // Auth: owner+professional
   app.get('/', {
     schema: { querystring: ListConversationsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ConversationController.list
       throw new Error('Not implemented');
     },
@@ -36,7 +36,7 @@ export default async function conversationRoutes(app: FastifyInstance) {
   // Auth: owner+professional
   app.get('/:id/messages', {
     schema: { params: UuidParam, querystring: ListMessagesQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ConversationController.listMessages
       throw new Error('Not implemented');
     },
@@ -46,7 +46,7 @@ export default async function conversationRoutes(app: FastifyInstance) {
   // Auth: owner+professional
   app.post('/:id/escalate', {
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ConversationController.escalate
       throw new Error('Not implemented');
     },
@@ -56,7 +56,7 @@ export default async function conversationRoutes(app: FastifyInstance) {
   // Auth: owner+professional
   app.post('/:id/close', {
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ConversationController.close
       throw new Error('Not implemented');
     },

@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 
-class OnboardingCompleteScreen extends StatefulWidget {
+class OnboardingCompleteScreen extends ConsumerStatefulWidget {
   const OnboardingCompleteScreen({super.key});
 
   @override
-  State<OnboardingCompleteScreen> createState() => _OnboardingCompleteScreenState();
+  ConsumerState<OnboardingCompleteScreen> createState() => _OnboardingCompleteScreenState();
 }
 
-class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen> {
+class _OnboardingCompleteScreenState extends ConsumerState<OnboardingCompleteScreen> {
   @override
   void initState() {
     super.initState();
@@ -51,7 +53,10 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen> {
               SizedBox(
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: () => context.go('/agenda'),
+                  onPressed: () {
+                    ref.read(studioStateProvider.notifier).markOnboardingComplete();
+                    context.go('/agenda');
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,

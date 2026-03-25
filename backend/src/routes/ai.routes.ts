@@ -24,7 +24,7 @@ export default async function aiRoutes(app: FastifyInstance) {
   // GET /api/v1/ai/config
   // Auth: owner
   app.get('/config', {
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AIConfigController.get
       throw new Error('Not implemented');
     },
@@ -34,7 +34,7 @@ export default async function aiRoutes(app: FastifyInstance) {
   // Auth: owner
   app.patch('/config', {
     schema: { body: UpdateAIConfigBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AIConfigController.update
       throw new Error('Not implemented');
     },

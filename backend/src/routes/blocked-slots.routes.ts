@@ -31,7 +31,7 @@ export default async function blockedSlotRoutes(app: FastifyInstance) {
   app.get('/', {
     onRequest: [app.requireStudioMember],
     schema: { querystring: ListBlockedSlotsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → BlockedSlotController.list
       throw new Error('Not implemented');
     },
@@ -43,7 +43,7 @@ export default async function blockedSlotRoutes(app: FastifyInstance) {
   app.post('/', {
     onRequest: [app.requireStudioMember],
     schema: { body: CreateBlockedSlotBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → BlockedSlotController.create
       throw new Error('Not implemented');
     },
@@ -55,7 +55,7 @@ export default async function blockedSlotRoutes(app: FastifyInstance) {
   app.delete('/:id', {
     onRequest: [app.requireStudioMember],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → BlockedSlotController.delete
       throw new Error('Not implemented');
     },

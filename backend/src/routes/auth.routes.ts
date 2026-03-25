@@ -30,7 +30,7 @@ export default async function authRoutes(app: FastifyInstance) {
   app.post('/signup', {
     schema: { body: SignupBody },
     config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AuthController.signup
       throw new Error('Not implemented');
     },
@@ -41,7 +41,7 @@ export default async function authRoutes(app: FastifyInstance) {
   app.post('/login', {
     schema: { body: LoginBody },
     config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AuthController.login
       throw new Error('Not implemented');
     },
@@ -51,7 +51,7 @@ export default async function authRoutes(app: FastifyInstance) {
   // Auth: authenticated
   app.post('/logout', {
     onRequest: [app.authenticate],
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AuthController.logout
       throw new Error('Not implemented');
     },
@@ -62,7 +62,7 @@ export default async function authRoutes(app: FastifyInstance) {
   app.post('/refresh', {
     schema: { body: RefreshBody },
     config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AuthController.refresh
       throw new Error('Not implemented');
     },
@@ -74,7 +74,7 @@ export default async function authRoutes(app: FastifyInstance) {
   app.post('/forgot-password', {
     schema: { body: ForgotPasswordBody },
     config: { rateLimit: { max: 3, timeWindow: '1 minute' } },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AuthController.forgotPassword
       throw new Error('Not implemented');
     },

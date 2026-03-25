@@ -40,7 +40,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
   app.get('/', {
     onRequest: [app.requireStudioMember],
     schema: { querystring: ListServicesQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ServiceController.list
       throw new Error('Not implemented');
     },
@@ -61,7 +61,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
   app.get('/:id', {
     onRequest: [app.requireStudioMember],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ServiceController.getById
       throw new Error('Not implemented');
     },
@@ -72,7 +72,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
   app.patch('/:id', {
     onRequest: [app.requireOwner],
     schema: { params: UuidParam, body: UpdateServiceBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ServiceController.update
       throw new Error('Not implemented');
     },
@@ -84,7 +84,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
   app.delete('/:id', {
     onRequest: [app.requireOwner],
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ServiceController.delete
       throw new Error('Not implemented');
     },

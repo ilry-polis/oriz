@@ -67,7 +67,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.get('/', {
     onRequest: [app.requireStudioMember],
     schema: { querystring: ListClientsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ClientController.list
       throw new Error('Not implemented');
     },
@@ -79,7 +79,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.post('/', {
     onRequest: [app.requireStudioMember],
     schema: { body: CreateClientBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ClientController.create
       throw new Error('Not implemented');
     },
@@ -91,7 +91,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.get('/:id', {
     onRequest: [app.requireStudioMember],
     schema: { params: ClientIdParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ClientController.getById
       throw new Error('Not implemented');
     },
@@ -102,7 +102,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.patch('/:id', {
     onRequest: [app.requireStudioMember],
     schema: { params: ClientIdParam, body: UpdateClientBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ClientController.update
       throw new Error('Not implemented');
     },
@@ -114,7 +114,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.delete('/:id', {
     onRequest: [app.requireOwner],
     schema: { params: ClientIdParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ClientController.delete
       throw new Error('Not implemented');
     },
@@ -127,7 +127,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.get('/:id/appointments', {
     onRequest: [app.requireStudioMember],
     schema: { params: ClientIdParam, querystring: ListClientAppointmentsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ClientController.listAppointments
       throw new Error('Not implemented');
     },
@@ -140,7 +140,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.get('/:clientId/anamneses', {
     onRequest: [app.requireStudioMember],
     schema: { params: ClientIdParam2 },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AnamnesisController.list
       throw new Error('Not implemented');
     },
@@ -151,7 +151,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.put('/:clientId/anamneses/:categoryId', {
     onRequest: [app.requireStudioMember],
     schema: { params: ClientIdWithCategoryParam, body: UpsertAnamnesisBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → AnamnesisController.upsert
       throw new Error('Not implemented');
     },
@@ -164,7 +164,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.get('/:clientId/package-subscriptions', {
     onRequest: [app.requireStudioMember],
     schema: { params: ClientIdParam2, querystring: ListPackageSubscriptionsQuery },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → PackageSubscriptionController.listByClient
       throw new Error('Not implemented');
     },
@@ -177,7 +177,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.get('/:clientId/consents', {
     onRequest: [app.requireStudioMember],
     schema: { params: ClientIdParam2 },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ConsentController.list
       throw new Error('Not implemented');
     },
@@ -188,7 +188,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.post('/:clientId/consents', {
     onRequest: [app.requireStudioMember],
     schema: { params: ClientIdParam2, body: CreateConsentBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ConsentController.create
       throw new Error('Not implemented');
     },
@@ -202,7 +202,7 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.post('/:clientId/data-deletion', {
     onRequest: [app.requireOwner],
     schema: { params: ClientIdParam2 },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → ClientController.dataDeletion
       throw new Error('Not implemented');
     },

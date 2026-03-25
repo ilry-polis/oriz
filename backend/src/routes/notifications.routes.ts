@@ -20,7 +20,7 @@ export default async function notificationRoutes(app: FastifyInstance) {
   // Upsert by (user_id, token)
   app.post('/', {
     schema: { body: CreateDeviceTokenBody },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → DeviceTokenController.create
       throw new Error('Not implemented');
     },
@@ -31,7 +31,7 @@ export default async function notificationRoutes(app: FastifyInstance) {
   // Soft delete: marks is_active = false. Uses record ID (not FCM token) in URL.
   app.delete('/:id', {
     schema: { params: UuidParam },
-    handler: async (request, reply) => {
+    handler: async (_request, _reply) => {
       // → DeviceTokenController.delete
       throw new Error('Not implemented');
     },

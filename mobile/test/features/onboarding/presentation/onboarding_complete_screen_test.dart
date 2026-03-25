@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:oriz/features/onboarding/presentation/onboarding_complete_screen.dart';
@@ -6,8 +7,10 @@ import 'package:oriz/features/onboarding/presentation/onboarding_complete_screen
 void main() {
   testWidgets('renders success message', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: OnboardingCompleteScreen(),
+      const ProviderScope(
+        child: MaterialApp(
+          home: OnboardingCompleteScreen(),
+        ),
       ),
     );
 
@@ -18,8 +21,10 @@ void main() {
 
   testWidgets('has button to go to agenda', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: OnboardingCompleteScreen(),
+      const ProviderScope(
+        child: MaterialApp(
+          home: OnboardingCompleteScreen(),
+        ),
       ),
     );
 
@@ -29,23 +34,27 @@ void main() {
   testWidgets('button navigates to /agenda', (tester) async {
     String? navigatedTo;
 
+    final router = GoRouter(
+      initialLocation: '/onboarding/complete',
+      routes: [
+        GoRoute(
+          path: '/onboarding/complete',
+          builder: (_, __) => const OnboardingCompleteScreen(),
+        ),
+        GoRoute(
+          path: '/agenda',
+          builder: (_, __) {
+            navigatedTo = '/agenda';
+            return const Scaffold(body: Text('Agenda'));
+          },
+        ),
+      ],
+    );
+
     await tester.pumpWidget(
-      MaterialApp.router(
-        routerConfig: GoRouter(
-          initialLocation: '/onboarding/complete',
-          routes: [
-            GoRoute(
-              path: '/onboarding/complete',
-              builder: (_, __) => const OnboardingCompleteScreen(),
-            ),
-            GoRoute(
-              path: '/agenda',
-              builder: (_, __) {
-                navigatedTo = '/agenda';
-                return const Scaffold(body: Text('Agenda'));
-              },
-            ),
-          ],
+      ProviderScope(
+        child: MaterialApp.router(
+          routerConfig: router,
         ),
       ),
     );

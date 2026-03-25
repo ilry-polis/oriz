@@ -41,6 +41,22 @@ class StudioExists extends StudioRouteState {
 class StudioStateNotifier extends Notifier<StudioRouteState> {
   @override
   StudioRouteState build() => const StudioUnknown();
+
+  void markOnboardingComplete() {
+    state = const StudioExists(onboardingComplete: true);
+  }
+
+  void setNotFound() {
+    state = const StudioNotFound();
+  }
+
+  void setExists({required bool onboardingComplete}) {
+    state = StudioExists(onboardingComplete: onboardingComplete);
+  }
+
+  void reset() {
+    state = const StudioUnknown();
+  }
 }
 
 final studioStateProvider =
@@ -55,19 +71,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       final onboardingRepo = ref.read(onboardingRepositoryProvider);
       final info = await onboardingRepo.getMyStudio();
       if (info == null) {
-        ref.read(studioStateProvider.notifier).state =
-            const StudioNotFound();
+        ref.read(studioStateProvider.notifier).setNotFound();
       } else {
-        ref.read(studioStateProvider.notifier).state =
-            StudioExists(
+        ref.read(studioStateProvider.notifier).setExists(
           onboardingComplete: info.onboardingStep == 'complete',
         );
       }
     } on ApiException catch (e) {
       // 404 = no studio; treat as no studio
       if (e.statusCode == 404) {
-        ref.read(studioStateProvider.notifier).state =
-            const StudioNotFound();
+        ref.read(studioStateProvider.notifier).setNotFound();
       }
       // Other API errors (500, network): keep unknown so redirect doesn't
       // falsely send user to onboarding. Router will retry on next auth change.
@@ -81,8 +94,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       checkStudio();
     }
     if (next is AuthUnauthenticated) {
-      ref.read(studioStateProvider.notifier).state =
-          const StudioUnknown();
+      ref.read(studioStateProvider.notifier).reset();
     }
   });
 
