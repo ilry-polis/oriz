@@ -1,6 +1,7 @@
 # Phase 2: Core Domain - Context
 
 **Gathered:** 2026-04-02
+**Updated:** 2026-04-02
 **Status:** Ready for planning
 
 <domain>
@@ -58,10 +59,17 @@ Services catalog, client management, and team management with commissions. Studi
 - Categories from onboarding carry over seamlessly
 
 ### Team management
-- Owner registers professional directly (name + email + services) — no invite flow
-- Owner sets a temporary password; professional changes on first login
+- Owner generates invite link shared via WhatsApp — link expires in 7 days
+- Collaborator clicks link, creates own account (email + password), gets linked to studio automatically
+- Owner pre-configures: name, services (checkbox), commission rate, card fee policy
 - Each professional linked to specific services (checkbox selection)
+- Toggle active/inactive per professional (is_active field exists) — inactive hides from scheduling but preserves history
 - Professional inherits studio hours by default, can override with custom working_hours (JSONB field exists)
+
+### Team permissions
+- Collaborator sees only: her own agenda, her clients, her working hours
+- Collaborator does NOT see: financeiro, commissions of others, studio settings, other professionals' agendas
+- Owner sees everything
 
 ### Commissions
 - Percentage per professional (single rate applied to all her services)
@@ -85,13 +93,25 @@ Services catalog, client management, and team management with commissions. Studi
 - Preserves appointment history and financial records for reporting
 - Audit log records the anonymization event
 
+### Empty states
+- Consistent pattern across all screens (clients, services, team)
+- Illustration (clean/minimal) + contextual text + CTA button ("Adicionar primeiro cliente", etc.)
+- Follows Cal.com/Linear visual reference
+
+### Navigation
+- Bottom nav with 4 tabs: Agenda | Clientes | Serviços | Mais
+- "Mais" opens a list screen with: Equipe, Financeiro (em breve), Configurações, Meu perfil, Sair
+- Future phases add items to "Mais" without changing bottom nav structure
+
 ### Claude's Discretion
 - Loading skeletons and transition animations
 - Exact spacing, typography, and color palette within clean minimal direction
-- Error state handling and empty states
+- Error state handling
 - Anamnesis template field types (boolean, text, select) — whatever makes clinical sense
 - Audit log UI presentation (tab vs expandable section in client detail)
 - How "Novo" and "Inativo" tags are calculated (days since last appointment thresholds)
+- Invite link generation mechanism (token format, URL structure)
+- First-login flow for collaborators after accepting invite
 
 </decisions>
 
@@ -102,6 +122,8 @@ Services catalog, client management, and team management with commissions. Studi
 - Service list should feel like a settings/config screen, not a storefront
 - Client list should feel like contacts app — fast search, quick access
 - Anamnesis templates should cover main beauty verticals: lash (alergia cola, lentes contato, lagrima artificial), micropig (gravidez, anticoagulante, queloides), unhas (alergia acetona, fungos), estetica (alergias, medicamentos)
+- Bottom nav icons should be simple line icons, not filled — consistent with minimal aesthetic
+- "Mais" screen should feel like iOS Settings — clean list with chevrons
 
 </specifics>
 
@@ -116,6 +138,7 @@ Services catalog, client management, and team management with commissions. Studi
 - Flutter: Riverpod sealed state pattern (Loading/Success/Error) from auth/onboarding
 - Flutter: ApiClient HTTP wrapper, GoRouter navigation
 - Flutter: Agenda widgets (skeleton_timeline, appointment_card) as reference for list patterns
+- Flutter: ShellRoute already exists for bottom nav — needs tab expansion
 
 ### Established Patterns
 - Backend: snake_case in DB/API, camelCase in services — controller converts
@@ -130,13 +153,15 @@ Services catalog, client management, and team management with commissions. Studi
 - Owner = first professional in studio (created during onboarding)
 - Agenda (Phase 3) will consume services, clients, and professionals from this phase
 - Marketing (Phase 7) depends on consent records created here
+- Bottom nav currently has only Agenda — Phase 2 adds Clientes, Serviços, Mais tabs
 
 </code_context>
 
 <deferred>
 ## Deferred Ideas
 
-- None — discussion stayed within phase scope
+- Import/export de clientes (CSV/Excel) — future feature, not Phase 2 scope
+- None other — discussion stayed within phase scope
 
 </deferred>
 
@@ -144,3 +169,4 @@ Services catalog, client management, and team management with commissions. Studi
 
 *Phase: 02-core-domain*
 *Context gathered: 2026-04-02*
+*Updated: 2026-04-02 — team invite flow changed to WhatsApp link, navigation and empty states added*
