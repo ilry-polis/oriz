@@ -132,7 +132,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 5.1 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Identity and Foundation | — | ✅ Completed | 2026-04-02 |
-| 2. Core Domain | 0/6 | Planning complete | - |
+| 2. Core Domain | 1/6 | In Progress|  |
 | 3. Scheduling Engine | 0/TBD | Not started | - |
 | 4. Financial and Packages | 0/TBD | Not started | - |
 | 5. External Channels | 0/TBD | Not started | - |
