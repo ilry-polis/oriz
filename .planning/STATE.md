@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-03-13T11:12:08.167Z"
-last_activity: 2026-03-13 — Roadmap created; 45 v1 requirements mapped to 7 phases
+stopped_at: Phase 2 context gathered
+last_updated: "2026-04-02T13:21:15.238Z"
+last_activity: 2026-04-02 — Phase 1 formally verified and closed
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 0
+  percent: 12
 ---
 
 # Project State
@@ -21,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** A profissional nunca mais precisa parar um atendimento para responder WhatsApp — a IA agenda, responde dúvidas e gerencia a agenda automaticamente.
-**Current focus:** Phase 1 — Identity and Foundation
+**Current focus:** Phase 2 — Core Domain
 
 ## Current Position
 
-Phase: 1 of 7 (Identity and Foundation)
+Phase: 2 of 8 (Core Domain)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-03-13 — Roadmap created; 45 v1 requirements mapped to 7 phases
+Last activity: 2026-04-02 — Phase 1 formally verified and closed
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 12%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
+- Total plans completed: 0 (Phase 1 was organic, not GSD-phased)
 - Average duration: —
 - Total execution time: 0 hours
 
@@ -43,7 +43,7 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 1. Identity and Foundation | organic | — | — |
 
 **Recent Trend:**
 - Last 5 plans: —
@@ -58,10 +58,11 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Roadmap: 7 phases derived from 45 v1 requirements; infrastructure and identity first, AI assistant last
-- Phase 6 (WhatsApp/AI): Requires `/gsd:research-phase` before planning — LangChain.js tool-calling API and Pinecone vs pgvector need verification
-- Phase 5 (External Channels): WhatsApp provider abstraction must be built here before AI integration in Phase 6
-- Phase 4 (Packages): Session deduction on appointment completion (not booking) is a deliberate product decision
+- Phase 1 closed: email/password auth only (social login deferred), no splash screen, no i18n
+- Roadmap: 8 phases (including 5.1 billing insertion) derived from 45 v1 requirements
+- Phase 6 (WhatsApp/AI): Requires `/gsd:research-phase` before planning
+- Phase 4 (Packages): Session deduction on appointment completion (not booking)
+- Feature branches mandatory for all new work
 
 ### Pending Todos
 
@@ -69,12 +70,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 6 (AI): LangChain.js tool-calling API has changed across versions — verify `@langchain/core v0.2` patterns before planning
-- Phase 5 (WhatsApp): Evolution API v2 production behavior under load not officially documented — test early
-- Phase 4 (Financial): Asaas SDK commission split configuration needs validation during planning
+- Phase 6 (AI): LangChain.js tool-calling API has changed across versions — verify before planning
+- Phase 5 (WhatsApp): Evolution API v2 production behavior under load not documented — test early
+- Phase 4 (Financial): Asaas SDK commission split configuration needs validation
 
 ## Session Continuity
 
-Last session: 2026-03-13T11:12:08.165Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-identity-and-foundation/01-CONTEXT.md
+Last session: 2026-04-02T13:21:15.235Z
+Stopped at: Phase 2 context gathered
+Resume file: .planning/phases/02-core-domain/02-CONTEXT.md
