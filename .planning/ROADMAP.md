@@ -12,7 +12,7 @@ Oriz is built in eight phases following a strict dependency graph. Infrastructur
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Identity and Foundation** - Auth, studio onboarding, and multi-tenant infrastructure
+- [x] **Phase 1: Identity and Foundation** - Auth, studio onboarding, and multi-tenant infrastructure (completed 2026-04-02; social login deferred)
 - [ ] **Phase 2: Core Domain** - Services, clients, and team management
 - [ ] **Phase 3: Scheduling Engine** - Agenda, conflict detection, and appointment workflows
 - [ ] **Phase 4: Financial and Packages** - Revenue dashboard, payment recording, and session packages
@@ -46,7 +46,15 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Professional can view full appointment history, add private notes, and tag clients (VIP, new, inactive)
   5. Owner can register professionals, link them to services, and configure commission rules (percentage or fixed amount)
   6. Every access to sensitive client data (view, export, delete) is recorded in the audit log with user, action, and timestamp
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Services backend: complete CRUD (list, getById, update, setActive, delete)
+- [ ] 02-02-PLAN.md — Clients + LGPD backend: client CRUD, auto-tags, audit log, consent
+- [ ] 02-03-PLAN.md — Anamnesis + Notes backend: anamnesis upsert, client notes, appointment history
+- [ ] 02-04-PLAN.md — Team backend: professional CRUD with Supabase Auth, service links, commissions
+- [ ] 02-05-PLAN.md — Services + Team Flutter screens: catalog with categories, team management
+- [ ] 02-06-PLAN.md — Clients Flutter screens: list with search/filters, detail with tabs, anamnesis forms
 
 ### Phase 3: Scheduling Engine
 **Goal**: Professionals can view and manage their agenda with guaranteed conflict-free booking
@@ -123,8 +131,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 5.1 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Identity and Foundation | 0/TBD | Not started | - |
-| 2. Core Domain | 0/TBD | Not started | - |
+| 1. Identity and Foundation | — | ✅ Completed | 2026-04-02 |
+| 2. Core Domain | 0/6 | Planning complete | - |
 | 3. Scheduling Engine | 0/TBD | Not started | - |
 | 4. Financial and Packages | 0/TBD | Not started | - |
 | 5. External Channels | 0/TBD | Not started | - |
