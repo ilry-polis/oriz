@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
+import Redis from 'ioredis';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { parseEnv } from './config/env.js';
 import { createPool } from './config/database.js';
@@ -48,10 +49,26 @@ await app.register(cors, {
     : /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
 });
 
-await app.register(rateLimit, {
+// Redis-backed rate limiting in production; in-memory fallback for dev without Redis
+const rateLimitOptions: Parameters<typeof rateLimit>[1] = {
   max: 100,
   timeWindow: '1 minute',
-});
+};
+
+if (env.REDIS_URL) {
+  const redis = new Redis(env.REDIS_URL, {
+    maxRetriesPerRequest: 1,
+    enableOfflineQueue: false,
+    lazyConnect: true,
+  });
+  redis.connect().catch((err) => {
+    app.log.warn(`Redis unavailable — rate limiting falls back to in-memory: ${err.message}`);
+  });
+  rateLimitOptions.redis = redis;
+  app.addHook('onClose', async () => { redis.disconnect(); });
+}
+
+await app.register(rateLimit, rateLimitOptions);
 
 // ─── Error Handler ─────────────────────────────────────────
 app.setErrorHandler(errorHandler);

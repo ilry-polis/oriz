@@ -65,14 +65,15 @@ export function buildAuthHook(pool: Pool, jwtSecret: string, supabaseUrl?: strin
     }
 
     // Look up studio membership: owner prioritized over professional
+    // Only active studios — deactivated studios deny access
     const { rows } = await pool.query<{ studio_id: string; role: 'owner' | 'professional' }>(
       `(SELECT s.id AS studio_id, 'owner' AS role, 1 AS priority
-        FROM studios s WHERE s.owner_id = $1)
+        FROM studios s WHERE s.owner_id = $1 AND s.is_active = true)
        UNION ALL
        (SELECT p.studio_id, 'professional' AS role, 2 AS priority
         FROM professionals p
         JOIN studios s ON s.id = p.studio_id
-        WHERE p.user_id = $1 AND p.is_active = true)
+        WHERE p.user_id = $1 AND p.is_active = true AND s.is_active = true)
        ORDER BY priority
        LIMIT 1`,
       [userId],
