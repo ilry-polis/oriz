@@ -1,6 +1,6 @@
 # Phase 2: Core Domain — Research
 
-**Researched:** 2026-04-02
+**Researched:** 2026-04-02 (atualizado 2026-04-02)
 **Domain:** Serviços, Clientes, Equipe, LGPD (Fastify + Flutter + Postgres/Supabase)
 **Confidence:** HIGH
 
@@ -56,11 +56,18 @@
 - Pre-defined seed categories (Lash, Unhas, Micropigmentacao, Cabelo, Estetica) + professional can create custom categories
 - Categories from onboarding carry over seamlessly
 
-**Team management**
-- Owner registers professional directly (name + email + services) — no invite flow
-- Owner sets a temporary password; professional changes on first login
+**Team management (UPDATED)**
+- Owner generates invite link shared via WhatsApp — link expires in 7 days
+- Collaborator clicks link, creates own account (email + password), gets linked to studio automatically
+- Owner pre-configures: name, services (checkbox), commission rate, card fee policy
 - Each professional linked to specific services (checkbox selection)
+- Toggle active/inactive per professional (is_active field exists) — inactive hides from scheduling but preserves history
 - Professional inherits studio hours by default, can override with custom working_hours (JSONB field exists)
+
+**Team permissions (NEW)**
+- Collaborator sees only: her own agenda, her clients, her working hours
+- Collaborator does NOT see: financeiro, commissions of others, studio settings, other professionals' agendas
+- Owner sees everything
 
 **Commissions**
 - Percentage per professional (single rate applied to all her services)
@@ -84,16 +91,28 @@
 - Preserves appointment history and financial records for reporting
 - Audit log records the anonymization event
 
+**Empty states (NEW)**
+- Consistent pattern across all screens (clients, services, team)
+- Illustration (clean/minimal) + contextual text + CTA button ("Adicionar primeiro cliente", etc.)
+- Follows Cal.com/Linear visual reference
+
+**Navigation (UPDATED)**
+- Bottom nav with 4 tabs: Agenda | Clientes | Serviços | Mais
+- "Mais" opens a list screen with: Equipe, Financeiro (em breve), Configurações, Meu perfil, Sair
+- Future phases add items to "Mais" without changing bottom nav structure
+
 ### Claude's Discretion
 - Loading skeletons and transition animations
 - Exact spacing, typography, and color palette within clean minimal direction
-- Error state handling and empty states
+- Error state handling
 - Anamnesis template field types (boolean, text, select) — whatever makes clinical sense
 - Audit log UI presentation (tab vs expandable section in client detail)
 - How "Novo" and "Inativo" tags are calculated (days since last appointment thresholds)
+- Invite link generation mechanism (token format, URL structure)
+- First-login flow for collaborators after accepting invite
 
 ### Deferred Ideas (OUT OF SCOPE)
-- None — discussion stayed within phase scope
+- Import/export de clientes (CSV/Excel) — future feature, not Phase 2 scope
 </user_constraints>
 
 ---
@@ -109,10 +128,10 @@
 | CLNT-02 | Duplicate phone numbers rejected; phone stored as E.164 | DB has UNIQUE(studio_id, phone) WHERE phone IS NOT NULL. Backend must catch pg error 23505 → 409 PHONE_ALREADY_EXISTS. |
 | CLNT-03 | Professional can fill and view anamnesis form per client per service category | Route stubs exist (PUT/GET anamneses). Need: AnamnesisService, AnamnesisRepository with upsert. |
 | CLNT-04 | Professional can view appointment history | Route stub exists (GET /clients/:id/appointments). Need: ClientRepository.listAppointments(). |
-| CLNT-05 | Professional can add private notes and tag clients (VIP, new, inactive) | Notes field exists in clients table. Auto-tags (Novo/Inativo) need business logic rule in service layer. |
+| CLNT-05 | Professional can add private notes and tag clients (VIP, new, inactive) | Notes field exists in clients table. Auto-tags (Novo/Inativo) need business logic rule in service layer. client_notes table does NOT exist — migration required. |
 | CLNT-06 | Client detail shows full ficha with tabs | Flutter: ClientDetailScreen with Histórico, Anamnese, Notas tabs per SCREENS.md. |
-| TEAM-01 | Owner can register professionals linked to services with commission rules | Route stub exists; ProfessionalController.update() implemented. Need: create, list, getById, delete. professional_services N:N table exists. |
-| TEAM-02 | Owner sets temporary password; professional changes on first login | No invite flow: owner creates auth user via Supabase Admin API, sets temporary password. |
+| TEAM-01 | Owner can register professionals linked to services with commission rules | Route stub exists; ProfessionalController.update() implemented. Need: create (invite flow), list, getById, delete. professional_services N:N table exists. |
+| TEAM-02 | Owner generates invite link; collaborator creates own account via link | UPDATED: no temp password. Need: professional_invites table (migration), POST /professionals/invites, POST /auth/accept-invite endpoints. |
 | TEAM-03 | Each professional linked to specific services via checkbox | professional_services table exists with UNIQUE(professional_id, service_id). Patch replaces all links atomically in a transaction. |
 | TEAM-04 | Commission rules: percentage or fixed amount | commission_type + commission_value fields exist in professionals table. |
 | TEAM-05 | Card fee policy configurable per professional | card_fee_policy field exists ('studio', 'professional', 'split'). |
@@ -124,13 +143,13 @@
 
 ## Summary
 
-Esta fase implementa três domínios independentes (Serviços, Clientes, Equipe) mais infraestrutura LGPD obrigatória. Todos os artefatos de infraestrutura já existem: tabelas criadas, schemas Zod definidos, stubs de rotas presentes, e os primeiros métodos de service/repository implantados. O trabalho desta fase é completar as implementações pendentes e construir as telas Flutter correspondentes.
+Esta fase implementa três domínios independentes (Serviços, Clientes, Equipe) mais infraestrutura LGPD obrigatória. Quase todos os artefatos de infraestrutura já existem: tabelas criadas, schemas Zod definidos, stubs de rotas presentes, e os primeiros métodos de service/repository implantados. O trabalho desta fase é completar as implementações pendentes e construir as telas Flutter correspondentes.
 
-O backend segue padrão Route → Controller → Service → Repository completamente estabelecido. Todos os repositórios usam `pg` (node-postgres) com SQL manual — sem ORM. O Flutter usa Riverpod com sealed states (Loading/Success/Error), GoRouter para navegação, e `ApiClient` HTTP wrapper já existente. O banco tem RLS ativo em todas as tabelas e a fase não requer nenhuma migration nova — o schema de Phase 1 já cobre tudo.
+O backend segue padrão Route → Controller → Service → Repository completamente estabelecido. Todos os repositórios usam `pg` (node-postgres) com SQL manual — sem ORM. O Flutter usa Riverpod com sealed states (Loading/Success/Error), GoRouter para navegação, e `ApiClient` HTTP wrapper já existente. O banco tem RLS ativo em todas as tabelas. Esta fase requer **duas migrations** que não existiam na versão anterior: `professional_invites` (fluxo de convite por link) e `client_notes` (timeline imutável de notas).
 
-O domínio de clientes tem a maior complexidade: gestão de tags automáticas (Novo/Inativo baseado em histórico de agendamentos), anamnese JSONB por categoria, notas imutáveis com timeline, consentimento LGPD append-only, e audit log automático em todo acesso a dados sensíveis. Equipe tem uma particularidade: criação de profissional envolve Supabase Auth Admin API para criar o usuário, além do registro no banco. Serviços são o domínio mais simples — a estrutura já existe quase completa.
+O fluxo de convite por link substituiu completamente a criação com senha temporária. O owner pré-configura o profissional (nome, serviços, comissão), o sistema gera um token UUID v4 com TTL de 7 dias, e o link `oriz://invite/<token>` é copiado para o WhatsApp. A colaboradora clica, cria sua própria conta (email + senha), e é automaticamente vinculada ao studio. O bottom nav também foi atualizado: o tab "Financeiro" (Phase 4) é substituído por "Serviços" nesta fase — `/financial` não aparece no nav até Phase 4.
 
-**Recomendação primária:** Implementar backend primeiro (waves ordenadas por domínio: Serviços → Clientes → Equipe → LGPD), depois Flutter screens por domínio. Audit log deve ser injetado como middleware de serviço reutilizável, não duplicado em cada endpoint.
+**Recomendação primária:** Implementar backend primeiro (waves ordenadas por domínio: Serviços → Clientes → Equipe + Invite → LGPD), depois Flutter screens por domínio. Audit log deve ser injetado como middleware de serviço reutilizável, não duplicado em cada endpoint.
 
 ---
 
@@ -140,20 +159,22 @@ O domínio de clientes tem a maior complexidade: gestão de tags automáticas (N
 
 | Library | Version | Purpose | Confirmed |
 |---------|---------|---------|-----------|
-| Fastify | ^5.x | HTTP framework | server.ts |
-| Zod + fastify-type-provider-zod | ^3.x | Schema validation | routes/*.ts |
-| node-postgres (pg) | ^8.x | DB driver | repositories/*.ts |
+| Fastify | ^5.3.3 | HTTP framework | server.ts |
+| Zod + fastify-type-provider-zod | ^3.25.11 / ^4.0.2 | Schema validation | routes/*.ts |
+| node-postgres (pg) | ^8.20.0 | DB driver | repositories/*.ts |
 | Vitest | ^3.2.1 | Unit testing | package.json |
-| Flutter + Riverpod | 3.x | Mobile app + state | mobile/lib/ |
-| GoRouter | 14.x | Routing | app_router.dart |
-| Supabase Flutter | 2.x | Auth only (not DB) | mobile/lib/core/ |
+| Flutter + Riverpod | 3.x / ^3.3.1 | Mobile app + state | mobile/lib/ |
+| GoRouter | ^17.1.0 | Routing | app_router.dart |
+| Supabase Flutter | ^2.0.0 | Auth only (not DB) | mobile/lib/core/ |
+| @supabase/supabase-js | ^2.99.1 | Admin API (backend) | package.json |
+| jose | ^6.0.11 | JWT verification | auth middleware |
 
 ### Supporting
 
 | Library | Purpose | When to Use |
 |---------|---------|-------------|
-| `@supabase/supabase-js` (admin) | Criar usuário via Admin API para profissional | TEAM-02: criar usuário auth ao registrar profissional |
-| `jose` | JWT verification | Já em uso no auth middleware |
+| `crypto.randomUUID()` (Node built-in) | Gerar token de convite | TEAM-02: POST /professionals/invites |
+| `ioredis` | TTL de token de convite em cache (opcional) | Alternativa a TTL via DB — usar DB por simplicidade |
 
 ### Alternatives Considered
 
@@ -161,6 +182,7 @@ O domínio de clientes tem a maior complexidade: gestão de tags automáticas (N
 |------------|-----------|----------|
 | SQL manual (pg) | Drizzle ORM | Projeto usa SQL manual por decisão existente — não alterar |
 | Append-only inserts para consent | Update de flag | Append-only é padrão LGPD e já definido no schema |
+| DB para TTL do invite token | Redis TTL | DB é mais simples e suficiente para 7d TTL com cleanup job |
 
 ---
 
@@ -171,73 +193,77 @@ O domínio de clientes tem a maior complexidade: gestão de tags automáticas (N
 ```
 backend/src/
 ├── routes/
-│   ├── clients.routes.ts        # stub completo com Zod schemas
-│   ├── services.routes.ts       # stub completo
-│   ├── professionals.routes.ts  # stub completo
-│   └── audit-logs.routes.ts     # stub completo
+│   ├── clients.routes.ts          # stub completo com Zod schemas
+│   ├── services.routes.ts         # stub completo
+│   ├── professionals.routes.ts    # stub completo — adicionar /invites endpoints
+│   └── audit-logs.routes.ts       # stub completo
 ├── controllers/
-│   ├── client.controller.ts     # NOVO
-│   ├── service.controller.ts    # parcial (create existe)
-│   ├── professional.controller.ts # parcial (update existe)
-│   ├── anamnesis.controller.ts  # NOVO
-│   ├── consent.controller.ts    # NOVO
-│   └── audit-log.controller.ts  # NOVO
+│   ├── client.controller.ts       # NOVO
+│   ├── service.controller.ts      # parcial (create existe)
+│   ├── professional.controller.ts # parcial (update existe) — adicionar create/invite/list/delete
+│   ├── anamnesis.controller.ts    # NOVO
+│   ├── consent.controller.ts      # NOVO
+│   └── audit-log.controller.ts    # NOVO
 ├── services/
-│   ├── client.service.ts        # NOVO
-│   ├── service.service.ts       # parcial (createService existe)
-│   ├── professional.service.ts  # parcial (updateWorkingHours existe)
-│   ├── anamnesis.service.ts     # NOVO
-│   ├── consent.service.ts       # NOVO
-│   └── audit-log.service.ts     # NOVO
+│   ├── client.service.ts          # NOVO
+│   ├── service.service.ts         # parcial (createService existe)
+│   ├── professional.service.ts    # parcial (updateWorkingHours existe) — adicionar invite flow
+│   ├── anamnesis.service.ts       # NOVO
+│   ├── consent.service.ts         # NOVO
+│   └── audit-log.service.ts       # NOVO
 ├── repositories/
-│   ├── client.repository.ts     # NOVO
-│   ├── service.repository.ts    # parcial (create existe)
+│   ├── client.repository.ts       # NOVO
+│   ├── service.repository.ts      # parcial (create existe)
 │   ├── professional.repository.ts # parcial (findByUserId, updateWorkingHours existem)
-│   ├── anamnesis.repository.ts  # NOVO
-│   ├── consent.repository.ts    # NOVO
-│   └── audit-log.repository.ts  # NOVO
+│   ├── anamnesis.repository.ts    # NOVO
+│   ├── consent.repository.ts      # NOVO
+│   └── audit-log.repository.ts    # NOVO
 └── types/
-    └── fastify.d.ts             # atualizar com novos controllers
+    └── fastify.d.ts               # atualizar com novos controllers
 ```
 
 ### Estrutura de Arquivos — Flutter (padrão estabelecido)
 
 ```
-mobile/lib/features/
-├── clients/
-│   ├── data/
-│   │   ├── client_repository.dart     # NOVO
-│   │   └── anamnesis_templates.dart   # NOVO
-│   ├── domain/
-│   │   ├── client_model.dart          # NOVO
-│   │   └── anamnesis_model.dart       # NOVO
-│   ├── providers/
-│   │   └── client_provider.dart       # NOVO
-│   └── presentation/
-│       ├── client_list_screen.dart    # NOVO (substitui _Placeholder)
-│       ├── client_detail_screen.dart  # NOVO
-│       ├── client_form_screen.dart    # NOVO
-│       ├── anamnesis_form_screen.dart # NOVO
-│       └── widgets/
-│           ├── client_list_item.dart
-│           ├── client_list_item_skeleton.dart
-│           └── tag_chip.dart
-├── services_management/
-│   ├── data/service_mgmt_repository.dart
-│   ├── domain/service_model.dart       # (pode reuso do onboarding)
-│   ├── providers/service_mgmt_provider.dart
-│   └── presentation/
-│       ├── services_management_screen.dart  # NOVO
-│       ├── service_form_screen.dart         # NOVO
-│       └── widgets/service_card.dart
-└── team/
-    ├── data/team_repository.dart
-    ├── domain/professional_model.dart
-    ├── providers/team_provider.dart
-    └── presentation/
-        ├── team_management_screen.dart   # NOVO
-        ├── professional_form_screen.dart # NOVO
-        └── widgets/professional_card.dart
+mobile/lib/
+├── core/
+│   ├── shell/app_shell.dart           # ATUALIZAR: tab Serviços em vez de Financeiro
+│   └── router/app_router.dart        # ATUALIZAR: /services rota + /invite/:token rota
+└── features/
+    ├── clients/
+    │   ├── data/
+    │   │   ├── client_repository.dart
+    │   │   └── anamnesis_templates.dart
+    │   ├── domain/
+    │   │   ├── client_model.dart
+    │   │   └── anamnesis_model.dart
+    │   ├── providers/client_provider.dart
+    │   └── presentation/
+    │       ├── client_list_screen.dart     # NOVO (substitui _Placeholder)
+    │       ├── client_detail_screen.dart   # NOVO
+    │       ├── client_form_screen.dart     # NOVO
+    │       ├── anamnesis_form_screen.dart  # NOVO
+    │       └── widgets/
+    │           ├── client_list_item.dart
+    │           ├── client_list_item_skeleton.dart
+    │           └── tag_chip.dart
+    ├── services_management/
+    │   ├── data/service_mgmt_repository.dart
+    │   ├── domain/service_model.dart
+    │   ├── providers/service_mgmt_provider.dart
+    │   └── presentation/
+    │       ├── services_management_screen.dart    # NOVO
+    │       ├── service_form_screen.dart           # NOVO
+    │       └── widgets/service_card.dart
+    └── team/
+        ├── data/team_repository.dart
+        ├── domain/professional_model.dart
+        ├── providers/team_provider.dart
+        └── presentation/
+            ├── team_management_screen.dart        # NOVO
+            ├── professional_form_screen.dart      # NOVO (pré-config + gerar link)
+            ├── invite_accept_screen.dart          # NOVO (collaborator signup via token)
+            └── widgets/professional_card.dart
 ```
 
 ### Pattern 1: Cursor-Based Pagination com pg
@@ -333,41 +359,142 @@ async getCurrentConsent(clientId: string, studioId: string, type: string): Promi
 }
 ```
 
-### Pattern 5: Professional Create com Supabase Admin API
+### Pattern 5: Invite Link Flow (NOVO — substitui senha temporária)
 
-**O que é:** Criar profissional requer criar um usuário Supabase Auth primeiro (owner define senha temporária), depois inserir o registro em professionals.
-**Quando usar:** POST /api/v1/professionals.
+**O que é:** Owner pré-configura profissional (nome, serviços, comissão). Sistema gera token UUID. Link é copiado para WhatsApp. Colaboradora abre link no app, cria conta, fica vinculada automaticamente.
+**Quando usar:** POST /api/v1/professionals/invites (criar convite), POST /api/v1/auth/accept-invite (aceitar e criar conta).
+
+**Fluxo completo:**
+
+```
+Owner (Flutter)                Backend                    Collaborator (Flutter)
+─────────────────────────────────────────────────────────────────────────────────
+1. Preenche form: nome,    →  POST /professionals/invites
+   serviços, comissão         Body: { name, service_ids,
+                               commission_type, commission_value,
+                               card_fee_policy }
+                           ←  201 { data: { invite_token, expires_at,
+                                           whatsapp_link } }
+2. Copia link WhatsApp
+   oriz://invite/<token>
+
+                                                      3. Clica no link →
+                                                         App abre InviteAcceptScreen
+                                                         GET /professionals/invites/<token>
+                                                      ←  200 { data: { studio_name, name } }
+                                                      4. Preenche email + senha
+                                                         POST /auth/accept-invite
+                                                         Body: { token, email, password }
+                              ↑ cria auth user via Supabase
+                                insere professionals row
+                                deletes/expires invite_token
+                           ←                          201 { data: { session } }
+                                                      5. App navega para /agenda
+```
+
+**Backend — criação do invite:**
 
 ```typescript
-// Source: supabase.md rules + CONTEXT.md (Team management decisions)
-// supabaseAdmin é o Supabase Admin Client (service_role key) — já decorado no Fastify
-async createProfessional(studioId: string, input: CreateProfessionalInput) {
-  // 1. Criar usuário no Supabase Auth com senha temporária
-  const { data: authUser, error } = await this.supabaseAdmin.auth.admin.createUser({
-    email: input.email,
-    password: input.temporaryPassword,
-    email_confirm: true, // confirma email automaticamente
-  });
-  if (error) throw new ConflictError('USER_CREATION_FAILED', error.message);
+// Source: CONTEXT.md (Team management — invite link flow)
+// professional_invites table: nova migration necessária
+async createInvite(studioId: string, ownerUserId: string, input: CreateInviteInput) {
+  const token = crypto.randomUUID(); // UUID v4 — entropia suficiente para token seguro
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 dias
 
-  // 2. Criar registro em professionals (dentro de transaction quando possível)
-  const professional = await this.repo.create({
+  await this.repo.createInvite({
+    token,
     studioId,
-    userId: authUser.user.id,
+    createdBy: ownerUserId,
     name: input.name,
+    serviceIds: input.serviceIds ?? [],
     commissionType: input.commissionType,
     commissionValue: input.commissionValue,
     cardFeePolicy: input.cardFeePolicy,
-    workingHours: input.workingHours ?? {},
+    expiresAt,
   });
 
-  // 3. Vincular serviços em professional_services (DELETE + INSERT em batch)
-  if (input.serviceIds?.length) {
-    await this.repo.replaceServiceLinks(professional.id, studioId, input.serviceIds);
+  // WhatsApp deep link — abre o app Oriz na tela de aceitar convite
+  const whatsappLink = `https://wa.me/?text=${encodeURIComponent(
+    `Você foi convidada para usar o Oriz! Clique para aceitar: oriz://invite/${token}`
+  )}`;
+
+  return { invite_token: token, expires_at: expiresAt, whatsapp_link: whatsappLink };
+}
+```
+
+**Backend — aceitar invite (criar conta):**
+
+```typescript
+// Source: CONTEXT.md + auth flow estabelecido (auth.routes.ts)
+async acceptInvite(token: string, email: string, password: string) {
+  // 1. Validar token (existe, não expirado, não usado)
+  const invite = await this.inviteRepo.findByToken(token);
+  if (!invite) throw new NotFoundError('INVITE_NOT_FOUND', 'Convite não encontrado');
+  if (invite.expires_at < new Date()) throw new UnprocessableError('INVITE_EXPIRED', 'Convite expirado');
+  if (invite.used_at) throw new ConflictError('INVITE_ALREADY_USED', 'Convite já foi utilizado');
+
+  // 2. Criar usuário Supabase Auth
+  const { data: authUser, error } = await this.supabaseAdmin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true, // confirma email automaticamente — profissional já foi convidada
+  });
+  if (error) throw new ConflictError('EMAIL_ALREADY_EXISTS', 'Email já cadastrado');
+
+  // 3. Inserir professional (dentro de transaction)
+  const professional = await this.professionalRepo.create({
+    studioId: invite.studio_id,
+    userId: authUser.user.id,
+    name: invite.name,
+    commissionType: invite.commission_type,
+    commissionValue: invite.commission_value,
+    cardFeePolicy: invite.card_fee_policy,
+  });
+
+  // 4. Vincular serviços
+  if (invite.service_ids?.length) {
+    await this.professionalRepo.replaceServiceLinks(professional.id, invite.studio_id, invite.service_ids);
   }
 
-  return professional;
+  // 5. Marcar invite como usado
+  await this.inviteRepo.markUsed(token);
+
+  // 6. Retornar sessão autenticada
+  const { data: session } = await this.supabaseAdmin.auth.admin.createSession({
+    user_id: authUser.user.id,
+  });
+
+  return session;
 }
+```
+
+**Migration necessária — professional_invites:**
+
+```sql
+-- Source: CONTEXT.md (invite link, 7 dias TTL) + data-modeling.md rules
+CREATE TABLE professional_invites (
+  token         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  studio_id     UUID         NOT NULL REFERENCES studios(id) ON DELETE CASCADE,
+  created_by    UUID         NOT NULL REFERENCES auth.users(id),
+  name          TEXT         NOT NULL,
+  service_ids   UUID[]       NOT NULL DEFAULT '{}',
+  commission_type TEXT       NOT NULL CHECK (commission_type IN ('percentage', 'fixed')),
+  commission_value NUMERIC(10,2) NOT NULL DEFAULT 0,
+  card_fee_policy TEXT       NOT NULL DEFAULT 'studio'
+                             CHECK (card_fee_policy IN ('studio', 'professional', 'split')),
+  expires_at    TIMESTAMPTZ  NOT NULL DEFAULT (now() + interval '7 days'),
+  used_at       TIMESTAMPTZ,
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_professional_invites_studio_id ON professional_invites(studio_id);
+-- RLS: owner do studio pode SELECT/INSERT/DELETE
+ALTER TABLE professional_invites ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "owner_manage_invites" ON professional_invites
+  USING (studio_id = auth.studio_id())
+  WITH CHECK (studio_id = auth.studio_id());
+-- Leitura pública do token (necessário para /auth/accept-invite sem auth)
+-- Implementar via endpoint backend com service_role — não expor RLS público
 ```
 
 ### Pattern 6: Riverpod Sealed State (Flutter — padrão estabelecido)
@@ -391,7 +518,7 @@ class ClientListError extends ClientListState {
 ### Pattern 7: Transaction para service_ids replace (professional_services)
 
 **O que é:** Atualizar os serviços de um profissional faz DELETE + INSERT em batch dentro de uma transação.
-**Quando usar:** POST /professionals e PATCH /professionals/:id quando service_ids enviado.
+**Quando usar:** POST /professionals/invites (accept) e PATCH /professionals/:id quando service_ids enviado.
 
 ```typescript
 // Source: API_CONTRACTS.md (§6 PATCH professionals/:id — "service_ids substitui completamente os vínculos")
@@ -421,15 +548,150 @@ async replaceServiceLinks(professionalId: string, studioId: string, serviceIds: 
 }
 ```
 
+### Pattern 8: Bottom Nav Update — Serviços em vez de Financeiro
+
+**O que é:** O ShellRoute no GoRouter já tem 4 tabs. O tab 2 (index 2) era "Financeiro" — deve ser atualizado para "Serviços". Financeiro vai para a tela "Mais" como item (Phase 4 irá expandir).
+
+**Arquivos a alterar:**
+- `mobile/lib/core/shell/app_shell.dart` — trocar `/financial` por `/services`, atualizar label e ícone
+- `mobile/lib/core/router/app_router.dart` — trocar rota `/financial` por `/services` com ServicesManagementScreen
+
+```dart
+// Source: mobile/lib/core/shell/app_shell.dart (existente — modificar)
+// Trocar tab index 2:
+// ANTES: path='/financial', label='Financeiro', icon=Icons.attach_money_rounded
+// DEPOIS:
+GoRoute(
+  path: '/services',
+  builder: (_, __) => const ServicesManagementScreen(),
+),
+
+// Em app_shell.dart — _currentIndex():
+if (location.startsWith('/services')) return 2;  // era /financial
+
+// BottomNavigationBarItem index 2:
+BottomNavigationBarItem(
+  icon: Icon(Icons.content_cut_outlined),      // ícone de tesoura/serviços
+  activeIcon: Icon(Icons.content_cut_rounded),
+  label: 'Serviços',
+),
+```
+
+**Rota de deep link para invite (GoRouter):**
+```dart
+// Adicionar ao ShellRoute ou como rota top-level sem shell
+GoRoute(
+  path: '/invite/:token',
+  builder: (context, state) =>
+    InviteAcceptScreen(token: state.pathParameters['token']!),
+),
+// Esta rota NÃO precisa de auth — é para colaboradora nova que ainda não tem conta
+// Deve ficar fora do ShellRoute, junto às rotas auth
+```
+
+### Pattern 9: Empty State Widget (NOVO — padrão definido)
+
+**O que é:** Toda lista vazia mostra ilustração + texto contextual + CTA. Padrão consistente em Clientes, Serviços, Equipe.
+**Referência visual:** Cal.com / Linear — clean, minimal, whitespace-heavy.
+
+```dart
+// Source: CONTEXT.md (Empty states — illustration + CTA)
+class EmptyState extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String ctaLabel;
+  final VoidCallback onCta;
+  final Widget? illustration; // SVG ou imagem local
+
+  const EmptyState({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.ctaLabel,
+    required this.onCta,
+    this.illustration,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (illustration != null) ...[
+              illustration!,
+              const SizedBox(height: 24),
+            ],
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(subtitle,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton(onPressed: onCta, child: Text(ctaLabel)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Uso em ClientListScreen quando lista vazia:
+EmptyState(
+  title: 'Nenhum cliente cadastrado',
+  subtitle: 'Adicione seu primeiro cliente para começar.',
+  ctaLabel: 'Adicionar primeiro cliente',
+  onCta: () => context.push('/clients/new'),
+)
+```
+
+### Pattern 10: Team Permissions — Collaborator vs Owner
+
+**O que é:** Colaboradora autentica normalmente, mas a API filtra o que ela pode ver com base no role extraído do JWT.
+**Quando usar:** Todos os endpoints de agenda, clientes, e equipe devem respeitar o role.
+
+**Backend — como o role é determinado:**
+O `professionals.user_id` mapeia o `auth.uid()` para o registro de profissional. O middleware `requireStudioMember` já valida que o usuário pertence ao studio. O role "owner" é determinado pelo campo `studios.owner_user_id = auth.uid()`.
+
+```typescript
+// Source: padrão do projeto (middleware) — regra CONTEXT.md
+// GET /api/v1/professionals — retorna todos se owner, só a própria se collaborator
+async list(studioId: string, requestingUserId: string, isOwner: boolean) {
+  if (isOwner) {
+    return this.repo.listAll(studioId, cursor, limit);
+  } else {
+    // Colaboradora vê apenas seu próprio perfil
+    return this.repo.findByUserId(requestingUserId, studioId);
+  }
+}
+
+// Campos sensíveis (commission, card_fee_policy) → null para não-owner
+// Já documentado no stub da rota: "commission → null for non-owners"
+```
+
+**Flutter — ocultar tabs baseado no role:**
+```dart
+// Source: CONTEXT.md (Team permissions — collaborator sees only own agenda)
+// Colaboradora NÃO deve ver: tab Serviços (gerenciamento), tab Mais > Equipe, tab Mais > Financeiro
+// Implementar: ler role do provider de auth, condicionar visibilidade dos tabs/items do "Mais"
+```
+
 ### Anti-Patterns a Evitar
 
 - **Select * em qualquer query:** sempre especificar colunas explicitamente (regra crítica do projeto).
 - **Studio_id via params/body:** sempre derivar do JWT authContext — nunca aceitar do cliente.
 - **UPDATE em consent_records:** é append-only — erro de arquitetura crítico.
 - **UPDATE em audit_logs:** é append-only — INSERT via service_role apenas.
-- **Lógica de tag automática no DB:** calcular no service layer, não como coluna gerada — mais fácil de mudar o threshold.
-- **Chamar Supabase diretamente no Flutter para CRUD:** todo CRUD passa pela API Fastify (regra mobile.md).
-- **Deletar hard o cliente com appointment history:** sempre anonimizar, nunca DELETE real quando há histórico.
+- **Lógica de tag automática no DB:** calcular no service layer, não como coluna gerada.
+- **Chamar Supabase diretamente no Flutter para CRUD:** todo CRUD passa pela API Fastify.
+- **Deletar hard o cliente com appointment history:** sempre anonimizar.
+- **Expor token de convite em resposta de listagem:** invite_token é single-use, retornar apenas na criação.
+- **Tab "Serviços" visível para colaboradora:** ocultar ou restringir baseado no role.
 
 ---
 
@@ -438,13 +700,16 @@ async replaceServiceLinks(professionalId: string, studioId: string, serviceIds: 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
 | Phone format validation | Regex manual E.164 | Zod `.regex(/^\+[1-9]\d{10,14}$/)` no CreateClientBody | Já definido no schema existente |
-| Duplicate phone detection | Verificação em service layer | Catch pg error `23505` (unique_violation) → `ConflictError('PHONE_ALREADY_EXISTS')` | DB constraint já existe: UNIQUE(studio_id, phone) |
-| Professional user creation | Flow de invite customizado | Supabase Admin API `createUser` com `email_confirm: true` | Supabase já gerencia auth, não reinventar |
+| Duplicate phone detection | Verificação em service layer | Catch pg error `23505` → `ConflictError('PHONE_ALREADY_EXISTS')` | DB constraint já existe: UNIQUE(studio_id, phone) |
+| Invite token generation | Hash customizado ou HMAC | `crypto.randomUUID()` (Node built-in, UUID v4) | Entropia suficiente, padrão, zero dependência |
+| Invite expiry | Cron job manual | `expires_at TIMESTAMPTZ` no DB + verificação na query | Simples e confiável; cleanup periódico via job |
+| Collaborator auth after invite | Fluxo customizado de "primeiro login" | Supabase Admin API `createUser` com `email_confirm: true` na aceitação | Supabase gerencia sessão; email_confirm pula verificação |
+| WhatsApp deep link | SDK WhatsApp | `https://wa.me/?text=` com link encode | URL pública sem dependência; funciona em qualquer plataforma |
 | Cursor pagination meta | Lógica manual | Padrão existente: fetch limit+1, has_more = rows.length > limit | Já estabelecido nos outros repositories |
 | Auto-tag "Novo"/"Inativo" | Coluna calculada ou trigger | Lógica em service ao retornar cliente | Threshold configurável no futuro sem migration |
-| Audit log chamada | Interceptor HTTP global | Chamada explícita no service (apenas em ClientService) | Audit log não é para todo endpoint, só dados sensíveis de clientes |
+| Audit log chamada | Interceptor HTTP global | Chamada explícita no service (apenas em ClientService) | Audit log não é para todo endpoint, só dados sensíveis |
 
-**Insight chave:** O schema do banco foi projetado para esta fase — todas as constraints, índices e campos necessários já existem. Não criar migrations novas; toda a lógica é implementação de código sobre estrutura existente.
+**Insight chave:** O schema do banco foi projetado para esta fase — quase todas as constraints, índices e campos necessários já existem. São necessárias apenas 2 novas migrations: `professional_invites` e `client_notes`.
 
 ---
 
@@ -459,6 +724,7 @@ async replaceServiceLinks(professionalId: string, studioId: string, serviceIds: 
   if (err.code === '23505') {
     if (err.constraint?.includes('phone')) throw new ConflictError('PHONE_ALREADY_EXISTS', 'Telefone já cadastrado');
     if (err.constraint?.includes('user_id')) throw new ConflictError('PROFESSIONAL_EXISTS', 'Usuário já é profissional');
+    if (err.constraint?.includes('email')) throw new ConflictError('EMAIL_ALREADY_EXISTS', 'Email já cadastrado');
   }
   throw err;
 }
@@ -466,11 +732,10 @@ async replaceServiceLinks(professionalId: string, studioId: string, serviceIds: 
 **Warning signs:** Teste de criação duplicada retornando 500 em vez de 409.
 
 ### Pitfall 2: Phone não normalizado para E.164
-**O que acontece:** Cliente registrado com "(11) 99999-1234" e outro com "+5511999991234" — ambos passam na validação de formato mas são o mesmo número, bypass da dedup.
+**O que acontece:** Cliente registrado com "(11) 99999-1234" e outro com "+5511999991234" — ambos passam na validação mas são o mesmo número.
 **Por que acontece:** Validação Zod aceita o formato E.164 mas não normaliza entrada do usuário.
 **Como evitar:** Normalizar o phone no service antes de persistir:
 ```typescript
-// Remover tudo exceto dígitos e +, garantir prefixo +55 para BR
 function normalizePhone(phone: string): string {
   const digits = phone.replace(/\D/g, '');
   if (digits.startsWith('55') && digits.length >= 12) return `+${digits}`;
@@ -478,41 +743,61 @@ function normalizePhone(phone: string): string {
   return `+${digits}`;
 }
 ```
-**Warning signs:** Mesmo cliente registrado duas vezes com formatos diferentes de phone.
 
 ### Pitfall 3: Audit log bloqueando resposta principal
-**O que acontece:** `await auditLogService.log(...)` falha (ex: timeout de DB) e lança exceção, tornando o GET /clients/:id um 500.
-**Por que acontece:** Audit log é infraestrutura secundária — falha dela não deve derrubar a operação principal.
-**Como evitar:** Usar fire-and-forget com catch silencioso para audit log:
+**O que acontece:** `await auditLogService.log(...)` falha e lança exceção, tornando o GET /clients/:id um 500.
+**Como evitar:** Usar fire-and-forget com catch silencioso:
 ```typescript
-// Não bloquear resposta pelo audit log
 auditLogService.log({ ... }).catch(err => {
   app.log.error({ err }, 'Audit log failed — non-critical');
 });
 ```
-**Warning signs:** Falha de DB no audit_logs derrubando endpoints de leitura de clientes.
 
 ### Pitfall 4: anamnesis.fields JSONB sem schema → dados inconsistentes
-**O que acontece:** Campo `fields` é JSONB sem schema fixo. Se não validado por categoria no backend, dados de anamnese de Lash podem conter campos de Micropig.
-**Por que acontece:** JSONB aceita qualquer coisa.
-**Como evitar:** Definir um mapa de campos esperados por categoria no service. Não rejeitar campos extras (flexibilidade de customização), mas validar que o formato dos valores é correto (booleano é booleano, não string "sim").
-**Warning signs:** Anamnese retornando `{ "gravidez": "sim" }` em vez de `{ "gravidez": true }`.
+**O que acontece:** Campo `fields` aceita qualquer coisa. Dados de Lash podem conter campos de Micropig.
+**Como evitar:** Validar que boolean é boolean, não string "sim". Os templates no Flutter definem os tipos — o backend valida o formato dos valores no Zod schema antes de persistir.
 
 ### Pitfall 5: professional_services replace sem transaction
-**O que acontece:** DELETE dos vínculos antigos seguido de INSERT dos novos — se o INSERT falhar, o profissional fica sem serviços vinculados.
-**Por que acontece:** Duas queries separadas sem transaction.
-**Como evitar:** Sempre usar `pool.connect()` + BEGIN/COMMIT/ROLLBACK para replace de vínculos N:N (Pattern 7 acima).
-**Warning signs:** Profissional aparece na lista mas sem serviços vinculados após edição.
+**O que acontece:** DELETE dos vínculos antigos seguido de INSERT dos novos — se o INSERT falhar, profissional fica sem serviços vinculados.
+**Como evitar:** Sempre usar `pool.connect()` + BEGIN/COMMIT/ROLLBACK (Pattern 7 acima).
 
-### Pitfall 6: Tags automáticas "Novo"/"Inativo" sendo gravadas no campo tags do banco
-**O que acontece:** Se o service gravar as auto-tags ("novo", "inativo") no campo JSONB `tags`, elas serão duplicadas ou permanecerão mesmo após o cliente ter agendamentos.
-**Por que acontece:** Confusão entre tags manuais persistidas e tags automáticas calculadas.
-**Como evitar:** Campo `tags` no banco armazena apenas tags manuais (VIP, custom). Auto-tags são adicionadas dinamicamente no service ao retornar o cliente, nunca persistidas.
+### Pitfall 6: Tags automáticas gravadas no campo tags do banco
+**O que acontece:** Se o service gravar as auto-tags ("novo", "inativo") no campo JSONB `tags`, ficam permanentes mesmo após o cliente ter agendamentos.
+**Como evitar:** Campo `tags` no banco armazena apenas tags manuais (VIP, custom). Auto-tags são adicionadas dinamicamente ao retornar o cliente, nunca persistidas.
 
-### Pitfall 7: ClientDetailScreen sem audit log no Flutter
-**O que acontece:** GET /clients/:id no backend registra audit log, mas se o Flutter faz múltiplas chamadas (ex: reload automático), gera flood de audit log entries.
-**Por que acontece:** Pull-to-refresh + auto-reload no Flutter.
-**Como evitar:** Audit log de `view` deve ser registrado apenas na primeira visualização da sessão, não em cada reload. Implementar debounce no backend: verificar se já foi registrado `view` para o mesmo (userId, clientId) nos últimos N minutos antes de inserir.
+### Pitfall 7: Audit log de `view` gerando flood no pull-to-refresh
+**O que acontece:** Pull-to-refresh no Flutter gera múltiplas chamadas a GET /clients/:id → flood de audit logs.
+**Como evitar:** Inserir audit log de `view` apenas uma vez por (userId, clientId) em janela de 5 minutos:
+```typescript
+// Antes de inserir, verificar se já existe entry recente
+const { rows } = await pool.query(
+  `SELECT 1 FROM audit_logs
+   WHERE user_id = $1 AND entity_id = $2 AND action = 'view'
+   AND created_at > now() - interval '5 minutes' LIMIT 1`,
+  [userId, clientId]
+);
+if (rows.length === 0) {
+  await this.repo.insert({ ... });
+}
+```
+
+### Pitfall 8: Invite token reutilizável → profissional duplicada (NOVO)
+**O que acontece:** Se o token não for marcado como `used_at` após accept, a mesma colaboradora (ou outra) pode criar outra conta e vincular ao studio novamente.
+**Como evitar:** O endpoint `POST /auth/accept-invite` DEVE ser atômico: validar token → criar auth user → criar profissional → marcar `used_at = now()` em uma transação. Se qualquer passo falhar, nenhum dado é persistido.
+
+### Pitfall 9: Rota `/invite/:token` protegida por auth → colaboradora sem conta bloqueada (NOVO)
+**O que acontece:** Se o GoRouter redireciona `/invite/:token` para `/login` porque não há sessão, a colaboradora não consegue aceitar o convite.
+**Como evitar:** A rota `/invite/:token` deve estar na lista de rotas públicas (junto com `/login`, `/signup`, `/forgot-password`) no redirect guard do GoRouter. Verificar o `isAuthRoute` check em `app_router.dart`:
+```dart
+final isAuthRoute = path == '/login' ||
+    path == '/signup' ||
+    path == '/forgot-password' ||
+    path.startsWith('/invite'); // ADICIONAR
+```
+
+### Pitfall 10: Tab Serviços visível para colaboradora → acesso indevido a catálogo (NOVO)
+**O que acontece:** Colaboradora vê e potencialmente edita o catálogo de serviços do studio.
+**Como evitar:** Ocultar ou redirecionar o tab "Serviços" para usuárias com role "professional" (não owner). Verificar o role no provider antes de renderizar os tabs — ou deixar o tab mas o backend rejeita mutations com 403.
 
 ---
 
@@ -540,15 +825,13 @@ async list(params: {
     paramIndex += 2;
   }
 
-  if (params.tag) {
+  if (params.tag === 'novo') {
+    whereClause += ` AND (last_appointment_at IS NULL)`;
+  } else if (params.tag === 'inativo') {
+    whereClause += ` AND last_appointment_at < now() - interval '60 days'`;
+  } else if (params.tag) {
     whereClause += ` AND tags @> $${paramIndex}::jsonb`;
     queryParams.push(JSON.stringify([params.tag]));
-    paramIndex++;
-  }
-
-  if (params.inactiveDays) {
-    whereClause += ` AND (last_appointment_at IS NULL OR last_appointment_at < now() - interval '$${paramIndex} days')`;
-    queryParams.push(params.inactiveDays);
     paramIndex++;
   }
 
@@ -574,17 +857,13 @@ async list(params: {
 
 ```typescript
 // Source: API_CONTRACTS.md §7 (GET /clients/:id — inclui stats)
-// NUNCA fazer 3 queries separadas para as stats — usar subquery
 async getByIdWithStats(clientId: string, studioId: string) {
   const { rows } = await this.pool.query(
     `SELECT
-       c.id, c.studio_id, c.name, c.phone, c.email, c.birth_date, c.tags, c.notes,
+       c.id, c.studio_id, c.name, c.phone, c.email, c.birth_date, c.tags,
        c.last_appointment_at, c.created_at, c.updated_at,
        COUNT(a.id) FILTER (WHERE a.status = 'completed') AS total_appointments,
-       COALESCE(SUM(p.amount) FILTER (WHERE a.status = 'completed'), 0) AS total_spent,
-       (SELECT s.name FROM appointments la JOIN services s ON la.service_id = s.id
-        WHERE la.client_id = c.id AND la.status = 'completed'
-        ORDER BY la.start_time DESC LIMIT 1) AS last_service
+       COALESCE(SUM(p.amount) FILTER (WHERE a.status = 'completed'), 0) AS total_spent
      FROM clients c
      LEFT JOIN appointments a ON a.client_id = c.id AND a.studio_id = c.studio_id
      LEFT JOIN payments p ON p.appointment_id = a.id
@@ -632,21 +911,19 @@ class _ClientListState extends ConsumerState<ClientListScreen> {
   }
 
   void _onScroll() {
-    // Prefetch at 80% scroll (pattern defined in SCREENS.md)
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
       ref.read(clientListProvider.notifier).loadMore();
     }
   }
-  // ...
 }
 ```
 
-### Anamnesis Templates (Flutter) — Tipos de campos por clínica
+### Anamnesis Templates (Flutter)
 
 ```dart
 // Source: CONTEXT.md — templates por categoria de beleza
-// Claude's discretion para field types: bool = toggle, string = text, list = select
+// Claude's discretion para field types: bool = toggle, string = text
 const Map<String, List<AnamnesisField>> kAnamnesisTemplates = {
   'Lash': [
     AnamnesisField(key: 'alergia_cola', label: 'Alergia a cola de cílios?', type: FieldType.bool),
@@ -686,9 +963,11 @@ const Map<String, List<AnamnesisField>> kAnamnesisTemplates = {
 | UPDATE consent flags | Append-only INSERT | Requisito LGPD | Histórico completo de consent, auditável |
 | Hard delete de clientes | Anonymization | Requisito LGPD | Preserva histórico financeiro |
 | Tags como coluna TEXT[] | JSONB array | Schema do projeto | Mais flexível para tags customizadas |
+| Owner cria senha temporária para colaboradora | Invite link via WhatsApp | CONTEXT.md atualizado 2026-04-02 | Colaboradora cria própria conta — mais seguro, sem sharing de senha |
+| Tab Financeiro no nav principal | Tab Serviços no nav principal | CONTEXT.md atualizado 2026-04-02 | Financeiro é Phase 4 — Serviços é Phase 2 |
 
-**Deprecated/outdated:**
-- `notes: TEXT` em clients: o campo `notes` existe na tabela mas o produto usa timeline de notas imutáveis. A tab "Notas" da ficha exige uma tabela separada `client_notes` — **gap identificado** (ver Open Questions).
+**Deprecated/outdated (versão anterior desta RESEARCH):**
+- `TEAM-02: owner sets temporary password` — SUBSTITUÍDO por invite link flow. O padrão anterior de `supabaseAdmin.auth.admin.createUser` com senha temporária ainda é usado internamente (na aceitação do invite), mas o owner não define mais a senha.
 
 ---
 
@@ -696,23 +975,22 @@ const Map<String, List<AnamnesisField>> kAnamnesisTemplates = {
 
 1. **Tabela `client_notes` não existe no schema atual**
    - O que sabemos: A tabela `clients` tem um campo `notes: TEXT` (nota única), mas o CONTEXT.md define notas como "timeline imutável, como chat comments".
-   - O que está incerto: CONTEXT.md diz "Free text with timeline (like chat comments) — each note is dated, immutable once created". O campo `notes` atual não suporta isso.
-   - Recomendação: Criar migration para tabela `client_notes` (id, studio_id, client_id, content TEXT NOT NULL, created_by UUID FK auth.users, created_at TIMESTAMPTZ) com RLS via studio_id. O campo `notes` existente em `clients` pode ser migrado como primeira nota ou descartado. Esta migration é necessária antes de implementar a tab Notas.
+   - Recomendação: Criar migration para tabela `client_notes` (id, studio_id, client_id, content TEXT NOT NULL, created_by UUID FK auth.users, created_at TIMESTAMPTZ) com RLS via studio_id. Campo `notes` existente em `clients` pode ser ignorado ou removido. Esta migration é necessária antes de implementar a tab Notas.
 
-2. **Threshold para tags "Novo" e "Inativo"**
-   - O que sabemos: Claude's Discretion define os thresholds.
-   - O que está incerto: Valor exato a usar.
-   - Recomendação: "Novo" = cliente sem nenhum agendamento completo (total_appointments = 0). "Inativo" = último agendamento completado há mais de 60 dias (alinha com campaigns.inactivity_days DEFAULT 60 no schema).
+2. **Tabela `professional_invites` não existe no schema atual**
+   - O que sabemos: Nenhuma tabela de convites foi criada nas migrations 001–003. O fluxo de invite é novo (CONTEXT.md atualizado 2026-04-02).
+   - Recomendação: Criar migration `004_professional_invites.sql` com schema descrito no Pattern 5 acima. Esta migration é necessária antes de implementar TEAM-02.
 
-3. **Audit log de `view` no GET /clients — flood de registros**
-   - O que sabemos: Cada GET /clients/:id deve gerar audit log de `view`.
-   - O que está incerto: Se pull-to-refresh no Flutter gera flood de audit logs.
-   - Recomendação: Inserir audit log de `view` apenas uma vez por (userId, clientId) em janela de 5 minutos. Implementar com verificação simples: `SELECT 1 FROM audit_logs WHERE user_id = $1 AND entity_id = $2 AND created_at > now() - interval '5 minutes' LIMIT 1`.
+3. **Threshold para tags "Novo" e "Inativo"**
+   - Recomendação: "Novo" = cliente sem nenhum agendamento completo (last_appointment_at IS NULL). "Inativo" = último agendamento completado há mais de 60 dias (alinha com campaigns.inactivity_days DEFAULT 60 no schema de marketing).
 
-4. **Supabase Admin API para criar profissional — senha temporária**
-   - O que sabemos: CONTEXT.md define que "Owner sets a temporary password; professional changes on first login".
-   - O que está incerto: Fluxo de "primeiro login" — Flutter precisa detectar se é primeiro acesso e forçar troca de senha.
-   - Recomendação: Na criação do profissional, incluir metadado no Supabase user metadata: `{ force_password_change: true }`. Flutter lê esse metadado após login e redireciona para tela de troca de senha antes de acessar o app.
+4. **Como a colaboradora acessa o link de convite no celular**
+   - O que sabemos: O link `oriz://invite/<token>` é um deep link. No celular com o app instalado, abre diretamente na InviteAcceptScreen. Se o app não está instalado, o link não funciona.
+   - Recomendação: Para Phase 2 (MVP), assumir app já instalado. O link via `wa.me/?text=` é a URL do WhatsApp Web que pré-preenche a mensagem — o owner copia manualmente para a conversa com a colaboradora. Para Phase 5+ considerar universal links com fallback para app store.
+
+5. **Role do usuário — como o Flutter sabe se é owner ou collaborator**
+   - O que sabemos: `studios.owner_user_id` identifica o owner. O JWT não inclui o role explicitamente.
+   - Recomendação: O endpoint `GET /api/v1/studios/me` ou `GET /api/v1/professionals/me` deve retornar um campo `role: 'owner' | 'professional'`. Flutter armazena no provider após login.
 
 ---
 
@@ -731,7 +1009,7 @@ const Map<String, List<AnamnesisField>> kAnamnesisTemplates = {
 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| SERV-01 | createService injeta studioId corretamente | unit | `npm run test -- tests/services/service.service.test.ts` | ✅ (parcial — só create) |
+| SERV-01 | createService injeta studioId corretamente | unit | `npm run test -- tests/services/service.service.test.ts` | parcial |
 | SERV-01 | listServices filtra por studio_id | unit | `npm run test -- tests/services/service.service.test.ts` | ❌ Wave 0 |
 | SERV-02 | setActive/setInactive modifica is_active | unit | `npm run test -- tests/services/service.service.test.ts` | ❌ Wave 0 |
 | CLNT-01 | createClient normaliza phone para E.164 | unit | `npm run test -- tests/services/client.service.test.ts` | ❌ Wave 0 |
@@ -741,7 +1019,11 @@ const Map<String, List<AnamnesisField>> kAnamnesisTemplates = {
 | CLNT-05 | enrichTags retorna 'novo' quando sem agendamentos | unit | `npm run test -- tests/services/client.service.test.ts` | ❌ Wave 0 |
 | CLNT-05 | enrichTags retorna 'inativo' após 60 dias sem visita | unit | `npm run test -- tests/services/client.service.test.ts` | ❌ Wave 0 |
 | CLNT-05 | tags manuais (VIP) não são sobrepostas pelas automáticas | unit | `npm run test -- tests/services/client.service.test.ts` | ❌ Wave 0 |
-| TEAM-01 | createProfessional cria auth user + registro no DB | unit | `npm run test -- tests/services/professional.service.test.ts` | ❌ Wave 0 |
+| TEAM-01 | listProfessionals retorna todos para owner, apenas próprio para collaborator | unit | `npm run test -- tests/services/professional.service.test.ts` | ❌ Wave 0 |
+| TEAM-02 | createInvite gera token com TTL 7 dias | unit | `npm run test -- tests/services/professional.service.test.ts` | ❌ Wave 0 |
+| TEAM-02 | acceptInvite cria auth user + profissional + marca token usado | unit | `npm run test -- tests/services/professional.service.test.ts` | ❌ Wave 0 |
+| TEAM-02 | acceptInvite com token expirado retorna 422 | unit | `npm run test -- tests/services/professional.service.test.ts` | ❌ Wave 0 |
+| TEAM-02 | acceptInvite com token já usado retorna 409 | unit | `npm run test -- tests/services/professional.service.test.ts` | ❌ Wave 0 |
 | TEAM-03 | replaceServiceLinks usa transaction (delete + insert) | unit | `npm run test -- tests/services/professional.service.test.ts` | ❌ Wave 0 |
 | TEAM-04 | comissão percentage calculada corretamente | unit | `npm run test -- tests/services/professional.service.test.ts` | ❌ Wave 0 |
 | LGPD-01 | clientService.getById chama auditLog.log com action=view | unit | `npm run test -- tests/services/client.service.test.ts` | ❌ Wave 0 |
@@ -764,7 +1046,9 @@ const Map<String, List<AnamnesisField>> kAnamnesisTemplates = {
 - [ ] `tests/services/consent.service.test.ts` — cobre LGPD-02
 - [ ] `tests/repositories/client.repository.test.ts` — cobre CLNT-04 (listAppointments)
 - [ ] Ampliar `tests/services/service.service.test.ts` — adicionar list, update, setActive (SERV-01, SERV-02)
-- [ ] Ampliar `tests/services/professional.service.test.ts` — adicionar create, replaceServiceLinks (TEAM-01, TEAM-03)
+- [ ] Ampliar `tests/services/professional.service.test.ts` — adicionar invite flow, permissions (TEAM-01, TEAM-02, TEAM-03)
+- [ ] `supabase/migrations/004_professional_invites.sql` — tabela de convites (TEAM-02)
+- [ ] `supabase/migrations/004_client_notes.sql` — timeline de notas imutáveis (CLNT-05) — pode ser combinada com 004
 
 ---
 
@@ -772,14 +1056,14 @@ const Map<String, List<AnamnesisField>> kAnamnesisTemplates = {
 
 ### Primary (HIGH confidence)
 
-- `backend/src/routes/clients.routes.ts` — Zod schemas e stubs completos para todos os endpoints de clientes
-- `backend/src/routes/services.routes.ts` — schemas e stubs de serviços
-- `backend/src/routes/professionals.routes.ts` — schemas e stubs de profissionais
-- `backend/src/routes/audit-logs.routes.ts` — stub do audit log
+- `mobile/lib/core/router/app_router.dart` — ShellRoute existente, rotas atuais, estrutura de redirect guard
+- `mobile/lib/core/shell/app_shell.dart` — BottomNavigationBar atual com 4 tabs (verificado ao vivo)
+- `backend/src/routes/professionals.routes.ts` — Zod schemas e stubs completos (verificado ao vivo)
+- `backend/src/routes/auth.routes.ts` — padrão signup existente (verificado ao vivo)
+- `backend/src/services/professional.service.ts` — apenas updateWorkingHours implementado (verificado ao vivo)
 - `docs/DATABASE_SCHEMA.md` — schema completo com todas as tabelas, índices, e RLS policies
 - `docs/API_CONTRACTS.md` — contratos §4 (service-categories), §5 (services), §6 (professionals), §7 (clients)
-- `docs/SCREENS.md` — wireframes §4 (clients), §6.4 (services management), §6.5/6.6 (team), AuditLogScreen
-- `.planning/phases/02-core-domain/02-CONTEXT.md` — todas as decisões de implementação
+- `.planning/phases/02-core-domain/02-CONTEXT.md` — todas as decisões de implementação (incluindo updates 2026-04-02)
 - `.claude/rules/` — backend.md, data-modeling.md, supabase.md, mobile.md, testing.md
 
 ### Secondary (MEDIUM confidence)
@@ -787,6 +1071,7 @@ const Map<String, List<AnamnesisField>> kAnamnesisTemplates = {
 - `backend/src/controllers/service.controller.ts` + `professional.controller.ts` — padrões de controller estabelecidos
 - `backend/tests/services/service.service.test.ts` — padrão de test com Vitest + mocks
 - `mobile/lib/features/onboarding/` — padrão Riverpod sealed state estabelecido no projeto
+- `supabase/migrations/001_initial_schema.sql` — confirmado que professional_invites NÃO existe (verificado ao vivo)
 
 ### Tertiary (LOW confidence)
 
@@ -797,14 +1082,19 @@ const Map<String, List<AnamnesisField>> kAnamnesisTemplates = {
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH — todas as libraries verificadas no código existente
-- Architecture: HIGH — padrão Route→Controller→Service→Repository completamente estabelecido e verificado
+- Standard stack: HIGH — todas as libraries verificadas no código existente (package.json, pubspec.yaml)
+- Architecture: HIGH — padrão Route→Controller→Service→Repository completamente estabelecido e verificado ao vivo
+- Invite link flow: HIGH — baseado em Supabase Admin API já em uso no projeto + Node.js crypto built-in
+- Bottom nav update: HIGH — app_shell.dart lido ao vivo, mudança é cirúrgica (2 arquivos, trocar /financial por /services)
 - Pitfalls: HIGH — baseados em regras explícitas do projeto (.claude/rules/) + schema constraints do banco
-- Flutter patterns: HIGH — verificados no código existente de onboarding e agenda
 
 **Research date:** 2026-04-02
 **Valid until:** 2026-05-02 (stack estável, sem mudanças esperadas)
 
 ---
 
-**Gap crítico identificado:** A tabela `client_notes` NÃO existe no schema atual. A tab "Notas" (CLNT-05/CLNT-06 + CONTEXT.md) requer timeline imutável de notas — o campo `notes: TEXT` na tabela `clients` não suporta isso. O Wave 0 do plano DEVE incluir a migration para `client_notes`.
+**Gaps críticos identificados:**
+1. A tabela `client_notes` NÃO existe no schema atual. A tab "Notas" requer timeline imutável — o campo `notes: TEXT` na tabela `clients` não suporta isso. Wave 0 deve incluir migration.
+2. A tabela `professional_invites` NÃO existe no schema atual. O fluxo de convite por link (TEAM-02) requer esta tabela. Wave 0 deve incluir migration.
+3. A rota `/invite/:token` deve ser adicionada ao GoRouter como rota pública (sem auth redirect) — senão colaboradora sem conta é bloqueada na tela de login.
+4. O `app_shell.dart` e `app_router.dart` precisam ser atualizados para refletir "Serviços" no tab 2 em vez de "Financeiro".
