@@ -12,6 +12,7 @@ import { createSupabaseAdmin } from "./config/supabase.js";
 import { AuditLogController } from "./controllers/audit-log.controller.js";
 import { ClientController } from "./controllers/client.controller.js";
 import { ConsentController } from "./controllers/consent.controller.js";
+import { InviteController } from "./controllers/invite.controller.js";
 import { OnboardingController } from "./controllers/onboarding.controller.js";
 import { ProfessionalController } from "./controllers/professional.controller.js";
 import { ServiceCategoryController } from "./controllers/service-category.controller.js";
@@ -26,6 +27,7 @@ import { errorHandler } from "./middlewares/error-handler.js";
 import { AuditLogRepository } from "./repositories/audit-log.repository.js";
 import { ClientRepository } from "./repositories/client.repository.js";
 import { ConsentRepository } from "./repositories/consent.repository.js";
+import { InviteRepository } from "./repositories/invite.repository.js";
 import { OnboardingRepository } from "./repositories/onboarding.repository.js";
 import { ProfessionalRepository } from "./repositories/professional.repository.js";
 import { ServiceCategoryRepository } from "./repositories/service-category.repository.js";
@@ -35,6 +37,7 @@ import { registerRoutes } from "./routes/index.js";
 import { AuditLogService } from "./services/audit-log.service.js";
 import { ClientService } from "./services/client.service.js";
 import { ConsentService } from "./services/consent.service.js";
+import { InviteService } from "./services/invite.service.js";
 import { OnboardingService } from "./services/onboarding.service.js";
 import { ProfessionalService } from "./services/professional.service.js";
 import { ServiceCategoryService } from "./services/service-category.service.js";
@@ -124,6 +127,7 @@ const onboardingRepo = new OnboardingRepository(pool);
 const serviceRepo = new ServiceRepository(pool);
 const serviceCategoryRepo = new ServiceCategoryRepository(pool);
 const professionalRepo = new ProfessionalRepository(pool);
+const inviteRepo = new InviteRepository(pool);
 const clientRepo = new ClientRepository(pool);
 const consentRepo = new ConsentRepository(pool);
 const auditLogRepo = new AuditLogRepository(pool);
@@ -138,6 +142,11 @@ const onboardingService = new OnboardingService(onboardingRepo);
 const serviceService = new ServiceService(serviceRepo);
 const serviceCategoryService = new ServiceCategoryService(serviceCategoryRepo);
 const professionalService = new ProfessionalService(professionalRepo);
+const inviteService = new InviteService(
+	inviteRepo,
+	professionalRepo,
+	supabaseAdmin,
+);
 const auditLogService = new AuditLogService(auditLogRepo);
 const consentService = new ConsentService(consentRepo);
 const clientService = new ClientService(
@@ -161,6 +170,7 @@ app.decorate(
 	"professionalController",
 	new ProfessionalController(professionalService),
 );
+app.decorate("inviteController", new InviteController(inviteService));
 app.decorate("clientController", new ClientController(clientService));
 app.decorate(
 	"consentController",
