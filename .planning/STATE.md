@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-03-PLAN.md — Controllers and Route Wiring
-last_updated: "2026-04-03T16:39:43.394Z"
+stopped_at: Completed 03-04-PLAN.md — Flutter Agenda Screen Real Data
+last_updated: "2026-04-03T20:03:18.608Z"
 last_activity: 2026-04-02 — Phase 1 formally verified and closed
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 4
   percent: 12
 ---
 
@@ -53,6 +53,7 @@ Progress: [█░░░░░░░░░] 12%
 | Phase 03-scheduling-engine P01 | 3 | 2 tasks | 6 files |
 | Phase 03-scheduling-engine P02 | 266 | 2 tasks | 7 files |
 | Phase 03-scheduling-engine P03 | 6 | 2 tasks | 8 files |
+| Phase 03-scheduling-engine P04 | 12 | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 03-scheduling-engine]: PaymentRepository created as separate repository — payments table already exists in initial schema (001_initial_schema.sql)
 - [Phase 03-scheduling-engine]: BlockedSlotService.list is distinct from getExpandedForDate — list for API (raw rows), getExpandedForDate for slot computation (TimeRange[])
 - [Phase 03-scheduling-engine]: 'whatsapp' source mapped to 'whatsapp_ai' at controller boundary — API contract uses 'whatsapp', repository enum uses 'whatsapp_ai'
+- [Phase 03-scheduling-engine]: Timeline bounds from appointments data (not working_hours) — professionals/me endpoint not implemented; fallback 8-19 + auto-expand
+- [Phase 03-scheduling-engine]: Multi-professional PageView deferred — requires professionals list endpoint from Phase 02
 
 ### Pending Todos
 
@@ -86,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T16:39:43.392Z
-Stopped at: Completed 03-03-PLAN.md — Controllers and Route Wiring
+Last session: 2026-04-03T20:03:18.606Z
+Stopped at: Completed 03-04-PLAN.md — Flutter Agenda Screen Real Data
 Resume file: None
