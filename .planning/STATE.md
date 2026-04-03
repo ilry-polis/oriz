@@ -76,6 +76,7 @@ None yet.
 - Phase 6 (AI): LangChain.js tool-calling API has changed across versions — verify before planning
 - Phase 5 (WhatsApp): Evolution API v2 production behavior under load not documented — test early
 - Phase 4 (Financial): Asaas SDK commission split configuration needs validation
+- Phase 3 (Scheduling): RLS atual permite qualquer membro do studio acessar todos os appointments — não diferencia owner vs collaborator no backend. Collaborator pode alterar appointments de outros profissionais via API direta. Hardening de role-based auth granular adiado para fase futura.
 
 ## Session Continuity
 
