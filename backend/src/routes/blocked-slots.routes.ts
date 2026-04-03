@@ -11,12 +11,21 @@ export const ListBlockedSlotsQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+export const RecurrenceRuleSchema = z.object({
+  frequency: z.literal('weekly'),
+  days: z.array(z.number().int().min(0).max(6)).min(1),
+  until: z.string().date().nullable(),
+});
+
 export const CreateBlockedSlotBody = z.object({
   professional_id: z.string().uuid(),
   date: z.string().date(),
   start_time: z.string().datetime(),
   end_time: z.string().datetime(),
+  title: z.string().min(1).max(200),
   reason: z.string().optional(),
+  recurrence_rule: RecurrenceRuleSchema.optional(),
+  excluded_dates: z.array(z.string().date()).optional(),
 });
 
 const UuidParam = z.object({ id: z.string().uuid() });

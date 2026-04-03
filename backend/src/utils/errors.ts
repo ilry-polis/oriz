@@ -41,3 +41,9 @@ export class ForbiddenError extends AppError {
     super('FORBIDDEN', message, 403);
   }
 }
+
+export class UnprocessableError extends AppError {
+  constructor(code: string, message: string, field?: string) {
+    super(code, message, 422, field);
+  }
+}
