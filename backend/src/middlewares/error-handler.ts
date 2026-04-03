@@ -35,7 +35,8 @@ export function errorHandler(
 		return;
 	}
 
-	// Unknown error — never leak internals
+	// Unknown error — log internally, never leak to client
+	_request.log.error(error, "Unhandled error");
 	reply.status(500).send({
 		errors: [
 			{ code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
