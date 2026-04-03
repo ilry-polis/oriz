@@ -59,7 +59,8 @@ describe('errorHandler', () => {
     const error = new Error('Something broke internally');
     const reply = createMockReply();
 
-    errorHandler(error, {} as never, reply as never);
+    const request = { log: { error: vi.fn() } } as never;
+    errorHandler(error, request, reply as never);
 
     expect(reply.status).toHaveBeenCalledWith(500);
     const body = reply.send.mock.calls[0]![0] as { errors: Array<{ code: string; message: string }> };
