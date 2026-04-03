@@ -1,3 +1,10 @@
+double _parseDouble(dynamic value) {
+  if (value == null) return 0;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? 0;
+  return 0;
+}
+
 class ProfessionalModel {
   final String id;
   final String name;
@@ -24,7 +31,7 @@ class ProfessionalModel {
         id: json['id'] as String,
         name: json['name'] as String,
         commissionType: (json['commission_type'] as String?) ?? 'percentage',
-        commissionValue: (json['commission_value'] as num?)?.toDouble() ?? 0,
+        commissionValue: _parseDouble(json['commission_value']),
         cardFeePolicy: (json['card_fee_policy'] as String?) ?? 'studio',
         isActive: (json['is_active'] as bool?) ?? true,
         serviceIds: (json['service_ids'] as List?)

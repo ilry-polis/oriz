@@ -1,11 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../data/client_repository.dart';
 import '../domain/client_model.dart';
 import '../providers/client_provider.dart';
 import 'widgets/tag_chip.dart';
+
+String _formatPhone(String phone) {
+  final digits = phone.replaceAll(RegExp(r'\D'), '');
+  // Remove country code 55 if present
+  final local = digits.startsWith('55') && digits.length > 11
+      ? digits.substring(2)
+      : digits;
+  if (local.length == 11) {
+    return '(${local.substring(0, 2)}) ${local.substring(2, 7)}-${local.substring(7)}';
+  }
+  if (local.length == 10) {
+    return '(${local.substring(0, 2)}) ${local.substring(2, 6)}-${local.substring(6)}';
+  }
+  return phone;
+}
+
+String _whatsappUrl(String phone) {
+  final digits = phone.replaceAll(RegExp(r'\D'), '');
+  final withCountry = digits.startsWith('55') ? digits : '55$digits';
+  return 'https://wa.me/$withCountry';
+}
 
 class ClientDetailScreen extends ConsumerStatefulWidget {
   final String clientId;
@@ -76,6 +102,104 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen>
     }
   }
 
+  void _showActions(ClientModel client) {
+    final isVip = client.tags.contains('vip');
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(top: AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.neutral300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            _actionItem(ctx, Icons.edit_outlined, 'Editar cliente', onTap: () {
+              Navigator.pop(ctx);
+              context.push('/clients/${client.id}/edit');
+            }),
+            _actionItem(
+              ctx,
+              isVip ? Icons.star_rounded : Icons.star_outline_rounded,
+              isVip ? 'Remover VIP' : 'Marcar como VIP',
+              color: isVip ? AppColors.accent : null,
+              onTap: () {
+                Navigator.pop(ctx);
+                _toggleVip(client);
+              },
+            ),
+            _actionItem(
+              ctx,
+              Icons.delete_outline,
+              'Excluir cliente',
+              color: AppColors.error,
+              onTap: () {
+                Navigator.pop(ctx);
+                _anonymize();
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _actionItem(
+    BuildContext context,
+    IconData icon,
+    String label, {
+    Color? color,
+    VoidCallback? onTap,
+  }) {
+    final c = color ?? AppColors.neutral900;
+    return ListTile(
+      leading: Icon(icon, color: c, size: 22),
+      title: Text(label, style: AppTypography.body.copyWith(color: c)),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+    );
+  }
+
+  Future<void> _toggleVip(ClientModel client) async {
+    final isVip = client.tags.contains('vip');
+    final newTags = isVip
+        ? client.tags.where((t) => t != 'vip').toList()
+        : [...client.tags, 'vip'];
+    try {
+      final repo = ref.read(clientRepositoryProvider);
+      await repo.updateTags(client.id, newTags);
+      ref.invalidate(clientDetailProvider(widget.clientId));
+      ref.read(clientListProvider.notifier).refresh();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isVip ? 'VIP removido' : 'Marcado como VIP'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erro: $e')));
+      }
+    }
+  }
+
   Future<void> _anonymize() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -123,20 +247,16 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen>
         appBar: AppBar(
           title: const Text('Cliente'),
           actions: [
-            PopupMenuButton<String>(
-              onSelected: (v) {
-                if (v == 'edit') context.push('/clients/${client.id}/edit');
-                if (v == 'delete') _anonymize();
-              },
-              itemBuilder: (_) => [
-                const PopupMenuItem(
-                    value: 'edit', child: Text('Editar cliente')),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child:
-                      Text('Excluir cliente', style: TextStyle(color: AppColors.error)),
+            GestureDetector(
+              onTap: () => _showActions(client),
+              child: const SizedBox(
+                width: 44,
+                height: 44,
+                child: Icon(
+                  Icons.more_horiz_rounded,
+                  color: AppColors.neutral400,
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -177,9 +297,32 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen>
                         ),
                         const SizedBox(height: 4),
                         if (client.phone != null)
-                          Text(client.phone!,
-                              style: const TextStyle(
-                                  color: AppColors.neutral600, fontSize: 14)),
+                          Row(
+                            children: [
+                              Text(
+                                _formatPhone(client.phone!),
+                                style: const TextStyle(
+                                    color: AppColors.neutral600, fontSize: 14),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              GestureDetector(
+                                onTap: () async {
+                                  HapticFeedback.lightImpact();
+                                  final uri =
+                                      Uri.parse(_whatsappUrl(client.phone!));
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(uri,
+                                        mode: LaunchMode.externalApplication);
+                                  }
+                                },
+                                child: const FaIcon(
+                                  FontAwesomeIcons.whatsapp,
+                                  color: Color(0xFF25D366),
+                                  size: 20,
+                                ),
+                              ),
+                            ],
+                          ),
                         if (client.email != null)
                           Text(client.email!,
                               style: const TextStyle(

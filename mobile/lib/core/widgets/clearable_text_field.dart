@@ -17,6 +17,7 @@ class ClearableTextField extends StatefulWidget {
   final bool obscureText;
   final int? maxLines;
   final ValueChanged<String>? onChanged;
+  final bool autofocus;
 
   const ClearableTextField({
     super.key,
@@ -33,6 +34,7 @@ class ClearableTextField extends StatefulWidget {
     this.obscureText = false,
     this.maxLines = 1,
     this.onChanged,
+    this.autofocus = false,
   });
 
   @override
@@ -89,6 +91,7 @@ class _ClearableTextFieldState extends State<ClearableTextField> {
       obscureText: widget.obscureText,
       maxLines: widget.maxLines,
       onChanged: widget.onChanged,
+      autofocus: widget.autofocus,
     );
   }
 }

@@ -19,6 +19,12 @@ class MoreScreen extends ConsumerWidget {
             onTap: () => context.push('/more/team'),
           ),
           _MenuItem(
+            icon: Icons.category_outlined,
+            title: 'Categorias',
+            subtitle: 'Gerenciar categorias de serviços',
+            onTap: () => context.push('/more/categories'),
+          ),
+          _MenuItem(
             icon: Icons.attach_money_rounded,
             title: 'Financeiro',
             subtitle: 'Em breve',

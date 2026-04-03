@@ -12,10 +12,11 @@ import '../../features/clients/presentation/client_detail_screen.dart';
 import '../../features/clients/presentation/client_form_screen.dart';
 import '../../features/clients/presentation/client_list_screen.dart';
 import '../../features/more/presentation/more_screen.dart';
+import '../../features/services_management/presentation/category_management_screen.dart';
+import '../../features/services_management/presentation/service_detail_screen.dart';
 import '../../features/services_management/presentation/service_form_screen.dart';
 import '../../features/services_management/presentation/services_management_screen.dart';
 import '../../features/team/presentation/invite_accept_screen.dart';
-import '../../features/team/presentation/professional_form_screen.dart';
 import '../../features/team/presentation/team_management_screen.dart';
 import '../http/api_client.dart';
 import '../../features/onboarding/data/onboarding_repository.dart';
@@ -227,10 +228,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const ClientListScreen(),
             routes: [
               GoRoute(
-                path: 'new',
-                builder: (_, __) => const ClientFormScreen(),
-              ),
-              GoRoute(
                 path: ':id',
                 builder: (_, state) => ClientDetailScreen(
                   clientId: state.pathParameters['id']!,
@@ -258,14 +255,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const ServicesManagementScreen(),
             routes: [
               GoRoute(
-                path: 'new',
-                builder: (_, __) => const ServiceFormScreen(),
-              ),
-              GoRoute(
-                path: ':id/edit',
-                builder: (_, state) => ServiceFormScreen(
-                  serviceId: state.pathParameters['id'],
+                path: ':id',
+                builder: (_, state) => ServiceDetailScreen(
+                  serviceId: state.pathParameters['id']!,
                 ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (_, state) => ServiceFormScreen(
+                      serviceId: state.pathParameters['id'],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -276,12 +277,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'team',
                 builder: (_, __) => const TeamManagementScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'new',
-                    builder: (_, __) => const ProfessionalFormScreen(),
-                  ),
-                ],
+              ),
+              GoRoute(
+                path: 'categories',
+                builder: (_, __) => const CategoryManagementScreen(),
               ),
             ],
           ),

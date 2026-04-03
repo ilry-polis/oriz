@@ -12,10 +12,36 @@ class ServiceMgmtRepository {
 
   ServiceMgmtRepository(this._api);
 
+  /// Lists studio-only categories (excludes globals).
   Future<List<Map<String, dynamic>>> listCategories() async {
-    final response = await _api.get('/api/v1/service-categories');
+    final response =
+        await _api.get('/api/v1/service-categories?scope=studio');
     final data = response['data'] as List;
     return data.map((e) => e as Map<String, dynamic>).toList();
+  }
+
+  Future<Map<String, dynamic>> createCategory(String name, {String? icon}) async {
+    final body = <String, dynamic>{'name': name};
+    if (icon != null) body['icon'] = icon;
+    final response =
+        await _api.post('/api/v1/service-categories', body: body);
+    return response['data'] as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> updateCategory(
+      String id, Map<String, dynamic> data) async {
+    final response =
+        await _api.patch('/api/v1/service-categories/$id', body: data);
+    return response['data'] as Map<String, dynamic>;
+  }
+
+  Future<void> deleteCategory(String id) async {
+    await _api.delete('/api/v1/service-categories/$id');
+  }
+
+  Future<ServiceModel> getService(String id) async {
+    final response = await _api.get('/api/v1/services/$id');
+    return ServiceModel.fromJson(response['data'] as Map<String, dynamic>);
   }
 
   Future<List<ServiceModel>> listServices() async {

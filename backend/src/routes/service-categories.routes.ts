@@ -5,6 +5,7 @@ import { z } from "zod";
 
 export const ListCategoriesQuery = z.object({
 	is_active: z.coerce.boolean().optional(),
+	scope: z.enum(["studio", "global"]).optional(),
 });
 
 export const CreateCategoryBody = z.object({
@@ -20,6 +21,10 @@ export const UpdateCategoryBody = z.object({
 	is_active: z.boolean().optional(),
 });
 
+export const CopyGlobalsBody = z.object({
+	category_ids: z.array(z.string().uuid()).min(1),
+});
+
 const UuidParam = z.object({ id: z.string().uuid() });
 
 // ─── Route Plugin ──────────────────────────────────────────
@@ -29,7 +34,7 @@ export default async function serviceCategoryRoutes(app: FastifyInstance) {
 
 	// GET /api/v1/service-categories
 	// Auth: owner+professional | No pagination (max ~15)
-	// Returns global (studio_id = NULL) + studio categories
+	// Query: ?scope=studio (only studio categories) | ?scope=global (only global)
 	app.get("/", {
 		onRequest: [app.requireStudioMember],
 		schema: { querystring: ListCategoriesQuery },
@@ -43,33 +48,39 @@ export default async function serviceCategoryRoutes(app: FastifyInstance) {
 	app.post("/", {
 		onRequest: [app.requireOwner],
 		schema: { body: CreateCategoryBody },
-		handler: async (_request, _reply) => {
-			// → ServiceCategoryController.create
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.serviceCategoryController.create(request, reply);
+		},
+	});
+
+	// POST /api/v1/service-categories/copy-globals
+	// Auth: owner — copies selected global categories to studio
+	app.post("/copy-globals", {
+		onRequest: [app.requireOwner],
+		schema: { body: CopyGlobalsBody },
+		handler: async (request, reply) => {
+			return app.serviceCategoryController.copyGlobals(request, reply);
 		},
 	});
 
 	// PATCH /api/v1/service-categories/:id
 	// Auth: owner
-	// Error: 403 GLOBAL_CATEGORY if studio_id is NULL
 	app.patch("/:id", {
 		onRequest: [app.requireOwner],
 		schema: { params: UuidParam, body: UpdateCategoryBody },
-		handler: async (_request, _reply) => {
-			// → ServiceCategoryController.update
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.serviceCategoryController.update(request, reply);
 		},
 	});
 
 	// DELETE /api/v1/service-categories/:id
 	// Auth: owner
-	// Error: 403 GLOBAL_CATEGORY, 409 CATEGORY_HAS_SERVICES
+	// Error: 409 CATEGORY_HAS_SERVICES
 	app.delete("/:id", {
 		onRequest: [app.requireOwner],
 		schema: { params: UuidParam },
-		handler: async (_request, _reply) => {
-			// → ServiceCategoryController.delete
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.serviceCategoryController.delete(request, reply);
 		},
 	});
 }

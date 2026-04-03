@@ -56,6 +56,17 @@ class BrazilianPhoneFormatter extends TextInputFormatter {
       selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
+
+  /// Formats digits into Brazilian phone mask: (11) 99999-9999
+  static String format(String digits) {
+    final d = digits.replaceAll(RegExp(r'\D'), '');
+    final formatter = BrazilianPhoneFormatter();
+    final result = formatter.formatEditUpdate(
+      TextEditingValue.empty,
+      TextEditingValue(text: d),
+    );
+    return result.text;
+  }
 }
 
 /// Extracts digits only from formatted phone for E.164 storage.

@@ -98,10 +98,29 @@ class OnboardingRepository {
     );
   }
 
-  Future<List<ServiceCategory>> getServiceCategories() async {
-    final response = await _client.get('/api/v1/service-categories');
+  /// Gets global categories (for onboarding template selection).
+  Future<List<ServiceCategory>> getGlobalCategories() async {
+    final response =
+        await _client.get('/api/v1/service-categories?scope=global');
     final list = response['data'] as List<dynamic>;
 
+    return list
+        .map((item) => ServiceCategory(
+              id: (item as Map<String, dynamic>)['id'] as String,
+              name: item['name'] as String,
+            ))
+        .toList();
+  }
+
+  /// Copies selected global categories to the studio.
+  /// Returns the created studio-specific categories.
+  Future<List<ServiceCategory>> copyGlobalCategories(
+      List<String> globalCategoryIds) async {
+    final response = await _client.post(
+      '/api/v1/service-categories/copy-globals',
+      body: {'category_ids': globalCategoryIds},
+    );
+    final list = response['data'] as List<dynamic>;
     return list
         .map((item) => ServiceCategory(
               id: (item as Map<String, dynamic>)['id'] as String,

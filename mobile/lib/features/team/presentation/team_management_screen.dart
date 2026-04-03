@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../providers/team_provider.dart';
+import 'professional_form_screen.dart';
 import 'widgets/professional_card.dart';
 
 class TeamManagementScreen extends ConsumerWidget {
@@ -18,7 +18,7 @@ class TeamManagementScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => context.push('/more/team/new'),
+            onPressed: () => ProfessionalFormSheet.show(context),
           ),
         ],
       ),
@@ -43,7 +43,7 @@ class TeamManagementScreen extends ConsumerWidget {
             title: 'Nenhuma profissional',
             subtitle: 'Convide sua primeira profissional para a equipe',
             ctaLabel: 'Convidar profissional',
-            onCta: () => context.push('/more/team/new'),
+            onCta: () => ProfessionalFormSheet.show(context),
           ),
         TeamLoaded(:final professionals) => RefreshIndicator(
             onRefresh: () => ref.read(teamProvider.notifier).refresh(),
@@ -51,7 +51,6 @@ class TeamManagementScreen extends ConsumerWidget {
               itemCount: professionals.length,
               itemBuilder: (_, i) => ProfessionalCard(
                 professional: professionals[i],
-                onTap: () => context.push('/more/team/${professionals[i].id}'),
               ),
             ),
           ),

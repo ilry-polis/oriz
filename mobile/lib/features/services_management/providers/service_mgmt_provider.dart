@@ -32,20 +32,14 @@ class ServiceMgmtNotifier extends Notifier<ServiceMgmtState> {
   Future<void> _load() async {
     try {
       final repo = ref.read(serviceMgmtRepositoryProvider);
-      // ignore: avoid_print
-      print('[ServiceMgmt] Loading services...');
       final services = await repo.listServices();
-      // ignore: avoid_print
-      print('[ServiceMgmt] Loaded ${services.length} services');
       final grouped = <String, List<ServiceModel>>{};
       for (final s in services) {
         final cat = s.categoryName ?? 'Sem categoria';
         grouped.putIfAbsent(cat, () => []).add(s);
       }
       state = ServiceMgmtLoaded(grouped: grouped, all: services);
-    } catch (e, stack) {
-      // ignore: avoid_print
-      print('[ServiceMgmt] ERROR: $e\n$stack');
+    } catch (e) {
       state = ServiceMgmtError(e.toString());
     }
   }

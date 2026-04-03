@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../data/client_repository.dart';
 import '../providers/client_provider.dart';
+import 'client_form_sheet.dart';
 import 'widgets/client_list_item.dart';
 import 'widgets/client_list_item_skeleton.dart';
 import 'widgets/tag_chip.dart';
@@ -25,6 +30,82 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
     super.dispose();
   }
 
+  Future<void> _toggleVip(
+      BuildContext context, WidgetRef ref, dynamic client) async {
+    final isVip = (client.tags as List).contains('vip');
+    final newTags = isVip
+        ? (client.tags as List<String>).where((t) => t != 'vip').toList()
+        : [...client.tags as List<String>, 'vip'];
+    try {
+      final repo = ref.read(clientRepositoryProvider);
+      await repo.updateTags(client.id as String, newTags);
+      ref.read(clientListProvider.notifier).refresh();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isVip ? 'VIP removido' : 'Marcado como VIP'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erro: $e')));
+      }
+    }
+  }
+
+  Future<void> _anonymize(
+      BuildContext context, WidgetRef ref, dynamic client) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: const Text('Excluir cliente?', style: AppTypography.title),
+        content: Text(
+          'Os dados de "${client.name}" serão anonimizados permanentemente.',
+          style: AppTypography.body.copyWith(color: AppColors.neutral600),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Voltar',
+                style:
+                    AppTypography.body.copyWith(color: AppColors.neutral600)),
+          ),
+          TextButton(
+            onPressed: () {
+              HapticFeedback.heavyImpact();
+              Navigator.pop(ctx, true);
+            },
+            child: Text('Excluir',
+                style: AppTypography.body.copyWith(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await ref
+          .read(clientRepositoryProvider)
+          .anonymize(client.id as String);
+      ref.read(clientListProvider.notifier).refresh();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erro: $e')));
+      }
+    }
+  }
+
   void _onTagTap(String? tag) {
     setState(() {
       _activeTag = _activeTag == tag ? null : tag;
@@ -43,7 +124,7 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => context.push('/clients/new'),
+            onPressed: () => ClientFormSheet.show(context),
           ),
         ],
       ),
@@ -126,7 +207,7 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                   title: 'Nenhum cliente',
                   subtitle: 'Adicione seu primeiro cliente',
                   ctaLabel: 'Adicionar cliente',
-                  onCta: () => context.push('/clients/new'),
+                  onCta: () => ClientFormSheet.show(context),
                 ),
               ClientListLoaded(:final clients, :final hasMore) =>
                 NotificationListener<ScrollNotification>(
@@ -143,10 +224,16 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                         ref.read(clientListProvider.notifier).refresh(),
                     child: ListView.builder(
                       itemCount: clients.length,
-                      itemBuilder: (_, i) => ClientListItem(
-                        client: clients[i],
-                        onTap: () => context.push('/clients/${clients[i].id}'),
-                      ),
+                      itemBuilder: (_, i) {
+                        final c = clients[i];
+                        return ClientListItem(
+                          client: c,
+                          onTap: () => context.push('/clients/${c.id}'),
+                          onEdit: () => context.push('/clients/${c.id}/edit'),
+                          onToggleVip: () => _toggleVip(context, ref, c),
+                          onDelete: () => _anonymize(context, ref, c),
+                        );
+                      },
                     ),
                   ),
                 ),
