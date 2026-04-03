@@ -218,22 +218,22 @@ export class ClientRepository {
 		try {
 			const params: unknown[] = [studioId, clientId, limit + 1];
 			let sql = `SELECT a.id, s.name AS service_name, p.name AS professional_name,
-			                  a.scheduled_at, a.status
+			                  (a.date || 'T' || a.start_time) AS scheduled_at, a.status
 			           FROM appointments a
 			           JOIN services s ON s.id = a.service_id
 			           JOIN professionals p ON p.id = a.professional_id
 			           WHERE a.studio_id = $1 AND a.client_id = $2`;
 			if (cursor) {
-				sql += " AND a.scheduled_at < (SELECT scheduled_at FROM appointments WHERE id = $4 AND studio_id = $1)";
+				sql += " AND (a.date, a.start_time) < (SELECT date, start_time FROM appointments WHERE id = $4 AND studio_id = $1)";
 				params.push(cursor);
 			}
-			sql += " ORDER BY a.scheduled_at DESC LIMIT $3";
+			sql += " ORDER BY a.date DESC, a.start_time DESC LIMIT $3";
 			const { rows } = await this.pool.query<AppointmentHistoryRow>(sql, params);
 			return rows;
 		} catch (err: unknown) {
-			// TODO(phase-3): Remove defensive catch once appointments table exists
+			// TODO(phase-3): Remove defensive catch once appointments schema is stable
 			const pgErr = err as { code?: string };
-			if (pgErr.code === "42P01") {
+			if (pgErr.code === "42P01" || pgErr.code === "42703") {
 				return [];
 			}
 			throw err;

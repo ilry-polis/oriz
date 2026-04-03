@@ -30,9 +30,15 @@ class TeamNotifier extends Notifier<TeamState> {
   Future<void> _load() async {
     try {
       final repo = ref.read(teamRepositoryProvider);
+      // ignore: avoid_print
+      print('[Team] Loading professionals...');
       final professionals = await repo.listProfessionals();
+      // ignore: avoid_print
+      print('[Team] Loaded ${professionals.length} professionals');
       state = TeamLoaded(professionals);
-    } catch (e) {
+    } catch (e, stack) {
+      // ignore: avoid_print
+      print('[Team] ERROR: $e\n$stack');
       state = TeamError(e.toString());
     }
   }
