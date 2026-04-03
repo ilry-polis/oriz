@@ -13,7 +13,7 @@ Oriz is built in eight phases following a strict dependency graph. Infrastructur
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Identity and Foundation** - Auth, studio onboarding, and multi-tenant infrastructure (completed 2026-04-02; social login deferred)
-- [ ] **Phase 2: Core Domain** - Services, clients, and team management
+- [x] **Phase 2: Core Domain** - Services, clients, and team management (completed 2026-04-03)
 - [ ] **Phase 3: Scheduling Engine** - Agenda, conflict detection, and appointment workflows
 - [ ] **Phase 4: Financial and Packages** - Revenue dashboard, payment recording, and session packages
 - [ ] **Phase 5: External Channels** - Public booking page and push notifications
