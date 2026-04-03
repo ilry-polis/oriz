@@ -7,7 +7,6 @@ import '../../../core/http/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
-import '../models/appointment_model.dart';
 import '../providers/agenda_provider.dart';
 import '../repositories/appointment_repository.dart';
 

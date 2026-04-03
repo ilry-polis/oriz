@@ -10,6 +10,9 @@ import 'widgets/appointment_card.dart';
 import 'widgets/blocked_slot_card.dart';
 import 'widgets/day_selector.dart';
 import 'widgets/empty_agenda.dart';
+import 'widgets/appointment_detail_sheet.dart';
+import 'widgets/cancel_dialog.dart';
+import 'widgets/payment_sheet.dart';
 import 'widgets/quick_book_sheet.dart';
 import 'widgets/skeleton_timeline.dart';
 
@@ -75,62 +78,8 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
     return !blockedSlots.any((b) => b.startTime.hour == hour);
   }
 
-  Future<void> _showCancelDialog(Appointment appointment) async {
-    final reasonController = TextEditingController();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        title: const Text('Cancelar agendamento?', style: AppTypography.title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Cancelar ${appointment.clientName}?',
-              style: AppTypography.body.copyWith(color: AppColors.neutral600),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(
-                hintText: 'Motivo (opcional)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              'Voltar',
-              style: AppTypography.body.copyWith(color: AppColors.neutral600),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              HapticFeedback.heavyImpact();
-              Navigator.pop(ctx, true);
-            },
-            child: Text(
-              'Cancelar',
-              style: AppTypography.body.copyWith(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      await ref.read(agendaNotifierProvider.notifier).cancelAppointment(
-        appointment.id,
-        reason: reasonController.text.isNotEmpty ? reasonController.text : null,
-      );
-    }
-    reasonController.dispose();
+  void _showCancelDialog(Appointment appointment) {
+    CancelDialog.show(context, appointment: appointment);
   }
 
   @override
@@ -402,16 +351,17 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
         child: AppointmentCard(
           appointment: appointment,
-          onTap: () {},
+          onTap: () => AppointmentDetailSheet.show(
+                context,
+                appointment: appointment,
+              ),
           onConfirm: appointment.canConfirm
               ? () => ref
                     .read(agendaNotifierProvider.notifier)
                     .confirmAppointment(appointment.id)
               : null,
           onComplete: appointment.canComplete
-              ? () => ref
-                    .read(agendaNotifierProvider.notifier)
-                    .completeAppointment(appointment.id)
+              ? () => PaymentSheet.show(context, appointment: appointment)
               : null,
           onCancel: appointment.canCancel
               ? () => _showCancelDialog(appointment)
