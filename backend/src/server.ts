@@ -14,16 +14,23 @@ import { OnboardingRepository } from './repositories/onboarding.repository.js';
 import { ServiceRepository } from './repositories/service.repository.js';
 import { ServiceCategoryRepository } from './repositories/service-category.repository.js';
 import { ProfessionalRepository } from './repositories/professional.repository.js';
+import { AppointmentRepository } from './repositories/appointment.repository.js';
+import { BlockedSlotRepository } from './repositories/blocked-slot.repository.js';
+import { PaymentRepository } from './repositories/payment.repository.js';
 import { StudioService } from './services/studio.service.js';
 import { OnboardingService } from './services/onboarding.service.js';
 import { ServiceService } from './services/service.service.js';
 import { ServiceCategoryService } from './services/service-category.service.js';
 import { ProfessionalService } from './services/professional.service.js';
+import { AppointmentService } from './services/appointment.service.js';
+import { BlockedSlotService } from './services/blocked-slot.service.js';
 import { StudioController } from './controllers/studio.controller.js';
 import { OnboardingController } from './controllers/onboarding.controller.js';
 import { ServiceController } from './controllers/service.controller.js';
 import { ServiceCategoryController } from './controllers/service-category.controller.js';
 import { ProfessionalController } from './controllers/professional.controller.js';
+import { AppointmentController } from './controllers/appointment.controller.js';
+import { BlockedSlotController } from './controllers/blocked-slot.controller.js';
 
 const env = parseEnv();
 
@@ -94,6 +101,9 @@ const onboardingRepo = new OnboardingRepository(pool);
 const serviceRepo = new ServiceRepository(pool);
 const serviceCategoryRepo = new ServiceCategoryRepository(pool);
 const professionalRepo = new ProfessionalRepository(pool);
+const appointmentRepo = new AppointmentRepository(pool);
+const blockedSlotRepo = new BlockedSlotRepository(pool);
+const paymentRepo = new PaymentRepository(pool);
 
 // ─── Services ─────────────────────────────────────────────
 const studioService = new StudioService(studioRepo, onboardingRepo, professionalRepo);
@@ -101,6 +111,14 @@ const onboardingService = new OnboardingService(onboardingRepo);
 const serviceService = new ServiceService(serviceRepo);
 const serviceCategoryService = new ServiceCategoryService(serviceCategoryRepo);
 const professionalService = new ProfessionalService(professionalRepo);
+const blockedSlotService = new BlockedSlotService(blockedSlotRepo);
+const appointmentService = new AppointmentService(
+  appointmentRepo,
+  professionalRepo,
+  serviceRepo,
+  paymentRepo,
+  blockedSlotService,
+);
 
 // ─── Controllers ──────────────────────────────────────────
 app.decorate('studioController', new StudioController(studioService));
@@ -108,6 +126,8 @@ app.decorate('onboardingController', new OnboardingController(onboardingService)
 app.decorate('serviceController', new ServiceController(serviceService));
 app.decorate('serviceCategoryController', new ServiceCategoryController(serviceCategoryService));
 app.decorate('professionalController', new ProfessionalController(professionalService));
+app.decorate('appointmentController', new AppointmentController(appointmentService));
+app.decorate('blockedSlotController', new BlockedSlotController(blockedSlotService));
 
 // ─── Request Decorator ─────────────────────────────────────
 app.decorateRequest('authContext', null as unknown as import('./middlewares/auth.js').AuthContext);
