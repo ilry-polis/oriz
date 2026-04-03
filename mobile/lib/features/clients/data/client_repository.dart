@@ -23,8 +23,8 @@ class ClientRepository {
     if (cursor != null) params['cursor'] = cursor;
     if (search != null && search.isNotEmpty) params['search'] = search;
     if (tag != null && tag.isNotEmpty) params['tag'] = tag;
-    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
-    return await _api.get('/api/v1/clients?$query');
+    final uri = Uri(path: '/api/v1/clients', queryParameters: params);
+    return await _api.get(uri.toString());
   }
 
   Future<ClientModel> getClientById(String id) async {
@@ -69,8 +69,8 @@ class ClientRepository {
       {String? cursor, int limit = 20}) async {
     final params = <String, String>{'limit': '$limit'};
     if (cursor != null) params['cursor'] = cursor;
-    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
-    return await _api.get('/api/v1/clients/$clientId/notes?$query');
+    final uri = Uri(path: '/api/v1/clients/$clientId/notes', queryParameters: params);
+    return await _api.get(uri.toString());
   }
 
   Future<ClientNote> createNote(String clientId, String content) async {
@@ -83,7 +83,7 @@ class ClientRepository {
       {String? cursor, int limit = 20}) async {
     final params = <String, String>{'limit': '$limit'};
     if (cursor != null) params['cursor'] = cursor;
-    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
-    return await _api.get('/api/v1/clients/$clientId/appointments?$query');
+    final uri = Uri(path: '/api/v1/clients/$clientId/appointments', queryParameters: params);
+    return await _api.get(uri.toString());
   }
 }

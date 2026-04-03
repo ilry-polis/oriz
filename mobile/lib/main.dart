@@ -36,6 +36,8 @@ void main() async {
 
   await initSupabase(url: supabaseUrl, anonKey: supabaseAnonKey);
 
+  final _apiClient = ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth);
+
   runApp(
     ProviderScope(
       overrides: [
@@ -43,12 +45,10 @@ void main() async {
           AuthRepository(supabase.auth),
         ),
         apiClientProvider.overrideWithValue(
-          ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth),
+          _apiClient,
         ),
         onboardingRepositoryProvider.overrideWithValue(
-          OnboardingRepository(
-            ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth),
-          ),
+          OnboardingRepository(_apiClient),
         ),
       ],
       child: const OrizApp(),

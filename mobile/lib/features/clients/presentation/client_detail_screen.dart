@@ -44,12 +44,14 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen>
               ?.map((e) => ClientNote.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [];
-      setState(() {
-        _notes = data;
-        _loadingNotes = false;
-      });
+      if (mounted) {
+        setState(() {
+          _notes = data;
+          _loadingNotes = false;
+        });
+      }
     } catch (_) {
-      setState(() => _loadingNotes = false);
+      if (mounted) setState(() => _loadingNotes = false);
     }
   }
 
@@ -60,10 +62,12 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen>
     try {
       final repo = ref.read(clientRepositoryProvider);
       final note = await repo.createNote(widget.clientId, content);
-      setState(() {
-        _notes.insert(0, note);
-        _noteController.clear();
-      });
+      if (mounted) {
+        setState(() {
+          _notes.insert(0, note);
+          _noteController.clear();
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
