@@ -10,10 +10,11 @@ class StatusBadge extends StatelessWidget {
   const StatusBadge({super.key, required this.status});
 
   (Color, Color, String) get _config => switch (status) {
+    AppointmentStatus.pending => (AppColors.warningSoft, AppColors.warning, 'Pendente'),
     AppointmentStatus.confirmed => (AppColors.infoSoft, AppColors.info, 'Confirmado'),
     AppointmentStatus.completed => (AppColors.successSoft, AppColors.success, 'Concluído'),
     AppointmentStatus.cancelled => (AppColors.errorSoft, AppColors.error, 'Cancelado'),
-    AppointmentStatus.noShow => (AppColors.warningSoft, AppColors.warning, 'Não compareceu'),
+    AppointmentStatus.noShow => (AppColors.neutral200, AppColors.neutral400, 'Não compareceu'),
   };
 
   @override

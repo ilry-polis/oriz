@@ -4,6 +4,8 @@ import 'core/http/api_client.dart';
 import 'core/router/app_router.dart';
 import 'core/supabase/supabase_config.dart';
 import 'core/theme/app_theme.dart';
+import 'features/agenda/repositories/appointment_repository.dart';
+import 'features/agenda/repositories/blocked_slot_repository.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/onboarding/data/onboarding_repository.dart';
@@ -44,6 +46,16 @@ void main() async {
         ),
         onboardingRepositoryProvider.overrideWithValue(
           OnboardingRepository(
+            ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth),
+          ),
+        ),
+        appointmentRepositoryProvider.overrideWithValue(
+          AppointmentRepository(
+            ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth),
+          ),
+        ),
+        blockedSlotRepositoryProvider.overrideWithValue(
+          BlockedSlotRepository(
             ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth),
           ),
         ),

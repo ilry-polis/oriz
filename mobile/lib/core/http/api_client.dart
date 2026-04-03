@@ -55,6 +55,28 @@ class ApiClient {
     return _handleResponse(response);
   }
 
+  Future<void> delete(String path) async {
+    final response = await _httpClient.delete(
+      Uri.parse('$baseUrl$path'),
+      headers: _headers,
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(response.body) as Map<String, dynamic>;
+    } on FormatException {
+      throw ApiException(
+        statusCode: response.statusCode,
+        code: 'INVALID_RESPONSE',
+        message: 'Resposta invalida do servidor',
+      );
+    }
+    final error = body['error'] as Map<String, dynamic>?;
+    final code = error?['code'] as String? ?? 'UNKNOWN';
+    final message = error?['message'] as String? ?? 'Erro desconhecido';
+    throw ApiException(statusCode: response.statusCode, code: code, message: message);
+  }
+
   Map<String, dynamic> _handleResponse(http.Response response) {
     final Map<String, dynamic> body;
     try {
