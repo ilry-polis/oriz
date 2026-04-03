@@ -1,7 +1,13 @@
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+// Provider must be overridden in ProviderScope (see main.dart)
+final apiClientProvider = Provider<ApiClient>((ref) {
+  throw UnimplementedError('apiClientProvider must be overridden');
+});
 
 class ApiClient {
   final http.Client _httpClient;
@@ -53,6 +59,27 @@ class ApiClient {
       body: body != null ? jsonEncode(body) : null,
     );
     return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> put(
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
+    final response = await _httpClient.put(
+      Uri.parse('$baseUrl$path'),
+      headers: _headers,
+      body: body != null ? jsonEncode(body) : null,
+    );
+    return _handleResponse(response);
+  }
+
+  Future<void> delete(String path) async {
+    final response = await _httpClient.delete(
+      Uri.parse('$baseUrl$path'),
+      headers: _headers,
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _handleResponse(response); // throws on error
   }
 
   Map<String, dynamic> _handleResponse(http.Response response) {

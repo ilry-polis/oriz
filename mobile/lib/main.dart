@@ -42,6 +42,9 @@ void main() async {
         authRepositoryProvider.overrideWithValue(
           AuthRepository(supabase.auth),
         ),
+        apiClientProvider.overrideWithValue(
+          ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth),
+        ),
         onboardingRepositoryProvider.overrideWithValue(
           OnboardingRepository(
             ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth),

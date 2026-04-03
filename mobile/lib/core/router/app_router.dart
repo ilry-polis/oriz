@@ -7,6 +7,12 @@ import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../../features/more/presentation/more_screen.dart';
+import '../../features/services_management/presentation/service_form_screen.dart';
+import '../../features/services_management/presentation/services_management_screen.dart';
+import '../../features/team/presentation/invite_accept_screen.dart';
+import '../../features/team/presentation/professional_form_screen.dart';
+import '../../features/team/presentation/team_management_screen.dart';
 import '../http/api_client.dart';
 import '../../features/onboarding/data/onboarding_repository.dart';
 import '../../features/onboarding/presentation/onboarding_complete_screen.dart';
@@ -117,8 +123,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           path == '/signup' ||
           path == '/forgot-password';
       final isOnboardingRoute = path.startsWith('/onboarding');
+      final isInviteRoute = path.startsWith('/invite/');
 
-      if (!hasSession && !isAuthRoute) return '/login';
+      if (!hasSession && !isAuthRoute && !isInviteRoute) return '/login';
 
       if (hasSession && isAuthRoute) {
         final studio = ref.read(studioStateProvider);
@@ -172,6 +179,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const OnboardingCompleteScreen(),
       ),
 
+      // Invite accept (no shell — standalone)
+      GoRoute(
+        path: '/invite/:token',
+        builder: (_, state) => InviteAcceptScreen(
+          token: state.pathParameters['token']!,
+        ),
+      ),
+
       // Protected routes with shell (bottom nav)
       ShellRoute(
         builder: (_, __, child) => AppShell(child: child),
@@ -185,12 +200,36 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const _Placeholder('Clientes'),
           ),
           GoRoute(
-            path: '/financial',
-            builder: (_, __) => const _Placeholder('Financeiro'),
+            path: '/services',
+            builder: (_, __) => const ServicesManagementScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (_, __) => const ServiceFormScreen(),
+              ),
+              GoRoute(
+                path: ':id/edit',
+                builder: (_, state) => ServiceFormScreen(
+                  serviceId: state.pathParameters['id'],
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: '/more',
-            builder: (_, __) => const _Placeholder('Mais'),
+            builder: (_, __) => const MoreScreen(),
+            routes: [
+              GoRoute(
+                path: 'team',
+                builder: (_, __) => const TeamManagementScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'new',
+                    builder: (_, __) => const ProfessionalFormScreen(),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
