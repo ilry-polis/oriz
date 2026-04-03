@@ -28,12 +28,18 @@ export const ListProfessionalsQuery = z.object({
 
 const CreateInviteBody = z.object({
 	name: z.string().min(1),
+	phone: z.string().optional(),
 	service_ids: z.array(z.string().uuid()).optional().default([]),
 	commission_type: z.enum(["percentage", "fixed"]),
 	commission_value: z.number().min(0),
 	card_fee_policy: z
 		.enum(["studio", "professional", "split"])
 		.default("studio"),
+});
+
+const ListInvitesQuery = z.object({
+	cursor: z.string().uuid().optional(),
+	limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export const UpdateProfessionalBody = z.object({
@@ -72,6 +78,45 @@ export default async function professionalRoutes(app: FastifyInstance) {
 		schema: { body: CreateInviteBody },
 		handler: async (request, reply) => {
 			return app.inviteController.create(request, reply);
+		},
+	});
+
+	/**
+	 * GET /api/v1/professionals/invites
+	 * Auth: owner only
+	 * Lists pending (not yet accepted) invites for the studio.
+	 */
+	app.get("/invites", {
+		onRequest: [app.requireOwner],
+		schema: { querystring: ListInvitesQuery },
+		handler: async (request, reply) => {
+			return app.inviteController.listPending(request, reply);
+		},
+	});
+
+	/**
+	 * DELETE /api/v1/professionals/invites/:token
+	 * Auth: owner only
+	 * Cancels a pending invite.
+	 */
+	app.delete("/invites/:token", {
+		onRequest: [app.requireOwner],
+		schema: { params: TokenParam },
+		handler: async (request, reply) => {
+			return app.inviteController.cancel(request, reply);
+		},
+	});
+
+	/**
+	 * POST /api/v1/professionals/invites/:token/resend
+	 * Auth: owner only
+	 * Extends invite expiry by 7 days and returns new whatsapp_link.
+	 */
+	app.post("/invites/:token/resend", {
+		onRequest: [app.requireOwner],
+		schema: { params: TokenParam },
+		handler: async (request, reply) => {
+			return app.inviteController.resend(request, reply);
 		},
 	});
 

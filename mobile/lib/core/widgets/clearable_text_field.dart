@@ -72,18 +72,51 @@ class _ClearableTextFieldState extends State<ClearableTextField> {
         labelText: widget.labelText,
         hintText: widget.hintText,
         prefixText: widget.prefixText,
-        suffixText: widget.suffixText,
         helperText: widget.helperText,
         prefixIcon: widget.prefixIcon,
-        suffixIcon: _hasText
-            ? IconButton(
-                icon: const Icon(Icons.clear, size: 18, color: AppColors.neutral400),
-                onPressed: () {
-                  widget.controller.clear();
-                  widget.onChanged?.call('');
-                },
+        suffixIcon: widget.suffixText != null
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Text(
+                      widget.suffixText!,
+                      style: TextStyle(
+                        color: AppColors.neutral400,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: _hasText
+                        ? IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: const Icon(Icons.clear,
+                                size: 18, color: AppColors.neutral400),
+                            onPressed: () {
+                              widget.controller.clear();
+                              widget.onChanged?.call('');
+                            },
+                          )
+                        : null,
+                  ),
+                ],
               )
-            : null,
+            : _hasText
+                ? IconButton(
+                    icon: const Icon(Icons.clear,
+                        size: 18, color: AppColors.neutral400),
+                    onPressed: () {
+                      widget.controller.clear();
+                      widget.onChanged?.call('');
+                    },
+                  )
+                : null,
       ),
       keyboardType: widget.keyboardType,
       inputFormatters: widget.inputFormatters,

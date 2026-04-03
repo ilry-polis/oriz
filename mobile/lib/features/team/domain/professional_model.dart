@@ -70,3 +70,46 @@ class InviteInfo {
         used: (json['used'] as bool?) ?? false,
       );
 }
+
+class PendingInvite {
+  final String token;
+  final String name;
+  final String? phone;
+  final String commissionType;
+  final double commissionValue;
+  final String cardFeePolicy;
+  final DateTime expiresAt;
+  final DateTime createdAt;
+
+  const PendingInvite({
+    required this.token,
+    required this.name,
+    this.phone,
+    required this.commissionType,
+    required this.commissionValue,
+    required this.cardFeePolicy,
+    required this.expiresAt,
+    required this.createdAt,
+  });
+
+  factory PendingInvite.fromJson(Map<String, dynamic> json) => PendingInvite(
+        token: json['token'] as String,
+        name: json['name'] as String,
+        phone: json['phone'] as String?,
+        commissionType: (json['commission_type'] as String?) ?? 'percentage',
+        commissionValue: _parseDouble(json['commission_value']),
+        cardFeePolicy: (json['card_fee_policy'] as String?) ?? 'studio',
+        expiresAt: DateTime.parse(json['expires_at'] as String),
+        createdAt: DateTime.parse(json['created_at'] as String),
+      );
+
+  bool get isExpired => expiresAt.isBefore(DateTime.now());
+
+  String get formattedCommission {
+    if (commissionType == 'percentage') {
+      return '${commissionValue.toStringAsFixed(0)}%';
+    }
+    final reais = commissionValue ~/ 100;
+    return 'R\$ $reais';
+  }
+}

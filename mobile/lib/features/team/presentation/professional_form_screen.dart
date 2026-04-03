@@ -6,8 +6,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/formatters/phone_formatter.dart';
 import '../../../core/widgets/clearable_text_field.dart';
 import '../data/team_repository.dart';
+import '../providers/invites_provider.dart';
 import '../providers/team_provider.dart';
 
 /// Bottom sheet for inviting a new professional — follows app pattern.
@@ -35,6 +37,7 @@ class _ProfessionalFormSheetState
     extends ConsumerState<ProfessionalFormSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _commissionController = TextEditingController(text: '30');
   String _commissionType = 'percentage';
   String _cardFeePolicy = 'studio';
@@ -43,6 +46,7 @@ class _ProfessionalFormSheetState
   @override
   void dispose() {
     _nameController.dispose();
+    _phoneController.dispose();
     _commissionController.dispose();
     super.dispose();
   }
@@ -52,19 +56,30 @@ class _ProfessionalFormSheetState
     setState(() => _saving = true);
 
     try {
+      final phone = phoneToE164(_phoneController.text);
       final repo = ref.read(teamRepositoryProvider);
       final result = await repo.createInvite({
         'name': _nameController.text.trim(),
+        'phone': phone,
         'commission_type': _commissionType,
         'commission_value': double.parse(_commissionController.text),
         'card_fee_policy': _cardFeePolicy,
       });
 
       ref.read(teamProvider.notifier).refresh();
+      ref.read(invitesProvider.notifier).refresh();
 
       final data = result['data'] as Map<String, dynamic>?;
-      final whatsappLink = data?['whatsapp_link'] as String?;
       final inviteToken = data?['invite_token'] as String?;
+
+      // Build WhatsApp link with the phone number
+      final phoneDigits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+      final whatsappNumber = '55$phoneDigits';
+      final inviteLink = 'oriz://invite/$inviteToken';
+      final message = Uri.encodeComponent(
+        'Você foi convidada para usar o Oriz! Clique para aceitar: $inviteLink',
+      );
+      final whatsappLink = 'https://wa.me/$whatsappNumber?text=$message';
 
       if (mounted) {
         Navigator.pop(context);
@@ -125,6 +140,7 @@ class _ProfessionalFormSheetState
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       HapticFeedback.mediumImpact();
+                      Navigator.pop(ctx);
                       final uri = Uri.parse(whatsappLink);
                       if (await canLaunchUrl(uri)) {
                         await launchUrl(uri,
@@ -154,7 +170,8 @@ class _ProfessionalFormSheetState
                       final link = 'oriz://invite/$inviteToken';
                       Clipboard.setData(ClipboardData(text: link));
                       HapticFeedback.selectionClick();
-                      ScaffoldMessenger.of(ctx).showSnackBar(
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: const Text('Link copiado!'),
                           backgroundColor: AppColors.success,
@@ -243,7 +260,9 @@ class _ProfessionalFormSheetState
                 const Divider(color: AppColors.neutral200, height: 1),
 
                 Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -256,15 +275,38 @@ class _ProfessionalFormSheetState
                             : null,
                       ),
                       const SizedBox(height: AppSpacing.md),
+                      ClearableTextField(
+                        controller: _phoneController,
+                        labelText: 'WhatsApp',
+                        keyboardType: TextInputType.phone,
+                        inputFormatters: [BrazilianPhoneFormatter()],
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Obrigatório para enviar o convite';
+                          }
+                          final digits = v.replaceAll(RegExp(r'\D'), '');
+                          if (digits.length < 10) return 'Telefone incompleto';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
 
-                      // Comissão: tipo + valor lado a lado
+                      // Comissão — seção
+                      Text('Comissão',
+                          style: AppTypography.caption
+                              .copyWith(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: AppSpacing.sm),
+
+                      // Tipo + Valor lado a lado
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Tipo
+                          // Tipo — ocupa mais espaço
                           Expanded(
+                            flex: 3,
                             child: DropdownButtonFormField<String>(
                               decoration: const InputDecoration(
-                                  labelText: 'Tipo comissão'),
+                                  labelText: 'Tipo'),
                               value: _commissionType,
                               items: const [
                                 DropdownMenuItem(
@@ -277,9 +319,10 @@ class _ProfessionalFormSheetState
                                   setState(() => _commissionType = v!),
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.sm),
-                          // Valor
+                          const SizedBox(width: AppSpacing.md),
+                          // Valor — mais estreito
                           Expanded(
+                            flex: 2,
                             child: ClearableTextField(
                               controller: _commissionController,
                               labelText: 'Valor',
@@ -298,20 +341,24 @@ class _ProfessionalFormSheetState
                           ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.md),
+                      const SizedBox(height: AppSpacing.xl),
 
-                      // Taxa do cartão
+                      // Taxa do cartão — scroll horizontal
                       Text('Taxa do cartão',
                           style: AppTypography.caption
                               .copyWith(fontWeight: FontWeight.w600)),
                       const SizedBox(height: AppSpacing.sm),
-                      Wrap(
-                        spacing: AppSpacing.sm,
-                        children: [
-                          _policyChip('studio', 'Estúdio absorve'),
-                          _policyChip('professional', 'Profissional absorve'),
-                          _policyChip('split', 'Dividir'),
-                        ],
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _policyChip('studio', 'Estúdio absorve'),
+                            const SizedBox(width: AppSpacing.sm),
+                            _policyChip('professional', 'Profissional absorve'),
+                            const SizedBox(width: AppSpacing.sm),
+                            _policyChip('split', 'Dividir'),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -320,7 +367,7 @@ class _ProfessionalFormSheetState
                 // Confirm button
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg,
+                    AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg,
                   ),
                   child: SizedBox(
                     width: double.infinity,

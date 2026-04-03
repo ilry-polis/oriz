@@ -15,6 +15,7 @@ export class InviteController {
 		const { studioId, userId } = request.authContext as StudioAuthContext;
 		const body = request.body as {
 			name: string;
+			phone?: string;
 			service_ids?: string[];
 			commission_type: "percentage" | "fixed";
 			commission_value: number;
@@ -23,6 +24,7 @@ export class InviteController {
 
 		const result = await this.service.createInvite(studioId, userId, {
 			name: body.name,
+			phone: body.phone,
 			serviceIds: body.service_ids ?? [],
 			commissionType: body.commission_type,
 			commissionValue: body.commission_value,
@@ -30,6 +32,64 @@ export class InviteController {
 		});
 
 		return reply.status(201).send({ data: result });
+	}
+
+	/**
+	 * GET /api/v1/professionals/invites
+	 * Auth: required + owner only
+	 * Lists pending invites for the studio.
+	 */
+	async listPending(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId } = request.authContext as StudioAuthContext;
+		const { cursor, limit } = request.query as {
+			cursor?: string;
+			limit?: number;
+		};
+		const result = await this.service.listPendingInvites(studioId, {
+			cursor,
+			limit,
+		});
+		return reply.send({ data: result.invites, meta: result.meta });
+	}
+
+	/**
+	 * DELETE /api/v1/professionals/invites/:token
+	 * Auth: required + owner only
+	 * Cancels a pending invite.
+	 */
+	async cancel(request: FastifyRequest, reply: FastifyReply) {
+		try {
+			const authCtx = request.authContext as StudioAuthContext;
+			request.log.info({ authCtx, params: request.params }, "[DEBUG] cancel invite — start");
+			const { studioId } = authCtx;
+			const { token } = request.params as { token: string };
+			await this.service.cancelInvite(studioId, token);
+			request.log.info({ token }, "[DEBUG] cancel invite — success");
+			return reply.status(204).send();
+		} catch (err) {
+			request.log.error(err, "[DEBUG] cancel invite — error");
+			throw err;
+		}
+	}
+
+	/**
+	 * POST /api/v1/professionals/invites/:token/resend
+	 * Auth: required + owner only
+	 * Extends invite expiry and returns new whatsapp_link.
+	 */
+	async resend(request: FastifyRequest, reply: FastifyReply) {
+		try {
+			const authCtx = request.authContext as StudioAuthContext;
+			request.log.info({ authCtx, params: request.params }, "[DEBUG] resend invite — start");
+			const { studioId } = authCtx;
+			const { token } = request.params as { token: string };
+			const result = await this.service.resendInvite(studioId, token);
+			request.log.info({ token, result }, "[DEBUG] resend invite — success");
+			return reply.send({ data: result });
+		} catch (err) {
+			request.log.error(err, "[DEBUG] resend invite — error");
+			throw err;
+		}
 	}
 
 	/**

@@ -5,6 +5,7 @@ export type InviteRow = {
 	studio_id: string;
 	created_by: string;
 	name: string;
+	phone: string | null;
 	service_ids: string[];
 	commission_type: "percentage" | "fixed";
 	commission_value: number;
@@ -19,6 +20,7 @@ export type CreateInviteData = {
 	studioId: string;
 	createdBy: string;
 	name: string;
+	phone?: string;
 	serviceIds: string[];
 	commissionType: "percentage" | "fixed";
 	commissionValue: number;
@@ -32,13 +34,14 @@ export class InviteRepository {
 	async create(data: CreateInviteData): Promise<void> {
 		await this.pool.query(
 			`INSERT INTO professional_invites
-         (token, studio_id, created_by, name, service_ids, commission_type, commission_value, card_fee_policy, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+         (token, studio_id, created_by, name, phone, service_ids, commission_type, commission_value, card_fee_policy, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 			[
 				data.token,
 				data.studioId,
 				data.createdBy,
 				data.name,
+				data.phone ?? null,
 				data.serviceIds,
 				data.commissionType,
 				data.commissionValue,
@@ -55,7 +58,7 @@ export class InviteRepository {
 	 */
 	async findByToken(token: string): Promise<InviteRow | null> {
 		const { rows } = await this.pool.query<InviteRow>(
-			`SELECT token, studio_id, created_by, name, service_ids,
+			`SELECT token, studio_id, created_by, name, phone, service_ids,
               commission_type, commission_value, card_fee_policy,
               expires_at, used_at, created_at
        FROM professional_invites
@@ -70,6 +73,52 @@ export class InviteRepository {
 		await this.pool.query(
 			"UPDATE professional_invites SET used_at = now() WHERE token = $1",
 			[token],
+		);
+	}
+
+	async findPendingByStudio(
+		studioId: string,
+		limit: number,
+		cursor?: string,
+	): Promise<InviteRow[]> {
+		if (cursor) {
+			const { rows } = await this.pool.query<InviteRow>(
+				`SELECT token, studio_id, created_by, name, phone, service_ids,
+				        commission_type, commission_value, card_fee_policy,
+				        expires_at, used_at, created_at
+				 FROM professional_invites
+				 WHERE studio_id = $1 AND used_at IS NULL
+				   AND created_at < (SELECT created_at FROM professional_invites WHERE token = $2)
+				 ORDER BY created_at DESC
+				 LIMIT $3`,
+				[studioId, cursor, limit],
+			);
+			return rows;
+		}
+		const { rows } = await this.pool.query<InviteRow>(
+			`SELECT token, studio_id, created_by, name, phone, service_ids,
+			        commission_type, commission_value, card_fee_policy,
+			        expires_at, used_at, created_at
+			 FROM professional_invites
+			 WHERE studio_id = $1 AND used_at IS NULL
+			 ORDER BY created_at DESC
+			 LIMIT $2`,
+			[studioId, limit],
+		);
+		return rows;
+	}
+
+	async delete(token: string): Promise<void> {
+		await this.pool.query(
+			"DELETE FROM professional_invites WHERE token = $1",
+			[token],
+		);
+	}
+
+	async updateExpiresAt(token: string, expiresAt: Date): Promise<void> {
+		await this.pool.query(
+			"UPDATE professional_invites SET expires_at = $1 WHERE token = $2",
+			[expiresAt, token],
 		);
 	}
 }

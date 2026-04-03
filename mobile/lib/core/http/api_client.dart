@@ -96,8 +96,10 @@ class ApiClient {
   }
 
   Future<void> delete(String path) async {
+    final headers = Map<String, String>.from(_headers)
+      ..remove('Content-Type');
     final response = await _withRefresh(
-      () => _httpClient.delete(Uri.parse('$baseUrl$path'), headers: _headers),
+      () => _httpClient.delete(Uri.parse('$baseUrl$path'), headers: headers),
     );
     if (response.statusCode >= 200 && response.statusCode < 300) return;
     _handleResponse(response);

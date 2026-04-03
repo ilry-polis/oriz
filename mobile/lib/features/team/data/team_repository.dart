@@ -45,6 +45,23 @@ class TeamRepository {
         response['data'] as Map<String, dynamic>);
   }
 
+  // Invite management (owner)
+  Future<List<PendingInvite>> listPendingInvites() async {
+    final response = await _api.get('/api/v1/professionals/invites');
+    final data = response['data'] as List;
+    return data
+        .map((e) => PendingInvite.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> cancelInvite(String token) async {
+    await _api.delete('/api/v1/professionals/invites/$token');
+  }
+
+  Future<Map<String, dynamic>> resendInvite(String token) async {
+    return await _api.post('/api/v1/professionals/invites/$token/resend', body: {});
+  }
+
   // Public endpoints — no auth needed
   Future<InviteInfo> getInviteInfo(String token) async {
     final response = await _api.get('/api/v1/professionals/invites/$token');

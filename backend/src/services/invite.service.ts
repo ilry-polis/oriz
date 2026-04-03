@@ -9,6 +9,7 @@ import {
 
 export type CreateInviteInput = {
 	name: string;
+	phone?: string;
 	serviceIds: string[];
 	commissionType: "percentage" | "fixed";
 	commissionValue: number;
@@ -41,6 +42,7 @@ export class InviteService {
 			studioId,
 			createdBy: ownerUserId,
 			name: input.name,
+			phone: input.phone,
 			serviceIds: input.serviceIds ?? [],
 			commissionType: input.commissionType,
 			commissionValue: input.commissionValue,
@@ -58,6 +60,78 @@ export class InviteService {
 			expires_at: expiresAt,
 			whatsapp_link: whatsappLink,
 		};
+	}
+
+	/**
+	 * Lists pending (not used) invites for a studio.
+	 */
+	async listPendingInvites(
+		studioId: string,
+		{ cursor, limit = 20 }: { cursor?: string; limit?: number },
+	) {
+		const rows = await this.inviteRepo.findPendingByStudio(
+			studioId,
+			limit + 1,
+			cursor,
+		);
+
+		const hasMore = rows.length > limit;
+		const data = hasMore ? rows.slice(0, limit) : rows;
+		const nextCursor = hasMore ? data[data.length - 1]!.token : undefined;
+
+		return {
+			invites: data.map((r) => ({
+				token: r.token,
+				name: r.name,
+				phone: r.phone,
+				commission_type: r.commission_type,
+				commission_value: r.commission_value,
+				card_fee_policy: r.card_fee_policy,
+				expires_at: r.expires_at,
+				created_at: r.created_at,
+			})),
+			meta: { next_cursor: nextCursor },
+		};
+	}
+
+	/**
+	 * Cancels a pending invite — only the studio owner can do this.
+	 */
+	async cancelInvite(studioId: string, token: string) {
+		const invite = await this.inviteRepo.findByToken(token);
+		if (!invite) throw new NotFoundError("Convite não encontrado");
+		if (invite.studio_id !== studioId)
+			throw new NotFoundError("Convite não encontrado");
+		if (invite.used_at)
+			throw new ConflictError(
+				"INVITE_ALREADY_USED",
+				"Convite já foi utilizado",
+			);
+		await this.inviteRepo.delete(token);
+	}
+
+	/**
+	 * Extends invite expiry by 7 days and returns a new whatsapp_link.
+	 */
+	async resendInvite(studioId: string, token: string) {
+		const invite = await this.inviteRepo.findByToken(token);
+		if (!invite) throw new NotFoundError("Convite não encontrado");
+		if (invite.studio_id !== studioId)
+			throw new NotFoundError("Convite não encontrado");
+		if (invite.used_at)
+			throw new ConflictError(
+				"INVITE_ALREADY_USED",
+				"Convite já foi utilizado",
+			);
+
+		const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+		await this.inviteRepo.updateExpiresAt(token, newExpiresAt);
+
+		const whatsappLink = `https://wa.me/?text=${encodeURIComponent(
+			`Você foi convidada para usar o Oriz! Clique para aceitar: oriz://invite/${token}`,
+		)}`;
+
+		return { whatsapp_link: whatsappLink, expires_at: newExpiresAt };
 	}
 
 	/**
