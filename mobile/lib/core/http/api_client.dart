@@ -13,7 +13,7 @@ class ApiClient {
   final http.Client _httpClient;
   final GoTrueClient _auth;
   final String baseUrl;
-  bool _refreshing = false;
+  Future<void>? _refreshFuture;
 
   ApiClient({
     required this.baseUrl,
@@ -31,25 +31,25 @@ class ApiClient {
   }
 
   /// Attempt token refresh once on 401, then retry the original request.
+  /// Concurrent 401s share the same refresh future — no duplicate refreshes.
   Future<http.Response> _withRefresh(
     Future<http.Response> Function() request,
   ) async {
     final response = await request();
-    if (response.statusCode == 401 && !_refreshing) {
-      _refreshing = true;
-      try {
-        await _auth.refreshSession();
-        // Retry with new token
-        final retry = await request();
-        return retry;
-      } catch (_) {
-        // Refresh failed — return original 401
-        return response;
-      } finally {
-        _refreshing = false;
-      }
+    if (response.statusCode != 401) return response;
+
+    try {
+      // Share a single refresh across concurrent 401s
+      _refreshFuture ??= _auth.refreshSession().whenComplete(() {
+        _refreshFuture = null;
+      });
+      await _refreshFuture;
+      // Retry with new token (headers getter reads fresh token)
+      return await request();
+    } catch (_) {
+      // Refresh failed — return original 401
+      return response;
     }
-    return response;
   }
 
   Future<Map<String, dynamic>> get(String path) async {

@@ -121,9 +121,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   ref.listen(authNotifierProvider, (prev, next) {
     if (next is AuthAuthenticated && prev is! AuthAuthenticated) {
+      _studioCheckAttempts = 0; // Reset counter on fresh login
       checkStudio();
     }
     if (next is AuthUnauthenticated) {
+      _studioCheckAttempts = 0;
       ref.read(studioStateProvider.notifier).reset();
     }
   });
