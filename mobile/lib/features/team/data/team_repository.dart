@@ -27,7 +27,7 @@ class TeamRepository {
   }
 
   Future<Map<String, dynamic>> createInvite(Map<String, dynamic> data) async {
-    return await _api.post('/api/v1/professionals/invite', body: data);
+    return await _api.post('/api/v1/professionals/invites', body: data);
   }
 
   Future<ProfessionalModel> updateProfessional(
@@ -47,13 +47,13 @@ class TeamRepository {
 
   // Public endpoints — no auth needed
   Future<InviteInfo> getInviteInfo(String token) async {
-    final response = await _api.get('/api/v1/auth/invite/$token');
+    final response = await _api.get('/api/v1/professionals/invites/$token');
     return InviteInfo.fromJson(response['data'] as Map<String, dynamic>);
   }
 
   Future<Map<String, dynamic>> acceptInvite(
       String token, String email, String password) async {
-    return await _api.post('/api/v1/auth/invite/$token/accept',
-        body: {'email': email, 'password': password});
+    return await _api.post('/api/v1/auth/accept-invite',
+        body: {'token': token, 'email': email, 'password': password});
   }
 }
