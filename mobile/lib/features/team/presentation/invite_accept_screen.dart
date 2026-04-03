@@ -37,10 +37,15 @@ class _InviteAcceptScreenState extends ConsumerState<InviteAcceptScreen> {
     super.dispose();
   }
 
+  static final _emailRegex = RegExp(
+    r'^[a-zA-Z0-9.!#$%&*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$',
+  );
+
   Future<void> _loadInviteInfo() async {
     try {
       final repo = ref.read(teamRepositoryProvider);
       final info = await repo.getInviteInfo(widget.token);
+      if (!mounted) return;
       setState(() {
         _info = info;
         _loading = false;
@@ -48,6 +53,7 @@ class _InviteAcceptScreenState extends ConsumerState<InviteAcceptScreen> {
         if (info.used) _error = 'Este convite já foi utilizado.';
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _loading = false;
         _error = 'Convite inválido ou não encontrado.';
@@ -123,7 +129,7 @@ class _InviteAcceptScreenState extends ConsumerState<InviteAcceptScreen> {
                         keyboardType: TextInputType.emailAddress,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) return 'Obrigatório';
-                          if (!v.contains('@')) return 'E-mail inválido';
+                          if (!_emailRegex.hasMatch(v.trim())) return 'E-mail inválido';
                           return null;
                         },
                       ),

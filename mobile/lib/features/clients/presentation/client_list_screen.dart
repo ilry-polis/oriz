@@ -26,7 +26,10 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
   }
 
   void _onTagTap(String? tag) {
-    setState(() => _activeTag = _activeTag == tag ? null : tag);
+    setState(() {
+      _activeTag = _activeTag == tag ? null : tag;
+      _searchController.clear();
+    });
     ref.read(clientListProvider.notifier).filterByTag(_activeTag);
   }
 

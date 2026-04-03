@@ -27,13 +27,21 @@ class AnamnesisField {
   final String label;
   final String type; // 'boolean', 'text', 'select'
   final List<String>? options;
-  dynamic value;
+  final dynamic value;
 
-  AnamnesisField({
+  const AnamnesisField({
     required this.key,
     required this.label,
     required this.type,
     this.options,
     this.value,
   });
+
+  AnamnesisField copyWith({dynamic value}) => AnamnesisField(
+        key: key,
+        label: label,
+        type: type,
+        options: options,
+        value: value ?? this.value,
+      );
 }

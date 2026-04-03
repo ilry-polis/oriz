@@ -36,6 +36,9 @@ class ClientListError extends ClientListState {
 
 class ClientListNotifier extends Notifier<ClientListState> {
   Timer? _debounce;
+  bool _isFetching = false;
+  String? _activeSearch;
+  String? _activeTag;
 
   @override
   ClientListState build() {
@@ -45,6 +48,9 @@ class ClientListNotifier extends Notifier<ClientListState> {
   }
 
   Future<void> _load({String? search, String? tag, String? cursor}) async {
+    if (_isFetching) return;
+    _isFetching = true;
+
     try {
       final repo = ref.read(clientRepositoryProvider);
       final response =
@@ -67,29 +73,31 @@ class ClientListNotifier extends Notifier<ClientListState> {
       );
     } catch (e) {
       state = ClientListError(e.toString());
+    } finally {
+      _isFetching = false;
     }
   }
 
   void search(String query) {
     _debounce?.cancel();
+    // Capture current tag before debounce fires
+    final tag = _activeTag;
+    _activeSearch = query.isEmpty ? null : query;
     _debounce = Timer(const Duration(milliseconds: 300), () {
       state = const ClientListLoading();
-      final current = state;
-      final tag = current is ClientListLoaded ? current.activeTag : null;
-      _load(search: query.isEmpty ? null : query, tag: tag);
+      _load(search: _activeSearch, tag: tag);
     });
   }
 
   void filterByTag(String? tag) {
+    _activeTag = tag;
     state = const ClientListLoading();
-    final current = state;
-    final search = current is ClientListLoaded ? current.activeSearch : null;
-    _load(search: search, tag: tag);
+    _load(search: _activeSearch, tag: tag);
   }
 
   void loadMore() {
     final current = state;
-    if (current is ClientListLoaded && current.hasMore) {
+    if (current is ClientListLoaded && current.hasMore && !_isFetching) {
       _load(
         search: current.activeSearch,
         tag: current.activeTag,
@@ -99,6 +107,8 @@ class ClientListNotifier extends Notifier<ClientListState> {
   }
 
   Future<void> refresh() async {
+    _activeSearch = null;
+    _activeTag = null;
     state = const ClientListLoading();
     await _load();
   }

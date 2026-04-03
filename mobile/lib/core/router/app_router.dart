@@ -39,6 +39,10 @@ class StudioUnknown extends StudioRouteState {
   const StudioUnknown();
 }
 
+class StudioCheckFailed extends StudioRouteState {
+  const StudioCheckFailed();
+}
+
 class StudioNotFound extends StudioRouteState {
   const StudioNotFound();
 }
@@ -60,6 +64,10 @@ class StudioStateNotifier extends Notifier<StudioRouteState> {
     state = const StudioNotFound();
   }
 
+  void setCheckFailed() {
+    state = const StudioCheckFailed();
+  }
+
   void setExists({required bool onboardingComplete}) {
     state = StudioExists(onboardingComplete: onboardingComplete);
   }
@@ -76,10 +84,15 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authRepo = ref.read(authRepositoryProvider);
   final authListenable = AuthNotifierListenable(ref);
 
+  int _studioCheckAttempts = 0;
+  const maxAttempts = 3;
+
   Future<void> checkStudio() async {
+    _studioCheckAttempts++;
     try {
       final onboardingRepo = ref.read(onboardingRepositoryProvider);
       final info = await onboardingRepo.getMyStudio();
+      _studioCheckAttempts = 0;
       if (info == null) {
         ref.read(studioStateProvider.notifier).setNotFound();
       } else {
@@ -88,14 +101,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         );
       }
     } on ApiException catch (e) {
-      // 404 = no studio; treat as no studio
       if (e.statusCode == 404) {
+        _studioCheckAttempts = 0;
         ref.read(studioStateProvider.notifier).setNotFound();
+      } else if (_studioCheckAttempts >= maxAttempts) {
+        // After N failed attempts, stop looping — let user see onboarding
+        // which shows a retry button instead of infinite redirect
+        _studioCheckAttempts = 0;
+        ref.read(studioStateProvider.notifier).setCheckFailed();
       }
-      // Other API errors (500, network): keep unknown so redirect doesn't
-      // falsely send user to onboarding. Router will retry on next auth change.
+      // Otherwise keep StudioUnknown — router will retry on next auth change
     } catch (_) {
-      // Network/timeout: keep StudioUnknown — don't assume no studio
+      if (_studioCheckAttempts >= maxAttempts) {
+        _studioCheckAttempts = 0;
+        ref.read(studioStateProvider.notifier).setCheckFailed();
+      }
     }
   }
 
@@ -140,9 +160,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/onboarding';
       }
 
-      if (hasSession && !isAuthRoute && !isOnboardingRoute) {
+      if (hasSession && !isAuthRoute && !isOnboardingRoute && !isInviteRoute) {
         final studio = ref.read(studioStateProvider);
         if (studio is StudioNotFound) return '/onboarding';
+        if (studio is StudioCheckFailed) return '/onboarding';
         if (studio is StudioUnknown) return '/onboarding';
         if (studio is StudioExists && !studio.onboardingComplete) {
           return '/onboarding';
