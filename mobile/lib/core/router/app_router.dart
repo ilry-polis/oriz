@@ -7,6 +7,10 @@ import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../../features/clients/presentation/anamnesis_form_screen.dart';
+import '../../features/clients/presentation/client_detail_screen.dart';
+import '../../features/clients/presentation/client_form_screen.dart';
+import '../../features/clients/presentation/client_list_screen.dart';
 import '../../features/more/presentation/more_screen.dart';
 import '../../features/services_management/presentation/service_form_screen.dart';
 import '../../features/services_management/presentation/services_management_screen.dart';
@@ -197,7 +201,34 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/clients',
-            builder: (_, __) => const _Placeholder('Clientes'),
+            builder: (_, __) => const ClientListScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (_, __) => const ClientFormScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (_, state) => ClientDetailScreen(
+                  clientId: state.pathParameters['id']!,
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (_, state) => ClientFormScreen(
+                      clientId: state.pathParameters['id'],
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'anamnesis/:category',
+                    builder: (_, state) => AnamnesisFormScreen(
+                      clientId: state.pathParameters['id']!,
+                      category: state.pathParameters['category']!,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           GoRoute(
             path: '/services',
