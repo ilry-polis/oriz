@@ -35,6 +35,21 @@ export function errorHandler(
 		return;
 	}
 
+	// Fastify validation errors (from Zod type provider)
+	const fastifyErr = error as FastifyError;
+	if (fastifyErr.statusCode === 400 && fastifyErr.code === "FST_ERR_VALIDATION") {
+		const validation = (fastifyErr as unknown as { validation?: Array<{ instancePath: string; message: string }> }).validation ?? [];
+		const errors = validation.map((v) => ({
+			code: "VALIDATION_ERROR",
+			message: v.message,
+			field: v.instancePath.replace(/^\//, ""),
+		}));
+		reply.status(400).send({
+			errors: errors.length > 0 ? errors : [{ code: "VALIDATION_ERROR", message: fastifyErr.message }],
+		} satisfies ErrorResponse);
+		return;
+	}
+
 	// Unknown error — log internally, never leak to client
 	_request.log.error(error, "Unhandled error");
 	reply.status(500).send({

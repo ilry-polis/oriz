@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/formatters/currency_formatter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/clearable_text_field.dart';
 import '../data/service_mgmt_repository.dart';
 import '../providers/service_mgmt_provider.dart';
 
@@ -21,10 +22,19 @@ class _ServiceFormScreenState extends ConsumerState<ServiceFormScreen> {
   final _priceController = TextEditingController();
   final _durationController = TextEditingController();
   final _bufferController = TextEditingController(text: '0');
+  String? _selectedCategoryId;
   bool _isActive = true;
   bool _saving = false;
+  List<Map<String, dynamic>> _categories = [];
+  bool _loadingCategories = true;
 
   bool get isEdit => widget.serviceId != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
 
   @override
   void dispose() {
@@ -35,17 +45,39 @@ class _ServiceFormScreenState extends ConsumerState<ServiceFormScreen> {
     super.dispose();
   }
 
+  Future<void> _loadCategories() async {
+    try {
+      final repo = ref.read(serviceMgmtRepositoryProvider);
+      final cats = await repo.listCategories();
+      if (mounted) {
+        setState(() {
+          _categories = cats;
+          _loadingCategories = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingCategories = false);
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedCategoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione uma categoria')),
+      );
+      return;
+    }
     setState(() => _saving = true);
 
     try {
       final repo = ref.read(serviceMgmtRepositoryProvider);
       final data = {
+        'category_id': _selectedCategoryId,
         'name': _nameController.text.trim(),
         'price': BrazilianCurrencyFormatter.parseCents(_priceController.text),
         'duration_minutes': int.parse(_durationController.text),
-        'buffer_minutes': int.parse(_bufferController.text),
+        'buffer_minutes': int.tryParse(_bufferController.text) ?? 0,
         'is_active': _isActive,
       };
 
@@ -114,19 +146,33 @@ class _ServiceFormScreenState extends ConsumerState<ServiceFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(
+            // Categoria
+            _loadingCategories
+                ? const LinearProgressIndicator()
+                : DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(labelText: 'Categoria'),
+                    value: _selectedCategoryId,
+                    items: _categories
+                        .map((c) => DropdownMenuItem<String>(
+                              value: c['id'] as String,
+                              child: Text(c['name'] as String),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setState(() => _selectedCategoryId = v),
+                    validator: (v) => v == null ? 'Selecione uma categoria' : null,
+                  ),
+            const SizedBox(height: 16),
+            ClearableTextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Nome do serviço'),
+              labelText: 'Nome do serviço',
               validator: (v) => (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
             ),
             const SizedBox(height: 16),
-            TextFormField(
+            ClearableTextField(
               controller: _priceController,
-              decoration: const InputDecoration(
-                labelText: 'Preço',
-                prefixText: 'R\$ ',
-                hintText: '0,00',
-              ),
+              labelText: 'Preço',
+              prefixText: 'R\$ ',
+              hintText: '0,00',
               keyboardType: TextInputType.number,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
@@ -139,20 +185,20 @@ class _ServiceFormScreenState extends ConsumerState<ServiceFormScreen> {
               },
             ),
             const SizedBox(height: 16),
-            TextFormField(
+            ClearableTextField(
               controller: _durationController,
-              decoration: const InputDecoration(labelText: 'Duração (minutos)'),
+              labelText: 'Duração',
+              suffixText: 'min',
               keyboardType: TextInputType.number,
-              validator: (v) => (v == null || int.tryParse(v) == null) ? 'Valor inválido' : null,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              validator: (v) => (v == null || int.tryParse(v) == null) ? 'Obrigatório' : null,
             ),
             const SizedBox(height: 16),
-            TextFormField(
+            ClearableTextField(
               controller: _bufferController,
-              decoration: const InputDecoration(
-                labelText: 'Intervalo após atendimento',
-                suffixText: 'min',
-                helperText: 'Tempo de preparo antes do próximo cliente',
-              ),
+              labelText: 'Intervalo após atendimento',
+              suffixText: 'min',
+              helperText: 'Tempo de preparo antes do próximo cliente',
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),

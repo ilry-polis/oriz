@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/clearable_text_field.dart';
 import '../data/team_repository.dart';
 import '../domain/professional_model.dart';
 
@@ -123,9 +124,9 @@ class _InviteAcceptScreenState extends ConsumerState<InviteAcceptScreen> {
                             fontSize: 15, color: AppColors.neutral600),
                       ),
                       const SizedBox(height: 32),
-                      TextFormField(
+                      ClearableTextField(
                         controller: _emailController,
-                        decoration: const InputDecoration(labelText: 'E-mail'),
+                        labelText: 'E-mail',
                         keyboardType: TextInputType.emailAddress,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) return 'Obrigatório';
@@ -134,9 +135,9 @@ class _InviteAcceptScreenState extends ConsumerState<InviteAcceptScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      ClearableTextField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(labelText: 'Senha'),
+                        labelText: 'Senha',
                         obscureText: true,
                         validator: (v) {
                           if (v == null || v.length < 8) {
@@ -146,10 +147,9 @@ class _InviteAcceptScreenState extends ConsumerState<InviteAcceptScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      ClearableTextField(
                         controller: _confirmPasswordController,
-                        decoration:
-                            const InputDecoration(labelText: 'Confirmar senha'),
+                        labelText: 'Confirmar senha',
                         obscureText: true,
                         validator: (v) {
                           if (v != _passwordController.text) {

@@ -51,15 +51,27 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar cliente...',
-                prefixIcon: const Icon(Icons.search, color: AppColors.neutral400),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _searchController,
+              builder: (context, value, _) => TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Buscar cliente...',
+                  prefixIcon: const Icon(Icons.search, color: AppColors.neutral400),
+                  suffixIcon: value.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18, color: AppColors.neutral400),
+                          onPressed: () {
+                            _searchController.clear();
+                            ref.read(clientListProvider.notifier).search('');
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+                onChanged: (v) => ref.read(clientListProvider.notifier).search(v),
               ),
-              onChanged: (v) => ref.read(clientListProvider.notifier).search(v),
             ),
           ),
           const SizedBox(height: 8),

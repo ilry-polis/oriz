@@ -12,6 +12,12 @@ class ServiceMgmtRepository {
 
   ServiceMgmtRepository(this._api);
 
+  Future<List<Map<String, dynamic>>> listCategories() async {
+    final response = await _api.get('/api/v1/service-categories');
+    final data = response['data'] as List;
+    return data.map((e) => e as Map<String, dynamic>).toList();
+  }
+
   Future<List<ServiceModel>> listServices() async {
     final response = await _api.get('/api/v1/services');
     final data = response['data'] as List;
