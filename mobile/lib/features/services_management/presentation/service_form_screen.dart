@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/formatters/currency_formatter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/service_mgmt_repository.dart';
 import '../providers/service_mgmt_provider.dart';
@@ -41,7 +43,7 @@ class _ServiceFormScreenState extends ConsumerState<ServiceFormScreen> {
       final repo = ref.read(serviceMgmtRepositoryProvider);
       final data = {
         'name': _nameController.text.trim(),
-        'price': int.parse(_priceController.text),
+        'price': BrazilianCurrencyFormatter.parseCents(_priceController.text),
         'duration_minutes': int.parse(_durationController.text),
         'buffer_minutes': int.parse(_bufferController.text),
         'is_active': _isActive,
@@ -120,9 +122,21 @@ class _ServiceFormScreenState extends ConsumerState<ServiceFormScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _priceController,
-              decoration: const InputDecoration(labelText: 'Preço (centavos)', prefixText: 'R\$ '),
+              decoration: const InputDecoration(
+                labelText: 'Preço',
+                prefixText: 'R\$ ',
+                hintText: '0,00',
+              ),
               keyboardType: TextInputType.number,
-              validator: (v) => (v == null || int.tryParse(v) == null) ? 'Valor inválido' : null,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                BrazilianCurrencyFormatter(),
+              ],
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Obrigatório';
+                if (BrazilianCurrencyFormatter.parseCents(v) <= 0) return 'Valor inválido';
+                return null;
+              },
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -134,8 +148,13 @@ class _ServiceFormScreenState extends ConsumerState<ServiceFormScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _bufferController,
-              decoration: const InputDecoration(labelText: 'Intervalo entre atendimentos (min)'),
+              decoration: const InputDecoration(
+                labelText: 'Intervalo após atendimento',
+                suffixText: 'min',
+                helperText: 'Tempo de preparo antes do próximo cliente',
+              ),
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             const SizedBox(height: 16),
             if (isEdit)

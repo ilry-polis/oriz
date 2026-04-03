@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/formatters/phone_formatter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/client_repository.dart';
 import '../providers/client_provider.dart';
@@ -40,7 +42,9 @@ class _ClientFormScreenState extends ConsumerState<ClientFormScreen> {
       final data = <String, dynamic>{
         'name': _nameController.text.trim(),
       };
-      if (_phoneController.text.isNotEmpty) data['phone'] = _phoneController.text.trim();
+      if (_phoneController.text.isNotEmpty) {
+        data['phone'] = phoneToE164(_phoneController.text);
+      }
       if (_emailController.text.isNotEmpty) data['email'] = _emailController.text.trim();
       if (!isEdit) data['marketing_consent'] = _marketingConsent;
 
@@ -80,8 +84,16 @@ class _ClientFormScreenState extends ConsumerState<ClientFormScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _phoneController,
-              decoration: const InputDecoration(labelText: 'Telefone'),
+              decoration: const InputDecoration(
+                labelText: 'Telefone',
+                hintText: '(11) 99999-9999',
+              ),
               keyboardType: TextInputType.phone,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(11),
+                BrazilianPhoneFormatter(),
+              ],
             ),
             const SizedBox(height: 16),
             TextFormField(
