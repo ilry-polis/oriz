@@ -25,11 +25,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Scheduling
 
-- [ ] **SCHD-01**: Professional views agenda in day and week view
+- [x] **SCHD-01**: Professional views agenda in day and week view
 - [x] **SCHD-02**: System detects and prevents double-booking with DB-level constraint
 - [x] **SCHD-03**: Professional can block time slots (vacation, breaks, lunch)
 - [x] **SCHD-04**: Appointments follow status workflow: confirmed → completed/cancelled/no-show
-- [ ] **SCHD-05**: Business hours configurable per day of week per professional
+- [x] **SCHD-05**: Business hours configurable per day of week per professional
 
 ### Clients
 
@@ -149,11 +149,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SERV-03 | Phase 4 | Pending |
 | SERV-04 | Phase 4 | Pending |
 | SERV-05 | Phase 4 | Pending |
-| SCHD-01 | Phase 3 | Pending |
+| SCHD-01 | Phase 3 | Complete |
 | SCHD-02 | Phase 3 | Complete |
 | SCHD-03 | Phase 3 | Complete |
 | SCHD-04 | Phase 3 | Complete |
-| SCHD-05 | Phase 3 | Pending |
+| SCHD-05 | Phase 3 | Complete |
 | CLNT-01 | Phase 2 | Pending |
 | CLNT-02 | Phase 2 | Pending |
 | CLNT-03 | Phase 2 | Pending |

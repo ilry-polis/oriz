@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-01-PLAN.md — DB foundation and repository layer
-last_updated: "2026-04-03T16:25:46.528Z"
+stopped_at: Completed 03-02-PLAN.md — AppointmentService and BlockedSlotService with TDD
+last_updated: "2026-04-03T16:33:22.588Z"
 last_activity: 2026-04-02 — Phase 1 formally verified and closed
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
+  completed_plans: 2
   percent: 12
 ---
 
@@ -51,6 +51,7 @@ Progress: [█░░░░░░░░░] 12%
 
 *Updated after each plan completion*
 | Phase 03-scheduling-engine P01 | 3 | 2 tasks | 6 files |
+| Phase 03-scheduling-engine P02 | 266 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,8 @@ Recent decisions affecting current work:
 - [Phase 03-scheduling-engine]: no_show excluded from appointments_no_overlap constraint — rebooking a no-show slot is valid behavior
 - [Phase 03-scheduling-engine]: Recurring blocked slots returned wholesale from listByDateRange — expansion to individual dates is service layer responsibility
 - [Phase 03-scheduling-engine]: confirmation_hours_before added to studios table now (Phase 5.1/6 will consume it) — cheaper than a later migration
+- [Phase 03-scheduling-engine]: Slot interval: 15-minute granularity for getAvailableSlots — balances precision with array size
+- [Phase 03-scheduling-engine]: PaymentRepository created as separate repository — payments table already exists in initial schema (001_initial_schema.sql)
 
 ### Pending Todos
 
@@ -80,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T16:25:46.527Z
-Stopped at: Completed 03-01-PLAN.md — DB foundation and repository layer
+Last session: 2026-04-03T16:33:22.587Z
+Stopped at: Completed 03-02-PLAN.md — AppointmentService and BlockedSlotService with TDD
 Resume file: None
