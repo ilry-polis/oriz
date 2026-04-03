@@ -9,7 +9,9 @@ import Redis from "ioredis";
 import { createPool } from "./config/database.js";
 import { parseEnv } from "./config/env.js";
 import { createSupabaseAdmin } from "./config/supabase.js";
+import { AnamnesisController } from "./controllers/anamnesis.controller.js";
 import { AuditLogController } from "./controllers/audit-log.controller.js";
+import { ClientNoteController } from "./controllers/client-note.controller.js";
 import { ClientController } from "./controllers/client.controller.js";
 import { ConsentController } from "./controllers/consent.controller.js";
 import { InviteController } from "./controllers/invite.controller.js";
@@ -24,7 +26,9 @@ import {
 	buildRequireStudio,
 } from "./middlewares/auth.js";
 import { errorHandler } from "./middlewares/error-handler.js";
+import { AnamnesisRepository } from "./repositories/anamnesis.repository.js";
 import { AuditLogRepository } from "./repositories/audit-log.repository.js";
+import { ClientNoteRepository } from "./repositories/client-note.repository.js";
 import { ClientRepository } from "./repositories/client.repository.js";
 import { ConsentRepository } from "./repositories/consent.repository.js";
 import { InviteRepository } from "./repositories/invite.repository.js";
@@ -34,7 +38,9 @@ import { ServiceCategoryRepository } from "./repositories/service-category.repos
 import { ServiceRepository } from "./repositories/service.repository.js";
 import { StudioRepository } from "./repositories/studio.repository.js";
 import { registerRoutes } from "./routes/index.js";
+import { AnamnesisService } from "./services/anamnesis.service.js";
 import { AuditLogService } from "./services/audit-log.service.js";
+import { ClientNoteService } from "./services/client-note.service.js";
 import { ClientService } from "./services/client.service.js";
 import { ConsentService } from "./services/consent.service.js";
 import { InviteService } from "./services/invite.service.js";
@@ -130,7 +136,9 @@ const professionalRepo = new ProfessionalRepository(pool);
 const inviteRepo = new InviteRepository(pool);
 const clientRepo = new ClientRepository(pool);
 const consentRepo = new ConsentRepository(pool);
+const anamnesisRepo = new AnamnesisRepository(pool);
 const auditLogRepo = new AuditLogRepository(pool);
+const clientNoteRepo = new ClientNoteRepository(pool);
 
 // ─── Services ─────────────────────────────────────────────
 const studioService = new StudioService(
@@ -147,7 +155,9 @@ const inviteService = new InviteService(
 	professionalRepo,
 	supabaseAdmin,
 );
+const anamnesisService = new AnamnesisService(anamnesisRepo);
 const auditLogService = new AuditLogService(auditLogRepo);
+const clientNoteService = new ClientNoteService(clientNoteRepo);
 const consentService = new ConsentService(consentRepo);
 const clientService = new ClientService(
 	clientRepo,
@@ -176,7 +186,15 @@ app.decorate(
 	"consentController",
 	new ConsentController(consentService, consentRepo),
 );
+app.decorate(
+	"anamnesisController",
+	new AnamnesisController(anamnesisService),
+);
 app.decorate("auditLogController", new AuditLogController(auditLogRepo));
+app.decorate(
+	"clientNoteController",
+	new ClientNoteController(clientNoteService),
+);
 
 // ─── Request Decorator ─────────────────────────────────────
 app.decorateRequest(

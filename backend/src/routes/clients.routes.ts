@@ -154,10 +154,8 @@ export default async function clientRoutes(app: FastifyInstance) {
 	app.get("/:clientId/anamneses", {
 		onRequest: [app.requireStudioMember],
 		schema: { params: ClientIdParam2 },
-		handler: async (_request, _reply) => {
-			// → AnamnesisController.list (Phase 2 plan 03)
-			throw new Error("Not implemented");
-		},
+		handler: async (request, reply) =>
+			app.anamnesisController.listByClient(request, reply),
 	});
 
 	// PUT /api/v1/clients/:clientId/anamneses/:categoryId
@@ -165,10 +163,46 @@ export default async function clientRoutes(app: FastifyInstance) {
 	app.put("/:clientId/anamneses/:categoryId", {
 		onRequest: [app.requireStudioMember],
 		schema: { params: ClientIdWithCategoryParam, body: UpsertAnamnesisBody },
-		handler: async (_request, _reply) => {
-			// → AnamnesisController.upsert (Phase 2 plan 03)
-			throw new Error("Not implemented");
+		handler: async (request, reply) =>
+			app.anamnesisController.upsert(request, reply),
+	});
+
+	// GET /api/v1/clients/:clientId/anamneses/:categoryId
+	// Auth: owner+professional
+	app.get("/:clientId/anamneses/:categoryId", {
+		onRequest: [app.requireStudioMember],
+		schema: { params: ClientIdWithCategoryParam },
+		handler: async (request, reply) =>
+			app.anamnesisController.getByClientAndCategory(request, reply),
+	});
+
+	// ─── Client Notes ─────────────────────────────────────────
+
+	// POST /api/v1/clients/:clientId/notes
+	// Auth: owner+professional | Immutable — no update/delete
+	app.post("/:clientId/notes", {
+		onRequest: [app.requireStudioMember],
+		schema: {
+			params: ClientIdParam2,
+			body: z.object({ content: z.string().min(1) }),
 		},
+		handler: async (request, reply) =>
+			app.clientNoteController.create(request, reply),
+	});
+
+	// GET /api/v1/clients/:clientId/notes
+	// Auth: owner+professional
+	app.get("/:clientId/notes", {
+		onRequest: [app.requireStudioMember],
+		schema: {
+			params: ClientIdParam2,
+			querystring: z.object({
+				cursor: z.string().uuid().optional(),
+				limit: z.coerce.number().int().min(1).max(100).default(20),
+			}),
+		},
+		handler: async (request, reply) =>
+			app.clientNoteController.listByClient(request, reply),
 	});
 
 	// ─── Package Subscriptions ────────────────────────────────

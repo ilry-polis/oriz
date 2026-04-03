@@ -97,8 +97,17 @@ export class ClientController {
 		return reply.send({ data: client });
 	}
 
-	// Stub for future: list appointments per client
-	async listAppointments(_request: FastifyRequest, _reply: FastifyReply) {
-		throw new Error("Not implemented — Phase 3 (Appointments)");
+	async listAppointments(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId } = request.authContext as StudioAuthContext;
+		const { id } = request.params as { id: string };
+		const query = request.query as { cursor?: string; limit?: number };
+
+		const result = await this.service.listAppointments(
+			studioId,
+			id,
+			query.cursor,
+			query.limit,
+		);
+		return reply.send(result);
 	}
 }

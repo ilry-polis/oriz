@@ -1,6 +1,14 @@
 import type { Pool } from "pg";
 import { ConflictError, NotFoundError } from "../utils/errors.js";
 
+export type AppointmentHistoryRow = {
+	id: string;
+	service_name: string;
+	professional_name: string;
+	scheduled_at: string;
+	status: string;
+};
+
 // ─── Types ───────────────────────────────────────────────────
 
 export type ClientRow = {
@@ -199,6 +207,37 @@ export class ClientRepository {
 		);
 
 		return rows[0] ?? null;
+	}
+
+	async listAppointments(
+		studioId: string,
+		clientId: string,
+		cursor?: string,
+		limit = 20,
+	): Promise<AppointmentHistoryRow[]> {
+		try {
+			const params: unknown[] = [studioId, clientId, limit + 1];
+			let sql = `SELECT a.id, s.name AS service_name, p.name AS professional_name,
+			                  a.scheduled_at, a.status
+			           FROM appointments a
+			           JOIN services s ON s.id = a.service_id
+			           JOIN professionals p ON p.id = a.professional_id
+			           WHERE a.studio_id = $1 AND a.client_id = $2`;
+			if (cursor) {
+				sql += " AND a.scheduled_at < (SELECT scheduled_at FROM appointments WHERE id = $4 AND studio_id = $1)";
+				params.push(cursor);
+			}
+			sql += " ORDER BY a.scheduled_at DESC LIMIT $3";
+			const { rows } = await this.pool.query<AppointmentHistoryRow>(sql, params);
+			return rows;
+		} catch (err: unknown) {
+			// TODO(phase-3): Remove defensive catch once appointments table exists
+			const pgErr = err as { code?: string };
+			if (pgErr.code === "42P01") {
+				return [];
+			}
+			throw err;
+		}
 	}
 
 	async anonymize(studioId: string, clientId: string): Promise<ClientRow> {

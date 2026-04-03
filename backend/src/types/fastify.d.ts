@@ -1,7 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { Pool } from "pg";
+import type { AnamnesisController } from "../controllers/anamnesis.controller.js";
 import type { AuditLogController } from "../controllers/audit-log.controller.js";
+import type { ClientNoteController } from "../controllers/client-note.controller.js";
 import type { ClientController } from "../controllers/client.controller.js";
 import type { ConsentController } from "../controllers/consent.controller.js";
 import type { InviteController } from "../controllers/invite.controller.js";
@@ -30,7 +32,9 @@ declare module "fastify" {
 		inviteController: InviteController;
 		clientController: ClientController;
 		consentController: ConsentController;
+		anamnesisController: AnamnesisController;
 		auditLogController: AuditLogController;
+		clientNoteController: ClientNoteController;
 	}
 
 	interface FastifyRequest {

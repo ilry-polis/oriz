@@ -156,6 +156,29 @@ export class ClientService {
 		return client;
 	}
 
+	async listAppointments(
+		studioId: string,
+		clientId: string,
+		cursor?: string,
+		limit = 20,
+	) {
+		const rows = await this.repo.listAppointments(
+			studioId,
+			clientId,
+			cursor,
+			limit + 1,
+		);
+		const hasMore = rows.length > limit;
+		const data = hasMore ? rows.slice(0, limit) : rows;
+		return {
+			data,
+			meta: {
+				has_more: hasMore,
+				next_cursor: hasMore ? data[data.length - 1].id : null,
+			},
+		};
+	}
+
 	async anonymizeClient(
 		studioId: string,
 		userId: string,
