@@ -10,6 +10,7 @@ import 'widgets/appointment_card.dart';
 import 'widgets/blocked_slot_card.dart';
 import 'widgets/day_selector.dart';
 import 'widgets/empty_agenda.dart';
+import 'widgets/quick_book_sheet.dart';
 import 'widgets/skeleton_timeline.dart';
 
 class AgendaDayScreen extends ConsumerStatefulWidget {
@@ -171,7 +172,17 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
           ),
           const SizedBox(width: AppSpacing.xs),
           GestureDetector(
-            onTap: () => HapticFeedback.lightImpact(),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              final agendaState = ref.read(agendaNotifierProvider);
+              final profId =
+                  agendaState.selectedProfessionalId ?? 'unknown';
+              QuickBookSheet.show(
+                context,
+                date: agendaState.selectedDate,
+                professionalId: profId,
+              );
+            },
             child: Container(
               width: 36,
               height: 36,
@@ -263,7 +274,7 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
         itemCount: endHour - startHour,
         itemBuilder: (context, index) {
           final hour = startHour + index;
-          return _buildTimeSlot(hour, appointments, blockedSlots);
+          return _buildTimeSlot(hour, appointments, blockedSlots, agendaState);
         },
       ),
     );
@@ -273,6 +284,7 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
     int hour,
     List<Appointment> appointments,
     List<BlockedSlot> blockedSlots,
+    AgendaState agendaState,
   ) {
     final hourLabel = '${hour.toString().padLeft(2, '0')}:00';
     final appointment =
@@ -341,7 +353,7 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
                                   .deleteAbsence(blocked.id),
                             ),
                           )
-                        : _buildEmptySlot(),
+                        : _buildEmptySlot(hour, agendaState),
               ),
             ],
           ),
@@ -414,23 +426,35 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
     );
   }
 
-  Widget _buildEmptySlot() {
-    return Container(
-      height: 44,
-      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.md),
+  Widget _buildEmptySlot(int hour, AgendaState agendaState) {
+    return GestureDetector(
+      onTap: () => QuickBookSheet.show(
+        context,
+        date: agendaState.selectedDate,
+        professionalId:
+            agendaState.selectedProfessionalId ?? 'unknown',
+        hour: hour,
+        minute: 0,
       ),
-      child: Row(
-        children: [
-          Expanded(child: Container(height: 1, color: AppColors.neutral200)),
-          const SizedBox(width: AppSpacing.sm),
-          const Icon(
-            Icons.add_circle_outline_rounded,
-            size: 18,
-            color: AppColors.neutral300,
-          ),
-        ],
+      child: Container(
+        height: 44,
+        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(height: 1, color: AppColors.neutral200),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            const Icon(
+              Icons.add_circle_outline_rounded,
+              size: 18,
+              color: AppColors.neutral300,
+            ),
+          ],
+        ),
       ),
     );
   }
