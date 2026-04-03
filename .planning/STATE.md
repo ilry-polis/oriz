@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-04-PLAN.md — Flutter Agenda Screen Real Data
-last_updated: "2026-04-03T20:03:18.608Z"
+stopped_at: Completed 03-06-PLAN.md — Week view, absences, working hours (checkpoint pending human verification)
+last_updated: "2026-04-03T20:08:31.890Z"
 last_activity: 2026-04-02 — Phase 1 formally verified and closed
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 12
 ---
 
@@ -54,6 +54,7 @@ Progress: [█░░░░░░░░░] 12%
 | Phase 03-scheduling-engine P02 | 266 | 2 tasks | 7 files |
 | Phase 03-scheduling-engine P03 | 6 | 2 tasks | 8 files |
 | Phase 03-scheduling-engine P04 | 12 | 2 tasks | 12 files |
+| Phase 03-scheduling-engine P06 | 18 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,9 @@ Recent decisions affecting current work:
 - [Phase 03-scheduling-engine]: 'whatsapp' source mapped to 'whatsapp_ai' at controller boundary — API contract uses 'whatsapp', repository enum uses 'whatsapp_ai'
 - [Phase 03-scheduling-engine]: Timeline bounds from appointments data (not working_hours) — professionals/me endpoint not implemented; fallback 8-19 + auto-expand
 - [Phase 03-scheduling-engine]: Multi-professional PageView deferred — requires professionals list endpoint from Phase 02
+- [Phase 03-scheduling-engine]: Working hours screen saves via OnboardingRepository.updateWorkingHours — reuses PATCH /professionals/:id, no new endpoint needed
+- [Phase 03-scheduling-engine]: Week view uses agendaNotifierProvider.blockedSlotsForDay — appointments mock until 03-04 wires auth context
+- [Phase 03-scheduling-engine]: Day-of-week mapping for recurrence: FilterChip index 0-6 = API days 0=Mon..6=Sun
 
 ### Pending Todos
 
@@ -89,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T20:03:18.606Z
-Stopped at: Completed 03-04-PLAN.md — Flutter Agenda Screen Real Data
+Last session: 2026-04-03T20:08:31.888Z
+Stopped at: Completed 03-06-PLAN.md — Week view, absences, working hours (checkpoint pending human verification)
 Resume file: None
