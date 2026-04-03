@@ -14,6 +14,17 @@ export type ProfessionalRow = {
 export class ProfessionalRepository {
   constructor(private pool: Pool) {}
 
+  async getById(studioId: string, professionalId: string): Promise<ProfessionalRow | null> {
+    const { rows } = await this.pool.query<ProfessionalRow>(
+      `SELECT p.id, p.studio_id, p.user_id, p.name, p.working_hours, p.is_active, p.created_at, p.updated_at
+       FROM professionals p
+       WHERE p.studio_id = $1 AND p.id = $2
+       LIMIT 1`,
+      [studioId, professionalId],
+    );
+    return rows[0] ?? null;
+  }
+
   async findByUserId(userId: string, studioId: string): Promise<ProfessionalRow | null> {
     const { rows } = await this.pool.query<ProfessionalRow>(
       `SELECT p.id, p.studio_id, p.user_id, p.name, p.working_hours, p.is_active, p.created_at, p.updated_at

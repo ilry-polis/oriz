@@ -26,6 +26,17 @@ export type CreateServiceInput = {
 export class ServiceRepository {
   constructor(private pool: Pool) {}
 
+  async getById(studioId: string, serviceId: string): Promise<ServiceRow | null> {
+    const { rows } = await this.pool.query<ServiceRow>(
+      `SELECT id, studio_id, category_id, name, duration_minutes, price, buffer_minutes, is_active, created_at, updated_at
+       FROM services
+       WHERE studio_id = $1 AND id = $2
+       LIMIT 1`,
+      [studioId, serviceId],
+    );
+    return rows[0] ?? null;
+  }
+
   async create(input: CreateServiceInput): Promise<ServiceRow> {
     const { rows } = await this.pool.query<ServiceRow>(
       `INSERT INTO services (id, studio_id, category_id, name, duration_minutes, price, buffer_minutes, is_active)
