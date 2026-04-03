@@ -65,6 +65,7 @@ Recent decisions affecting current work:
 - Phase 4 (Packages): Session deduction on appointment completion (not booking)
 - Feature branches mandatory for all new work
 - [Phase 02-core-domain]: Services CRUD: cursor pagination uses id > cursor; setActive is separate PATCH /:id/active endpoint; DELETE returns 204
+- Brevo como provedor de envio transacional: convites para profissionais serão enviados via Brevo (email/WhatsApp), n��o apenas clipboard manual
 
 ### Pending Todos
 
