@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-06-PLAN.md — Week view, absences, working hours (checkpoint pending human verification)
-last_updated: "2026-04-03T20:08:31.890Z"
+stopped_at: Completed 03-05-PLAN.md — Booking, Payment, and Detail Sheets
+last_updated: "2026-04-03T20:09:43.991Z"
 last_activity: 2026-04-02 — Phase 1 formally verified and closed
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 12
 ---
 
@@ -55,6 +55,7 @@ Progress: [█░░░░░░░░░] 12%
 | Phase 03-scheduling-engine P03 | 6 | 2 tasks | 8 files |
 | Phase 03-scheduling-engine P04 | 12 | 2 tasks | 12 files |
 | Phase 03-scheduling-engine P06 | 18 | 2 tasks | 7 files |
+| Phase 03-scheduling-engine P05 | 19 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ Recent decisions affecting current work:
 - [Phase 03-scheduling-engine]: Working hours screen saves via OnboardingRepository.updateWorkingHours — reuses PATCH /professionals/:id, no new endpoint needed
 - [Phase 03-scheduling-engine]: Week view uses agendaNotifierProvider.blockedSlotsForDay — appointments mock until 03-04 wires auth context
 - [Phase 03-scheduling-engine]: Day-of-week mapping for recurrence: FilterChip index 0-6 = API days 0=Mon..6=Sun
+- [Phase 03-scheduling-engine]: QuickBookSheet is the single booking entry point — both slot tap (pre-filled time) and [+] button use it; professionalId from agendaState.selectedProfessionalId
+- [Phase 03-scheduling-engine]: Amount in PaymentSheet is editable (pre-filled from service price) — handles discounts applied at checkout without API contract change
 
 ### Pending Todos
 
@@ -93,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T20:08:31.888Z
-Stopped at: Completed 03-06-PLAN.md — Week view, absences, working hours (checkpoint pending human verification)
+Last session: 2026-04-03T20:09:43.989Z
+Stopped at: Completed 03-05-PLAN.md — Booking, Payment, and Detail Sheets
 Resume file: None
