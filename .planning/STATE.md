@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 2 planned and mental-linted, ready to execute
-last_updated: "2026-04-02T22:32:23.608Z"
+stopped_at: Completed 03-01-PLAN.md — DB foundation and repository layer
+last_updated: "2026-04-03T16:25:46.528Z"
 last_activity: 2026-04-02 — Phase 1 formally verified and closed
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 6
-  completed_plans: 0
+  completed_plans: 1
   percent: 12
 ---
 
@@ -50,6 +50,7 @@ Progress: [█░░░░░░░░░] 12%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 03-scheduling-engine P01 | 3 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -63,6 +64,9 @@ Recent decisions affecting current work:
 - Phase 6 (WhatsApp/AI): Requires `/gsd:research-phase` before planning
 - Phase 4 (Packages): Session deduction on appointment completion (not booking)
 - Feature branches mandatory for all new work
+- [Phase 03-scheduling-engine]: no_show excluded from appointments_no_overlap constraint — rebooking a no-show slot is valid behavior
+- [Phase 03-scheduling-engine]: Recurring blocked slots returned wholesale from listByDateRange — expansion to individual dates is service layer responsibility
+- [Phase 03-scheduling-engine]: confirmation_hours_before added to studios table now (Phase 5.1/6 will consume it) — cheaper than a later migration
 
 ### Pending Todos
 
@@ -76,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T22:32:23.605Z
-Stopped at: Phase 2 planned and mental-linted, ready to execute
-Resume file: .planning/phases/02-core-domain/.continue-here.md
+Last session: 2026-04-03T16:25:46.527Z
+Stopped at: Completed 03-01-PLAN.md — DB foundation and repository layer
+Resume file: None
