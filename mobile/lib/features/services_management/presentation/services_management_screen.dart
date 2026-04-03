@@ -39,7 +39,7 @@ class ServicesManagementScreen extends ConsumerWidget {
           ),
         ServiceMgmtLoaded(:final grouped, :final all) when all.isEmpty =>
           EmptyStateWidget(
-            icon: Icons.content_cut_outlined,
+            icon: Icons.auto_awesome_mosaic_outlined,
             title: 'Nenhum serviço cadastrado',
             subtitle: 'Adicione seu primeiro serviço para começar',
             ctaLabel: 'Adicionar serviço',

@@ -53,8 +53,8 @@ class AppShell extends StatelessWidget {
               label: 'Clientes',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.content_cut_outlined),
-              activeIcon: Icon(Icons.content_cut),
+              icon: Icon(Icons.auto_awesome_mosaic_outlined),
+              activeIcon: Icon(Icons.auto_awesome_mosaic),
               label: 'Serviços',
             ),
             BottomNavigationBarItem(

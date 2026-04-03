@@ -121,7 +121,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen>
           Scaffold(body: Center(child: Text('Erro: $e'))),
       data: (client) => Scaffold(
         appBar: AppBar(
-          title: Text(client.name),
+          title: const Text('Cliente'),
           actions: [
             PopupMenuButton<String>(
               onSelected: (v) {
@@ -142,32 +142,64 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen>
         ),
         body: Column(
           children: [
-            // Header
+            // Header with profile avatar
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (client.phone != null)
-                    Text(client.phone!,
-                        style: const TextStyle(color: AppColors.neutral600)),
-                  if (client.email != null)
-                    Text(client.email!,
-                        style: const TextStyle(
-                            color: AppColors.neutral600, fontSize: 13)),
-                  if (client.allTags.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Wrap(
-                        spacing: 6,
-                        children: client.allTags
-                            .map((t) => TagChip(
-                                  label: t,
-                                  readOnly: client.autoTags.contains(t),
-                                ))
-                            .toList(),
+                  // Profile photo / initials avatar
+                  CircleAvatar(
+                    radius: 36,
+                    backgroundColor: AppColors.neutral200,
+                    child: Text(
+                      client.initials,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.neutral600,
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          client.name,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.neutral900,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        if (client.phone != null)
+                          Text(client.phone!,
+                              style: const TextStyle(
+                                  color: AppColors.neutral600, fontSize: 14)),
+                        if (client.email != null)
+                          Text(client.email!,
+                              style: const TextStyle(
+                                  color: AppColors.neutral400, fontSize: 13)),
+                        if (client.allTags.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Wrap(
+                              spacing: 6,
+                              children: client.allTags
+                                  .map((t) => TagChip(
+                                        label: t,
+                                        readOnly: client.autoTags.contains(t),
+                                      ))
+                                  .toList(),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

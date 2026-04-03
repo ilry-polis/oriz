@@ -87,13 +87,14 @@ const rateLimitOptions: Parameters<typeof rateLimit>[1] = {
 };
 
 if (env.REDIS_URL) {
+	const redis = new Redis(env.REDIS_URL, {
+		maxRetriesPerRequest: 1,
+		enableOfflineQueue: false,
+		lazyConnect: true,
+		connectTimeout: 3000,
+		retryStrategy: () => null, // Don't auto-retry — we handle fallback
+	});
 	try {
-		const redis = new Redis(env.REDIS_URL, {
-			maxRetriesPerRequest: 1,
-			enableOfflineQueue: false,
-			lazyConnect: true,
-			connectTimeout: 3000,
-		});
 		await redis.connect();
 		rateLimitOptions.redis = redis;
 		app.addHook("onClose", async () => {
@@ -101,6 +102,7 @@ if (env.REDIS_URL) {
 		});
 		app.log.info("Redis connected — rate limiting uses Redis store");
 	} catch (err) {
+		redis.disconnect();
 		app.log.warn(
 			`Redis unavailable — rate limiting uses in-memory fallback: ${(err as Error).message}`,
 		);

@@ -53,11 +53,9 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: TextField(
               controller: _searchController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Buscar cliente...',
-                prefixIcon: const Icon(Icons.search, color: AppColors.neutral400),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                prefixIcon: Icon(Icons.search, color: AppColors.neutral400),
               ),
               onChanged: (v) => ref.read(clientListProvider.notifier).search(v),
             ),

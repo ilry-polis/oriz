@@ -126,7 +126,13 @@ class ApiClient {
       return body;
     }
 
-    final error = body['error'] as Map<String, dynamic>?;
+    // Backend returns { errors: [{ code, message }] } — extract first error
+    final errors = body['errors'] as List?;
+    final firstError = errors?.isNotEmpty == true
+        ? errors!.first as Map<String, dynamic>
+        : null;
+    // Fallback to legacy { error: { code, message } } shape
+    final error = firstError ?? body['error'] as Map<String, dynamic>?;
     final code = error?['code'] as String? ?? 'UNKNOWN';
     final message = error?['message'] as String? ?? 'Erro desconhecido';
 
