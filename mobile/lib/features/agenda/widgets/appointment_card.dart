@@ -9,15 +9,27 @@ import 'status_badge.dart';
 class AppointmentCard extends StatelessWidget {
   final Appointment appointment;
   final VoidCallback? onTap;
+
+  /// Called when the user confirms the appointment (pending only).
+  final VoidCallback? onConfirm;
+
+  /// Called when the user completes the appointment (confirmed only).
   final VoidCallback? onComplete;
+
+  /// Called when the user cancels (pending or confirmed).
   final VoidCallback? onCancel;
+
+  /// Called when the user marks as no-show (confirmed only).
+  final VoidCallback? onMarkNoShow;
 
   const AppointmentCard({
     super.key,
     required this.appointment,
     this.onTap,
+    this.onConfirm,
     this.onComplete,
     this.onCancel,
+    this.onMarkNoShow,
   });
 
   String get _timeLabel {
@@ -26,13 +38,39 @@ class AppointmentCard extends StatelessWidget {
     return '$h:$m';
   }
 
+  /// For terminal states (completed, cancelled, noShow), render at 60% opacity.
+  bool get _isTerminal => appointment.isTerminal;
+
+  /// Swipe-right action based on status:
+  /// - pending → confirm (blue)
+  /// - confirmed → complete (green)
+  VoidCallback? get _swipeRightAction {
+    if (appointment.canConfirm) return onConfirm;
+    if (appointment.canComplete) return onComplete;
+    return null;
+  }
+
+  Color get _swipeRightColor {
+    if (appointment.canConfirm) return AppColors.info;
+    return AppColors.success;
+  }
+
+  IconData get _swipeRightIcon {
+    if (appointment.canConfirm) return Icons.check_circle_outline_rounded;
+    return Icons.check_rounded;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Dismissible(
-      key: Key(appointment.id),
+    final card = Dismissible(
+      key: ValueKey(appointment.id),
+      // Only allow swipe if there's an action available
+      direction: appointment.isTerminal
+          ? DismissDirection.none
+          : DismissDirection.horizontal,
       background: _swipeBackground(
-        color: AppColors.success,
-        icon: Icons.check_rounded,
+        color: _swipeRightColor,
+        icon: _swipeRightIcon,
         alignment: Alignment.centerLeft,
       ),
       secondaryBackground: _swipeBackground(
@@ -43,70 +81,69 @@ class AppointmentCard extends StatelessWidget {
       confirmDismiss: (direction) async {
         HapticFeedback.mediumImpact();
         if (direction == DismissDirection.startToEnd) {
-          final confirmed = await _showCompleteDialog(context);
-          if (confirmed == true) onComplete?.call();
+          _swipeRightAction?.call();
         } else {
-          final confirmed = await _showCancelDialog(context);
-          if (confirmed == true) onCancel?.call();
+          onCancel?.call();
         }
-        return false;
+        return false; // card stays, state updates via provider
       },
       child: GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();
           onTap?.call();
         },
-        child: AnimatedScale(
-          scale: 1.0,
-          duration: const Duration(milliseconds: 80),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColors.neutral100,
-              border: Border.all(color: AppColors.neutral200),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(_timeLabel, style: AppTypography.bodySemibold),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        appointment.clientName,
-                        style: AppTypography.body,
-                        overflow: TextOverflow.ellipsis,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.neutral100,
+            border: Border.all(color: AppColors.neutral200),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(_timeLabel, style: AppTypography.bodySemibold),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      appointment.clientName,
+                      style: AppTypography.body,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _showContextMenu(context),
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        Icons.more_horiz_rounded,
+                        color: AppColors.neutral400,
+                        size: 20,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => _showContextMenu(context),
-                      child: const SizedBox(
-                        width: 44,
-                        height: 44,
-                        child: Icon(
-                          Icons.more_horiz_rounded,
-                          color: AppColors.neutral400,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  '${appointment.serviceName} · ${appointment.durationMinutes} min',
-                  style: AppTypography.caption,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                StatusBadge(status: appointment.status),
-              ],
-            ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                '${appointment.serviceName} · ${appointment.durationMinutes} min',
+                style: AppTypography.caption,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              StatusBadge(status: appointment.status),
+            ],
           ),
         ),
       ),
     );
+
+    if (_isTerminal) {
+      return Opacity(opacity: 0.6, child: card);
+    }
+    return card;
   }
 
   Widget _swipeBackground({
@@ -125,82 +162,13 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  Future<bool?> _showCompleteDialog(BuildContext context) {
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        title: const Text('Concluir agendamento?', style: AppTypography.title),
-        content: Text(
-          'Marcar ${appointment.clientName} às $_timeLabel como concluído?',
-          style: AppTypography.body.copyWith(color: AppColors.neutral600),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              'Voltar',
-              style: AppTypography.body.copyWith(color: AppColors.neutral600),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              Navigator.pop(ctx, true);
-            },
-            child: Text(
-              'Concluir',
-              style: AppTypography.body.copyWith(color: AppColors.success),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<bool?> _showCancelDialog(BuildContext context) {
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        title: const Text('Cancelar agendamento?', style: AppTypography.title),
-        content: Text(
-          'Cancelar ${appointment.clientName} às $_timeLabel?',
-          style: AppTypography.body.copyWith(color: AppColors.neutral600),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              'Voltar',
-              style: AppTypography.body.copyWith(color: AppColors.neutral600),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              HapticFeedback.heavyImpact();
-              Navigator.pop(ctx, true);
-            },
-            child: Text(
-              'Cancelar',
-              style: AppTypography.body.copyWith(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showContextMenu(BuildContext context) {
     HapticFeedback.lightImpact();
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
       builder: (ctx) => SafeArea(
         child: Column(
@@ -215,15 +183,33 @@ class AppointmentCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            _menuItem(ctx, Icons.edit_outlined, 'Editar agendamento'),
-            _menuItem(ctx, Icons.person_outline_rounded, 'Ver cliente'),
-            _menuItem(ctx, Icons.visibility_off_outlined, 'Marcar não compareceu'),
-            _menuItem(
-              ctx,
-              Icons.cancel_outlined,
-              'Cancelar',
-              color: AppColors.error,
-            ),
+            if (!appointment.isTerminal) ...[
+              _menuItem(ctx, Icons.edit_outlined, 'Editar agendamento'),
+              _menuItem(ctx, Icons.person_outline_rounded, 'Ver cliente'),
+              if (appointment.canMarkNoShow)
+                _menuItem(
+                  ctx,
+                  Icons.visibility_off_outlined,
+                  'Marcar nao compareceu',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    onMarkNoShow?.call();
+                  },
+                ),
+              if (appointment.canCancel)
+                _menuItem(
+                  ctx,
+                  Icons.cancel_outlined,
+                  'Cancelar',
+                  color: AppColors.error,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    onCancel?.call();
+                  },
+                ),
+            ] else ...[
+              _menuItem(ctx, Icons.person_outline_rounded, 'Ver cliente'),
+            ],
             const SizedBox(height: AppSpacing.sm),
           ],
         ),
@@ -236,12 +222,13 @@ class AppointmentCard extends StatelessWidget {
     IconData icon,
     String label, {
     Color? color,
+    VoidCallback? onTap,
   }) {
     final c = color ?? AppColors.neutral900;
     return ListTile(
       leading: Icon(icon, color: c, size: 22),
       title: Text(label, style: AppTypography.body.copyWith(color: c)),
-      onTap: () => Navigator.pop(context),
+      onTap: onTap ?? () => Navigator.pop(context),
       contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
     );
   }

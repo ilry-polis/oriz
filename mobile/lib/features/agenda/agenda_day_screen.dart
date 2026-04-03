@@ -1,92 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import 'models/appointment_model.dart';
+import 'providers/agenda_provider.dart';
 import 'widgets/appointment_card.dart';
 import 'widgets/blocked_slot_card.dart';
 import 'widgets/day_selector.dart';
 import 'widgets/empty_agenda.dart';
-import 'widgets/quick_book_sheet.dart';
 import 'widgets/skeleton_timeline.dart';
 
-enum _ViewState { loading, data, empty, error }
-
-class AgendaDayScreen extends StatefulWidget {
+class AgendaDayScreen extends ConsumerStatefulWidget {
   const AgendaDayScreen({super.key});
 
   @override
-  State<AgendaDayScreen> createState() => _AgendaDayScreenState();
+  ConsumerState<AgendaDayScreen> createState() => _AgendaDayScreenState();
 }
 
-class _AgendaDayScreenState extends State<AgendaDayScreen> {
-  DateTime _selectedDate = DateTime.now();
-  _ViewState _state = _ViewState.loading;
-  List<Appointment> _appointments = [];
-  List<BlockedSlot> _blockedSlots = [];
+class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
   int? _dragOverHour;
-
-  // Working hours from studio config
-  static const _startHour = 8;
-  static const _endHour = 19;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    setState(() => _state = _ViewState.loading);
-
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    if (!mounted) return;
-
-    final appointments = mockAppointments(_selectedDate);
-    final blockedSlots = mockBlockedSlots(_selectedDate);
-
-    setState(() {
-      _appointments = appointments;
-      _blockedSlots = blockedSlots;
-      _state = appointments.isEmpty && blockedSlots.isEmpty
-          ? _ViewState.empty
-          : _ViewState.data;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(agendaNotifierProvider.notifier).selectDate(DateTime.now());
     });
   }
 
-  void _onDateSelected(DateTime date) {
-    setState(() => _selectedDate = date);
-    _loadData();
+  String _dateLabel(DateTime d) {
+    const weekdays = [
+      'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado', 'Domingo',
+    ];
+    const months = [
+      'janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+    ];
+    return '${weekdays[d.weekday - 1]}, ${d.day} de ${months[d.month - 1]}';
+  }
+
+  Future<void> _pickDate(DateTime current) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current,
+      firstDate: DateTime(2024),
+      lastDate: DateTime(2028),
+    );
+    if (picked != null && mounted) {
+      ref.read(agendaNotifierProvider.notifier).selectDate(picked);
+    }
   }
 
   void _moveAppointment(Appointment appointment, int newHour) {
-    final duration = appointment.endTime.difference(appointment.startTime);
-    final newStart = DateTime(
-      _selectedDate.year, _selectedDate.month, _selectedDate.day, newHour,
-    );
-    final newEnd = newStart.add(duration);
-
-    setState(() {
-      _appointments = _appointments.map((a) {
-        if (a.id == appointment.id) {
-          return Appointment(
-            id: a.id,
-            clientName: a.clientName,
-            serviceName: a.serviceName,
-            durationMinutes: a.durationMinutes,
-            startTime: newStart,
-            endTime: newEnd,
-            status: a.status,
-          );
-        }
-        return a;
-      }).toList();
-      _dragOverHour = null;
-    });
-
     HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -100,38 +67,84 @@ class _AgendaDayScreenState extends State<AgendaDayScreen> {
         ),
       ),
     );
+    setState(() => _dragOverHour = null);
   }
 
-  bool _canDropAt(int hour) {
-    // Can't drop on a blocked slot
-    final blocked = _blockedSlots.any((b) => b.startTime.hour == hour);
-    return !blocked;
+  bool _canDropAt(int hour, List<BlockedSlot> blockedSlots) {
+    return !blockedSlots.any((b) => b.startTime.hour == hour);
   }
 
-  String get _dateLabel {
-    const weekdays = [
-      'Segunda', 'Terça', 'Quarta', 'Quinta',
-      'Sexta', 'Sábado', 'Domingo',
-    ];
-    const months = [
-      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
-    ];
-    final wd = weekdays[_selectedDate.weekday - 1];
-    final m = months[_selectedDate.month - 1];
-    return '$wd, ${_selectedDate.day} de $m';
+  Future<void> _showCancelDialog(Appointment appointment) async {
+    final reasonController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: const Text('Cancelar agendamento?', style: AppTypography.title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Cancelar ${appointment.clientName}?',
+              style: AppTypography.body.copyWith(color: AppColors.neutral600),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: reasonController,
+              decoration: const InputDecoration(
+                hintText: 'Motivo (opcional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Voltar',
+              style: AppTypography.body.copyWith(color: AppColors.neutral600),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              HapticFeedback.heavyImpact();
+              Navigator.pop(ctx, true);
+            },
+            child: Text(
+              'Cancelar',
+              style: AppTypography.body.copyWith(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await ref.read(agendaNotifierProvider.notifier).cancelAppointment(
+        appointment.id,
+        reason: reasonController.text.isNotEmpty ? reasonController.text : null,
+      );
+    }
+    reasonController.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final agendaState = ref.watch(agendaNotifierProvider);
+    final selectedDate = agendaState.selectedDate;
+
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             _buildTopBar(),
-            _buildDateSection(),
+            _buildDateSection(agendaState),
             const Divider(height: 1, color: AppColors.neutral200),
-            Expanded(child: _buildContent()),
+            Expanded(child: _buildContent(agendaState, selectedDate)),
           ],
         ),
       ),
@@ -179,7 +192,7 @@ class _AgendaDayScreenState extends State<AgendaDayScreen> {
     );
   }
 
-  Widget _buildDateSection() {
+  Widget _buildDateSection(AgendaState agendaState) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm,
@@ -187,73 +200,91 @@ class _AgendaDayScreenState extends State<AgendaDayScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _dateLabel,
-            style: AppTypography.body.copyWith(color: AppColors.neutral600),
+          GestureDetector(
+            onTap: () => _pickDate(agendaState.selectedDate),
+            child: Text(
+              _dateLabel(agendaState.selectedDate),
+              style: AppTypography.body.copyWith(color: AppColors.neutral600),
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
           DaySelector(
-            selectedDate: _selectedDate,
-            onDateSelected: _onDateSelected,
+            selectedDate: agendaState.selectedDate,
+            onDateSelected: (date) =>
+                ref.read(agendaNotifierProvider.notifier).selectDate(date),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContent() {
-    return switch (_state) {
-      _ViewState.loading => const Padding(
+  Widget _buildContent(AgendaState agendaState, DateTime selectedDate) {
+    if (agendaState.isLoading) {
+      return const Padding(
         padding: EdgeInsets.all(AppSpacing.md),
         child: SkeletonTimeline(),
-      ),
-      _ViewState.empty => EmptyAgenda(
-        onCreateAppointment: () => QuickBookSheet.show(
-          context, hour: 9, date: _selectedDate,
-        ),
-      ),
-      _ViewState.error => _buildError(),
-      _ViewState.data => _buildTimeline(),
-    };
+      );
+    }
+
+    if (agendaState.error != null) {
+      return _buildError(agendaState.error!);
+    }
+
+    final appointments = agendaState.appointmentsForDay(selectedDate);
+    final blockedSlots = agendaState.blockedSlotsForDay(selectedDate);
+
+    if (appointments.isEmpty && blockedSlots.isEmpty) {
+      return EmptyAgenda(onCreateAppointment: () {});
+    }
+
+    return _buildTimeline(
+      agendaState: agendaState,
+      appointments: appointments,
+      blockedSlots: blockedSlots,
+    );
   }
 
-  Widget _buildTimeline() {
+  Widget _buildTimeline({
+    required AgendaState agendaState,
+    required List<Appointment> appointments,
+    required List<BlockedSlot> blockedSlots,
+  }) {
+    final startHour = agendaState.timelineStart;
+    final endHour = agendaState.timelineEnd;
+
     return RefreshIndicator(
-      onRefresh: _loadData,
+      onRefresh: () => ref.read(agendaNotifierProvider.notifier).refresh(),
       color: AppColors.primary,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
         ),
-        itemCount: _endHour - _startHour,
+        itemCount: endHour - startHour,
         itemBuilder: (context, index) {
-          final hour = _startHour + index;
-          return _buildTimeSlot(hour);
+          final hour = startHour + index;
+          return _buildTimeSlot(hour, appointments, blockedSlots);
         },
       ),
     );
   }
 
-  Widget _buildTimeSlot(int hour) {
+  Widget _buildTimeSlot(
+    int hour,
+    List<Appointment> appointments,
+    List<BlockedSlot> blockedSlots,
+  ) {
     final hourLabel = '${hour.toString().padLeft(2, '0')}:00';
-
-    final appointment = _appointments.where(
-      (a) => a.startTime.hour == hour,
-    ).firstOrNull;
-
-    final blocked = _blockedSlots.where(
-      (b) => b.startTime.hour == hour,
-    ).firstOrNull;
-
+    final appointment =
+        appointments.where((a) => a.startTime.hour == hour).firstOrNull;
+    final blocked =
+        blockedSlots.where((b) => b.startTime.hour == hour).firstOrNull;
     final isDragOver = _dragOverHour == hour;
-    final canDrop = _canDropAt(hour);
+    final canDrop = _canDropAt(hour, blockedSlots);
 
-    // Wrap each slot in a DragTarget for appointment reordering
     return DragTarget<Appointment>(
       onWillAcceptWithDetails: (details) {
         if (!canDrop) return false;
-        // Don't accept on its own slot
         if (details.data.startTime.hour == hour) return false;
         setState(() => _dragOverHour = hour);
         return true;
@@ -271,10 +302,7 @@ class _AgendaDayScreenState extends State<AgendaDayScreen> {
               ? BoxDecoration(
                   color: AppColors.accentSoft,
                   borderRadius: BorderRadius.circular(AppRadius.md),
-                  border: Border.all(
-                    color: AppColors.accent,
-                    width: 2,
-                  ),
+                  border: Border.all(color: AppColors.accent, width: 2),
                 )
               : null,
           child: Row(
@@ -304,12 +332,16 @@ class _AgendaDayScreenState extends State<AgendaDayScreen> {
                     ? _buildDraggableAppointment(appointment)
                     : blocked != null
                         ? Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: AppSpacing.sm,
+                            padding:
+                                const EdgeInsets.only(bottom: AppSpacing.sm),
+                            child: BlockedSlotCard(
+                              slot: blocked,
+                              onDelete: () => ref
+                                  .read(agendaNotifierProvider.notifier)
+                                  .deleteAbsence(blocked.id),
                             ),
-                            child: BlockedSlotCard(slot: blocked),
                           )
-                        : _buildEmptySlot(hour),
+                        : _buildEmptySlot(),
               ),
             ],
           ),
@@ -342,14 +374,11 @@ class _AgendaDayScreenState extends State<AgendaDayScreen> {
           decoration: BoxDecoration(
             color: AppColors.neutral200.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: AppColors.neutral300,
-              style: BorderStyle.solid,
-            ),
+            border: Border.all(color: AppColors.neutral300),
           ),
           child: Center(
             child: Text(
-              'Solte em outro horário',
+              'Solte em outro horario',
               style: AppTypography.caption.copyWith(
                 color: AppColors.neutral400,
               ),
@@ -362,57 +391,51 @@ class _AgendaDayScreenState extends State<AgendaDayScreen> {
         child: AppointmentCard(
           appointment: appointment,
           onTap: () {},
-          onComplete: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('${appointment.clientName} concluído!'),
-                backgroundColor: AppColors.success,
-                duration: const Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-              ),
-            );
-          },
-          onCancel: () {},
+          onConfirm: appointment.canConfirm
+              ? () => ref
+                    .read(agendaNotifierProvider.notifier)
+                    .confirmAppointment(appointment.id)
+              : null,
+          onComplete: appointment.canComplete
+              ? () => ref
+                    .read(agendaNotifierProvider.notifier)
+                    .completeAppointment(appointment.id)
+              : null,
+          onCancel: appointment.canCancel
+              ? () => _showCancelDialog(appointment)
+              : null,
+          onMarkNoShow: appointment.canMarkNoShow
+              ? () => ref
+                    .read(agendaNotifierProvider.notifier)
+                    .markNoShow(appointment.id)
+              : null,
         ),
       ),
     );
   }
 
-  Widget _buildEmptySlot(int hour) {
-    return GestureDetector(
-      onTap: () => QuickBookSheet.show(
-        context, hour: hour, date: _selectedDate,
+  Widget _buildEmptySlot() {
+    return Container(
+      height: 44,
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
-      child: Container(
-        height: 44, // minimum touch target
-        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 1,
-                color: AppColors.neutral200,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Icon(
-              Icons.add_circle_outline_rounded,
-              size: 18,
-              color: AppColors.neutral300,
-            ),
-          ],
-        ),
+      child: Row(
+        children: [
+          Expanded(child: Container(height: 1, color: AppColors.neutral200)),
+          const SizedBox(width: AppSpacing.sm),
+          const Icon(
+            Icons.add_circle_outline_rounded,
+            size: 18,
+            color: AppColors.neutral300,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildError() {
+  Widget _buildError(String message) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
@@ -431,7 +454,7 @@ class _AgendaDayScreenState extends State<AgendaDayScreen> {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Verifique sua conexão e tente novamente.',
+              message,
               style: AppTypography.body.copyWith(color: AppColors.neutral600),
               textAlign: TextAlign.center,
             ),
@@ -439,7 +462,8 @@ class _AgendaDayScreenState extends State<AgendaDayScreen> {
             SizedBox(
               height: 48,
               child: OutlinedButton(
-                onPressed: _loadData,
+                onPressed: () =>
+                    ref.read(agendaNotifierProvider.notifier).refresh(),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.neutral200),
                   shape: RoundedRectangleBorder(
