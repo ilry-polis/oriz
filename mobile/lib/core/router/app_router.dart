@@ -8,9 +8,11 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../http/api_client.dart';
+import '../../features/more/presentation/more_screen.dart';
 import '../../features/onboarding/data/onboarding_repository.dart';
 import '../../features/onboarding/presentation/onboarding_complete_screen.dart';
 import '../../features/onboarding/presentation/onboarding_wizard_screen.dart';
+import '../../features/settings/working_hours_screen.dart';
 import '../shell/app_shell.dart';
 
 /// Listenable that notifies GoRouter when auth state changes.
@@ -190,7 +192,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/more',
-            builder: (_, __) => const _Placeholder('Mais'),
+            builder: (_, __) => const MoreScreen(),
+            routes: [
+              GoRoute(
+                path: 'working-hours',
+                builder: (_, __) => const WorkingHoursScreen(),
+              ),
+            ],
           ),
         ],
       ),
