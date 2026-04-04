@@ -12,6 +12,7 @@ import 'widgets/blocked_slot_card.dart';
 import 'widgets/day_selector.dart';
 import 'widgets/appointment_detail_sheet.dart';
 import 'widgets/cancel_dialog.dart';
+import 'widgets/create_absence_sheet.dart';
 import 'widgets/payment_sheet.dart';
 import 'widgets/quick_book_sheet.dart';
 import 'widgets/skeleton_timeline.dart';
@@ -380,15 +381,26 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
   }
 
   Widget _buildEmptySlot(int hour, AgendaState agendaState) {
+    final profId = agendaState.selectedProfessionalId ??
+        ref.read(currentProfessionalIdProvider) ?? '';
     return GestureDetector(
       onTap: () => QuickBookSheet.show(
         context,
         date: agendaState.selectedDate,
-        professionalId:
-            agendaState.selectedProfessionalId ?? ref.read(currentProfessionalIdProvider) ?? '',
+        professionalId: profId,
         hour: hour,
         minute: 0,
       ),
+      onLongPress: () {
+        HapticFeedback.mediumImpact();
+        CreateAbsenceSheet.show(
+          context,
+          initialDate: agendaState.selectedDate,
+          initialStartTime: '${hour.toString().padLeft(2, '0')}:00',
+          initialEndTime: '${(hour + 1).toString().padLeft(2, '0')}:00',
+          onCreated: () => ref.read(agendaNotifierProvider.notifier).refresh(),
+        );
+      },
       child: Container(
         height: 44,
         margin: const EdgeInsets.only(bottom: AppSpacing.xs),
