@@ -229,7 +229,10 @@ export class AppointmentRepository {
             (id, studio_id, client_id, professional_id, service_id, date,
              start_time, end_time, notes, source)
           VALUES
-            (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9)
+            (gen_random_uuid(), $1, $2, $3, $4, $5,
+             ($5::date || ' ' || $6::text)::timestamptz,
+             ($5::date || ' ' || $7::text)::timestamptz,
+             $8, $9)
           RETURNING *
         )
         SELECT ${APPOINTMENT_COLUMNS}
