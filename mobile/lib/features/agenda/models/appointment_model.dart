@@ -162,6 +162,10 @@ class BlockedSlot {
     final endStr = json['end_time'] as String? ?? '01:00';
 
     DateTime parseSlotDateTime(String d, String t) {
+      // If t is a full ISO timestamp, parse directly
+      if (t.contains('T')) {
+        return DateTime.parse(t).toLocal();
+      }
       final colonIdx = t.indexOf(':');
       final h = colonIdx > 0 ? int.tryParse(t.substring(0, colonIdx)) ?? 0 : 0;
       final rest = colonIdx > 0 ? t.substring(colonIdx + 1) : '0';
