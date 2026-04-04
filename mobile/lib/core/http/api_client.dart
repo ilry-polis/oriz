@@ -71,9 +71,12 @@ class ApiClient {
         message: 'Resposta invalida do servidor',
       );
     }
-    final error = body['error'] as Map<String, dynamic>?;
-    final code = error?['code'] as String? ?? 'UNKNOWN';
-    final message = error?['message'] as String? ?? 'Erro desconhecido';
+    final errors = body['errors'] as List<dynamic>?;
+    final firstError = errors?.isNotEmpty == true
+        ? errors!.first as Map<String, dynamic>
+        : null;
+    final code = firstError?['code'] as String? ?? 'UNKNOWN';
+    final message = firstError?['message'] as String? ?? 'Erro desconhecido';
     throw ApiException(statusCode: response.statusCode, code: code, message: message);
   }
 
@@ -93,9 +96,13 @@ class ApiClient {
       return body;
     }
 
-    final error = body['error'] as Map<String, dynamic>?;
-    final code = error?['code'] as String? ?? 'UNKNOWN';
-    final message = error?['message'] as String? ?? 'Erro desconhecido';
+    // Backend returns { errors: [{ code, message, field? }] }
+    final errors = body['errors'] as List<dynamic>?;
+    final firstError = errors?.isNotEmpty == true
+        ? errors!.first as Map<String, dynamic>
+        : null;
+    final code = firstError?['code'] as String? ?? 'UNKNOWN';
+    final message = firstError?['message'] as String? ?? 'Erro desconhecido';
 
     throw ApiException(
       statusCode: response.statusCode,
