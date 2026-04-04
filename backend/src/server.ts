@@ -31,6 +31,8 @@ import { ServiceCategoryController } from './controllers/service-category.contro
 import { ProfessionalController } from './controllers/professional.controller.js';
 import { AppointmentController } from './controllers/appointment.controller.js';
 import { BlockedSlotController } from './controllers/blocked-slot.controller.js';
+import { ClientRepository } from './repositories/client.repository.js';
+import { ClientController } from './controllers/client.controller.js';
 
 const env = parseEnv();
 
@@ -67,12 +69,17 @@ if (env.REDIS_URL) {
     maxRetriesPerRequest: 1,
     enableOfflineQueue: false,
     lazyConnect: true,
+    retryStrategy: (times) => (times > 1 ? null : 500),
   });
-  redis.connect().catch((err) => {
-    app.log.warn(`Redis unavailable — rate limiting falls back to in-memory: ${err.message}`);
-  });
-  rateLimitOptions.redis = redis;
-  app.addHook('onClose', async () => { redis.disconnect(); });
+  redis.on('error', () => {}); // suppress unhandled ioredis events
+  try {
+    await redis.connect();
+    rateLimitOptions.redis = redis;
+    app.addHook('onClose', async () => { redis.disconnect(); });
+  } catch (err) {
+    app.log.warn(`Redis unavailable — rate limiting falls back to in-memory: ${(err as Error).message}`);
+    redis.disconnect();
+  }
 }
 
 await app.register(rateLimit, rateLimitOptions);
@@ -104,6 +111,7 @@ const professionalRepo = new ProfessionalRepository(pool);
 const appointmentRepo = new AppointmentRepository(pool);
 const blockedSlotRepo = new BlockedSlotRepository(pool);
 const paymentRepo = new PaymentRepository(pool);
+const clientRepo = new ClientRepository(pool);
 
 // ─── Services ─────────────────────────────────────────────
 const studioService = new StudioService(studioRepo, onboardingRepo, professionalRepo);
@@ -128,6 +136,7 @@ app.decorate('serviceCategoryController', new ServiceCategoryController(serviceC
 app.decorate('professionalController', new ProfessionalController(professionalService));
 app.decorate('appointmentController', new AppointmentController(appointmentService));
 app.decorate('blockedSlotController', new BlockedSlotController(blockedSlotService));
+app.decorate('clientController', new ClientController(clientRepo));
 
 // ─── Request Decorator ─────────────────────────────────────
 app.decorateRequest('authContext', null as unknown as import('./middlewares/auth.js').AuthContext);

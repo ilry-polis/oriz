@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../providers/agenda_provider.dart';
+import '../../../core/utils/phone_formatter.dart';
 import '../repositories/appointment_repository.dart';
 
 /// Bottom sheet for booking a new appointment.
@@ -234,7 +235,7 @@ class _QuickBookSheetState extends ConsumerState<QuickBookSheet> {
 
   Future<void> _createAndSelectClient() async {
     final name = _newClientNameController.text.trim();
-    final phone = _newClientPhoneController.text.trim();
+    final phone = stripPhoneMask(_newClientPhoneController.text);
     if (name.isEmpty || phone.isEmpty) return;
 
     setState(() => _creatingClient = true);
@@ -598,8 +599,9 @@ class _QuickBookSheetState extends ConsumerState<QuickBookSheet> {
           const SizedBox(height: AppSpacing.xs),
           TextField(
             controller: _newClientPhoneController,
-            decoration: _inputDecoration('Telefone'),
+            decoration: _inputDecoration('(00) 00000-0000'),
             keyboardType: TextInputType.phone,
+            inputFormatters: [BrazilPhoneFormatter()],
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(

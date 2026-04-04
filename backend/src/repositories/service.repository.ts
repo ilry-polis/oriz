@@ -26,6 +26,46 @@ export type CreateServiceInput = {
 export class ServiceRepository {
   constructor(private pool: Pool) {}
 
+  async list(
+    studioId: string,
+    opts: { categoryId?: string; isActive?: boolean; cursor?: string; limit: number },
+  ): Promise<{ data: ServiceRow[]; hasMore: boolean }> {
+    const params: unknown[] = [studioId, opts.limit + 1];
+    const conditions = ['studio_id = $1'];
+    let paramIndex = 3;
+
+    if (opts.categoryId) {
+      conditions.push(`category_id = $${paramIndex}`);
+      params.push(opts.categoryId);
+      paramIndex++;
+    }
+    if (opts.isActive !== undefined) {
+      conditions.push(`is_active = $${paramIndex}`);
+      params.push(opts.isActive);
+      paramIndex++;
+    }
+    if (opts.cursor) {
+      conditions.push(`id < $${paramIndex}`);
+      params.push(opts.cursor);
+      paramIndex++;
+    }
+
+    const where = conditions.join(' AND ');
+    const { rows } = await this.pool.query<ServiceRow>(
+      `SELECT id, studio_id, category_id, name, duration_minutes, price, buffer_minutes, is_active, created_at, updated_at
+       FROM services
+       WHERE ${where}
+       ORDER BY name ASC, id DESC
+       LIMIT $2`,
+      params,
+    );
+
+    const hasMore = rows.length > opts.limit;
+    if (hasMore) rows.pop();
+
+    return { data: rows, hasMore };
+  }
+
   async getById(studioId: string, serviceId: string): Promise<ServiceRow | null> {
     const { rows } = await this.pool.query<ServiceRow>(
       `SELECT id, studio_id, category_id, name, duration_minutes, price, buffer_minutes, is_active, created_at, updated_at

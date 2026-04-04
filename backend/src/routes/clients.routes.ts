@@ -67,9 +67,8 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.get('/', {
     onRequest: [app.requireStudioMember],
     schema: { querystring: ListClientsQuery },
-    handler: async (_request, _reply) => {
-      // → ClientController.list
-      throw new Error('Not implemented');
+    handler: async (request, reply) => {
+      return app.clientController.list(request, reply);
     },
   });
 
@@ -79,9 +78,8 @@ export default async function clientRoutes(app: FastifyInstance) {
   app.post('/', {
     onRequest: [app.requireStudioMember],
     schema: { body: CreateClientBody },
-    handler: async (_request, _reply) => {
-      // → ClientController.create
-      throw new Error('Not implemented');
+    handler: async (request, reply) => {
+      return app.clientController.create(request, reply);
     },
   });
 

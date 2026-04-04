@@ -40,9 +40,8 @@ export default async function serviceRoutes(app: FastifyInstance) {
   app.get('/', {
     onRequest: [app.requireStudioMember],
     schema: { querystring: ListServicesQuery },
-    handler: async (_request, _reply) => {
-      // → ServiceController.list
-      throw new Error('Not implemented');
+    handler: async (request, reply) => {
+      return app.serviceController.list(request, reply);
     },
   });
 

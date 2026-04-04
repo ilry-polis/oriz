@@ -7,6 +7,7 @@ import type { OnboardingController } from "../controllers/onboarding.controller.
 import type { ProfessionalController } from "../controllers/professional.controller.js";
 import type { ServiceCategoryController } from "../controllers/service-category.controller.js";
 import type { ServiceController } from "../controllers/service.controller.js";
+import type { ClientController } from "../controllers/client.controller.js";
 import type { StudioController } from "../controllers/studio.controller.js";
 import type { AuthContext } from "../middlewares/auth.js";
 
@@ -27,6 +28,7 @@ declare module "fastify" {
 		professionalController: ProfessionalController;
 		appointmentController: AppointmentController;
 		blockedSlotController: BlockedSlotController;
+		clientController: ClientController;
 	}
 
 	interface FastifyRequest {
