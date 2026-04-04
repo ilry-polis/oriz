@@ -308,9 +308,24 @@ export class AppointmentRepository {
     const params: unknown[] = [studioId, appointmentId];
     let idx = 3;
 
+    // Time fields need date+time cast to timestamptz
+    const timeFields = new Set(['start_time', 'end_time']);
+    // Use provided date or fallback to existing appointment date
+    const dateExpr = fields.date !== undefined ? `$${idx}::date` : 'date';
+    if (fields.date !== undefined) {
+      setClauses.push(`date = $${idx++}`);
+      params.push(fields.date);
+    }
+
     for (const key of allowed) {
+      if (key === 'date') continue; // handled above
       if (fields[key] !== undefined) {
-        setClauses.push(`${key} = $${idx++}`);
+        if (timeFields.has(key)) {
+          setClauses.push(`${key} = (${dateExpr} || ' ' || $${idx}::text)::timestamptz`);
+        } else {
+          setClauses.push(`${key} = $${idx}`);
+        }
+        idx++;
         params.push(fields[key] ?? null);
       }
     }

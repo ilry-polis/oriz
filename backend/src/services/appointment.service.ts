@@ -191,12 +191,18 @@ export class AppointmentService {
       );
     }
 
+    // Recalculate end_time when start_time changes
+    let endTime = params.endTime;
+    if (params.startTime && !endTime) {
+      endTime = addMinutesToTime(params.startTime, appt.duration_minutes + appt.buffer_minutes);
+    }
+
     const updated = await this.appointmentRepo.update(studioId, appointmentId, {
       professional_id: params.professionalId,
       service_id: params.serviceId,
       date: params.date,
       start_time: params.startTime,
-      end_time: params.endTime,
+      end_time: endTime,
       notes: params.notes,
     });
 

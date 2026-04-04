@@ -155,6 +155,15 @@ class AgendaNotifier extends Notifier<AgendaState> {
     await _loadDayData(state.selectedDate, state.selectedProfessionalId);
   }
 
+  Future<void> rescheduleAppointment(String id, {required String date, required String startTime}) async {
+    try {
+      await _appointments.reschedule(id, date: date, startTime: startTime);
+      await _loadDayData(state.selectedDate, state.selectedProfessionalId);
+    } on ApiException catch (e) {
+      state = state.copyWith(error: e.message);
+    }
+  }
+
   // ─── Appointment status transitions ──────────────────────────────────────
 
   Future<void> confirmAppointment(String id) async {

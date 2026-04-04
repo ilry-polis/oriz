@@ -65,19 +65,33 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
 
   void _moveAppointment(Appointment appointment, int newHour) {
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${appointment.clientName} movido para ${newHour.toString().padLeft(2, '0')}:00',
-        ),
-        backgroundColor: AppColors.info,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-      ),
-    );
     setState(() => _dragOverHour = null);
+
+    final agendaState = ref.read(agendaNotifierProvider);
+    final d = agendaState.selectedDate;
+    final dateStr =
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final timeStr = '${newHour.toString().padLeft(2, '0')}:00';
+
+    ref
+        .read(agendaNotifierProvider.notifier)
+        .rescheduleAppointment(appointment.id, date: dateStr, startTime: timeStr)
+        .then((_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${appointment.clientName} movido para $timeStr',
+            ),
+            backgroundColor: AppColors.info,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+          ),
+        );
+      }
+    });
   }
 
   bool _canDropAt(int hour, List<BlockedSlot> blockedSlots) {

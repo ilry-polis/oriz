@@ -95,6 +95,19 @@ class AppointmentRepository {
     return Appointment.fromJson(response['data'] as Map<String, dynamic>);
   }
 
+  /// PATCH /api/v1/appointments/:id — reschedule (change start_time)
+  Future<Appointment> reschedule(
+    String id, {
+    required String date,
+    required String startTime,
+  }) async {
+    final response = await _client.patch(
+      '/api/v1/appointments/$id',
+      body: {'date': date, 'start_time': startTime},
+    );
+    return Appointment.fromJson(response['data'] as Map<String, dynamic>);
+  }
+
   /// POST /api/v1/appointments/:id/no-show
   Future<Appointment> markNoShow(String id) async {
     final response = await _client.post('/api/v1/appointments/$id/no-show');
