@@ -21,13 +21,14 @@ export class ProfessionalController {
 			query.limit,
 		);
 
-		// Strip commission data for collaborators (they cannot see other professionals' commissions)
+		// Strip commission data for collaborators — they see their own, not others'
 		if (role === "professional") {
+			const { userId } = request.authContext as StudioAuthContext & { userId: string };
 			result.data = result.data.map((p) => {
-				const { commission_type, commission_value, card_fee_policy, ...safe } =
-					p;
-				return safe as typeof p;
-			});
+				if (p.user_id === userId) return p;
+				const { commission_type, commission_value, card_fee_policy, ...safe } = p;
+				return safe;
+			}) as unknown as typeof result.data;
 		}
 
 		return reply.send(result);

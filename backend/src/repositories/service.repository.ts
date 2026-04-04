@@ -83,8 +83,23 @@ export class ServiceRepository {
 
 		let cursorClause = "";
 		if (cursor) {
-			params.push(cursor);
-			cursorClause = `AND (sc.name, s.name, s.id) > (SELECT sc2.name, s2.name, s2.id FROM services s2 LEFT JOIN service_categories sc2 ON sc2.id = s2.category_id WHERE s2.id = $${params.length} AND s2.studio_id = $1)`;
+			// Two-step: resolve cursor values first, then use as bind params
+			const { rows: cursorRows } = await this.pool.query<{
+				cat_name: string | null;
+				svc_name: string;
+				svc_id: string;
+			}>(
+				`SELECT sc.name AS cat_name, s.name AS svc_name, s.id AS svc_id
+				 FROM services s
+				 LEFT JOIN service_categories sc ON sc.id = s.category_id
+				 WHERE s.id = $1 AND s.studio_id = $2`,
+				[cursor, studioId],
+			);
+			if (cursorRows[0]) {
+				const c = cursorRows[0];
+				params.push(c.cat_name, c.svc_name, c.svc_id);
+				cursorClause = `AND (sc.name, s.name, s.id) > ($${params.length - 2}, $${params.length - 1}, $${params.length})`;
+			}
 		}
 
 		const { rows } = await this.pool.query<
