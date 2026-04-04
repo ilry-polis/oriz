@@ -59,7 +59,8 @@ Services catalog, client management, and team management with commissions. Studi
 - Categories from onboarding carry over seamlessly
 
 ### Team management
-- Owner generates invite link shared via WhatsApp — link expires in 7 days
+- Owner generates invite link — link expires in 7 days
+- Invite delivery via Brevo (email/WhatsApp transactional) — fallback: manual clipboard copy
 - Collaborator clicks link, creates own account (email + password), gets linked to studio automatically
 - Owner pre-configures: name, services (checkbox), commission rate, card fee policy
 - Each professional linked to specific services (checkbox selection)

@@ -423,6 +423,129 @@ scrollController.addListener(() {
 
 ---
 
+## Padrões de Componentes (Obrigatórios)
+
+### Bottom Sheet para Criação (Padrão do App)
+
+Toda criação de entidade (cliente, serviço, categoria, agendamento) usa **bottom sheet**, nunca navegação para tela nova. Bottom sheets mantêm o contexto e seguem o padrão do `QuickBookSheet`.
+
+**Estrutura obrigatória:**
+```
+┌──────────────────────────────────┐
+│           ────── (handle)        │
+│                                  │
+│  [ícone]  Título do formulário   │
+│  ─────────────────────────────── │
+│                                  │
+│  [ Campos do formulário ]        │
+│                                  │
+│  [ ========= Botão ========== ] │
+│                                  │
+└──────────────────────────────────┘
+```
+
+- **Handle**: 36x4px, --neutral-300, radius 2px, margin-top --space-sm
+- **Header**: Ícone em container accent-soft + título --text-title
+- **Divider**: 1px --neutral-200
+- **Campos**: padding --space-lg
+- **Botão**: full-width, 48px, --brand-primary, radius-md
+- `isScrollControlled: true` para respeitar teclado
+- `MediaQuery.of(context).viewInsets.bottom` para padding do teclado
+- `HapticFeedback.lightImpact()` ao abrir
+
+**Padrão de código — método `show` estático:**
+```dart
+static Future<void> show(BuildContext context) {
+  HapticFeedback.lightImpact();
+  return showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+    ),
+    builder: (_) => const MeuFormSheet(),
+  );
+}
+```
+
+### Bottom Sheet para Ações (Menu de Contexto)
+
+Toda ação contextual (editar, excluir, ativar/desativar) usa **bottom sheet com 3 pontinhos**, nunca `PopupMenuButton`.
+
+**Trigger**: `Icons.more_horiz_rounded` em SizedBox 44x44 (touch target), cor --neutral-400, tamanho 20
+**Estrutura**:
+```
+┌──────────────────────────────────┐
+│           ────── (handle)        │
+│  [ícone] Editar                  │
+│  [ícone] Ativar/Desativar        │
+│  [ícone] Excluir (vermelho)      │
+│                                  │
+└──────────────────────────────────┘
+```
+
+- Handle: mesmo padrão do bottom sheet de criação
+- Itens: `ListTile` com icon 22px + texto --text-body
+- Padding horizontal: --space-lg
+- Ação destrutiva: cor --error no ícone e texto
+- `HapticFeedback.lightImpact()` ao abrir
+- `HapticFeedback.heavyImpact()` antes de confirmar ação destrutiva
+
+### Botão "+" (Adicionar) no AppBar
+
+O botão de adicionar em toda tela de listagem usa `IconButton` padrão:
+```dart
+IconButton(
+  icon: const Icon(Icons.add),
+  onPressed: () => MeuFormSheet.show(context),
+)
+```
+- Ícone "+" simples, sem background colorido
+- Sempre abre um **bottom sheet** de criação, nunca navega para tela nova
+
+### Cards de Listagem
+
+Cards seguem o padrão do `AppointmentCard`:
+```
+┌──────────────────────────────────┐
+│  Nome do item         Inativo    │  → badge se inativo
+│  Detalhes · Info            [•••]│  → 3 pontinhos para ações
+└──────────────────────────────────┘
+```
+- Container com border --neutral-200, bg --neutral-100, radius-md, padding-md
+- Margin horizontal --space-md, vertical --space-xs
+- Row: info expandida à esquerda + 3 pontinhos à direita (SizedBox 44x44)
+- Tap no card: navega para detalhe (tela full)
+- Tap nos 3 pontinhos: abre bottom sheet de ações
+
+### Telas de Edição
+
+Edição usa **tela full** (Scaffold com AppBar), não bottom sheet.
+- Carrega dados da entidade no `initState` via API
+- Popula todos os campos antes de mostrar o form
+- Mostra `CircularProgressIndicator` enquanto carrega
+- Botão "Salvar" de 48px seguindo padrão de botão primário
+
+### Fluxo: Criar vs Editar vs Detalhe
+
+| Ação | Componente | Exemplo |
+|------|-----------|---------|
+| Criar | Bottom sheet | `ServiceFormSheet.show(context)` |
+| Ver detalhe | Tela full (read-only) | `/services/:id` → `ServiceDetailScreen` |
+| Editar | Tela full (form) | `/services/:id/edit` → `ServiceFormScreen` |
+| Ações rápidas | Bottom sheet via 3 pontinhos | Editar, ativar/desativar, excluir |
+
+### Confirmação de Ações
+
+| Tipo | Componente | Haptic |
+|------|-----------|--------|
+| Abrir menu | Bottom sheet | `lightImpact` |
+| Seleção | Tap | `selectionClick` |
+| Confirmar criação/edição | Botão | `mediumImpact` |
+| Confirmar exclusão | AlertDialog + botão | `heavyImpact` |
+
+---
+
 ## Anti-padrões (NUNCA fazer)
 
 - Modais sobre modais
@@ -442,3 +565,9 @@ scrollController.addListener(() {
 - Recarregar lista inteira ao voltar de tela de detalhe (manter state)
 - Scroll sem prefetch (carregar só quando chega no final)
 - Loading que esconde dados já disponíveis
+- Criar entidade navegando para tela nova (usar bottom sheet)
+- PopupMenuButton para ações contextuais (usar bottom sheet com 3 pontinhos)
+- Botão "+" com background/círculo colorido (usar IconButton simples)
+- Form de edição sem carregar dados existentes (sempre popular campos)
+- Bottom sheet sem handle no topo
+- Bottom sheet sem `isScrollControlled: true` quando tem form

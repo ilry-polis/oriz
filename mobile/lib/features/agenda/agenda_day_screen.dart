@@ -156,24 +156,10 @@ class _AgendaDayScreenState extends State<AgendaDayScreen> {
             onPressed: () {},
             tooltip: 'Filtrar por profissional',
           ),
-          const SizedBox(width: AppSpacing.xs),
-          GestureDetector(
-            onTap: () => HapticFeedback.lightImpact(),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: const BoxDecoration(
-                color: AppColors.accent,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.add_rounded,
-                color: AppColors.primary,
-                size: 22,
-              ),
-            ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => HapticFeedback.lightImpact(),
           ),
-          const SizedBox(width: AppSpacing.sm),
         ],
       ),
     );

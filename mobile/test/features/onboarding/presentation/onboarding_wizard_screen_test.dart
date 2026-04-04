@@ -13,7 +13,7 @@ void main() {
 
   setUp(() {
     mockRepo = MockOnboardingRepository();
-    when(() => mockRepo.getServiceCategories()).thenAnswer((_) async => []);
+    when(() => mockRepo.getGlobalCategories()).thenAnswer((_) async => []);
   });
 
   Widget buildScreen() {

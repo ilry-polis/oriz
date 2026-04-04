@@ -74,6 +74,7 @@ Desconto no plano anual (% a definir). Nomes dos planos a definir.
 | IA completa no v1 (não incremental) | É o diferencial — lançar sem IA não faz sentido | — Pending |
 | Cal.com como referência de UX | Clean, minimalista, foco na funcionalidade core | — Pending |
 | Lançamento em evento presencial | Base captive de 400-700 profissionais, demo ao vivo da IA | — Pending |
+| Brevo como provedor de comunicação transacional | Envio de convites para profissionais (e futuramente confirmações, lembretes) via Brevo (email/WhatsApp) — centraliza envios em um provedor | — Pending |
 
 ---
-*Last updated: 2026-03-12 after initialization*
+*Last updated: 2026-04-02 after Phase 2 completion*
