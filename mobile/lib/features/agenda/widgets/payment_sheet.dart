@@ -58,6 +58,7 @@ class PaymentSheet extends ConsumerStatefulWidget {
 
 class _PaymentSheetState extends ConsumerState<PaymentSheet> {
   PaymentMethod? _selectedMethod;
+  int _installments = 1;
   late final TextEditingController _amountController;
   bool _submitting = false;
 
@@ -243,6 +244,71 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
                 ],
               ),
             ),
+            // Installments selector (credit only)
+            if (_selectedMethod == PaymentMethod.credito)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Parcelas',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.neutral600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    SizedBox(
+                      height: 36,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: 12,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: AppSpacing.xs),
+                        itemBuilder: (_, i) {
+                          final n = i + 1;
+                          final selected = _installments == n;
+                          return GestureDetector(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() => _installments = n);
+                            },
+                            child: Container(
+                              width: 44,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? AppColors.primary
+                                    : AppColors.neutral100,
+                                border: Border.all(
+                                  color: selected
+                                      ? AppColors.primary
+                                      : AppColors.neutral200,
+                                ),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.full),
+                              ),
+                              child: Text(
+                                '${n}x',
+                                style: AppTypography.caption.copyWith(
+                                  color: selected
+                                      ? Colors.white
+                                      : AppColors.neutral900,
+                                  fontWeight: selected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             // Confirm button
             Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -285,7 +351,10 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
-        setState(() => _selectedMethod = method);
+        setState(() {
+          _selectedMethod = method;
+          if (method != PaymentMethod.credito) _installments = 1;
+        });
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
