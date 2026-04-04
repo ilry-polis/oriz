@@ -152,8 +152,8 @@ export class BlockedSlotRepository {
           title, reason, recurrence_rule, excluded_dates)
        VALUES
          (gen_random_uuid(), $1, $2, $3,
-          ($3::date || ' ' || $4::text)::timestamptz,
-          ($3::date || ' ' || $5::text)::timestamptz,
+          (($3::date || ' ' || $4::text)::timestamp AT TIME ZONE (SELECT timezone FROM studios WHERE id = $1)),
+          (($3::date || ' ' || $5::text)::timestamp AT TIME ZONE (SELECT timezone FROM studios WHERE id = $1)),
           $6, $7, $8, $9)
        RETURNING ${BLOCKED_SLOT_COLUMNS.replace(/bs\./g, "")}`,
 			[

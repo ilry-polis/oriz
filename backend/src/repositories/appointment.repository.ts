@@ -230,8 +230,8 @@ export class AppointmentRepository {
              start_time, end_time, notes, source)
           VALUES
             (gen_random_uuid(), $1, $2, $3, $4, $5,
-             ($5::date || ' ' || $6::text)::timestamptz,
-             ($5::date || ' ' || $7::text)::timestamptz,
+             (($5::date || ' ' || $6::text)::timestamp AT TIME ZONE (SELECT timezone FROM studios WHERE id = $1)),
+             (($5::date || ' ' || $7::text)::timestamp AT TIME ZONE (SELECT timezone FROM studios WHERE id = $1)),
              $8, $9)
           RETURNING *
         )
@@ -321,7 +321,7 @@ export class AppointmentRepository {
       if (key === 'date') continue; // handled above
       if (fields[key] !== undefined) {
         if (timeFields.has(key)) {
-          setClauses.push(`${key} = (${dateExpr} || ' ' || $${idx}::text)::timestamptz`);
+          setClauses.push(`${key} = ((${dateExpr} || ' ' || $${idx}::text)::timestamp AT TIME ZONE (SELECT timezone FROM studios WHERE id = $1))`);
         } else {
           setClauses.push(`${key} = $${idx}`);
         }
