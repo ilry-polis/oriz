@@ -22,10 +22,10 @@ class ApiClient {
   })  : _auth = auth,
         _httpClient = httpClient ?? http.Client();
 
-  Map<String, String> get _headers {
+  Map<String, String> _headers({bool hasBody = false}) {
     final token = _auth.currentSession?.accessToken;
     return {
-      'Content-Type': 'application/json',
+      if (hasBody) 'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
@@ -54,7 +54,7 @@ class ApiClient {
 
   Future<Map<String, dynamic>> get(String path) async {
     final response = await _withRefresh(
-      () => _httpClient.get(Uri.parse('$baseUrl$path'), headers: _headers),
+      () => _httpClient.get(Uri.parse('$baseUrl$path'), headers: _headers()),
     );
     return _handleResponse(response);
   }
@@ -66,7 +66,7 @@ class ApiClient {
     final encoded = body != null ? jsonEncode(body) : null;
     final response = await _withRefresh(
       () => _httpClient.post(Uri.parse('$baseUrl$path'),
-          headers: _headers, body: encoded),
+          headers: _headers(hasBody: encoded != null), body: encoded),
     );
     return _handleResponse(response);
   }
@@ -78,7 +78,7 @@ class ApiClient {
     final encoded = body != null ? jsonEncode(body) : null;
     final response = await _withRefresh(
       () => _httpClient.patch(Uri.parse('$baseUrl$path'),
-          headers: _headers, body: encoded),
+          headers: _headers(hasBody: encoded != null), body: encoded),
     );
     return _handleResponse(response);
   }
@@ -90,14 +90,13 @@ class ApiClient {
     final encoded = body != null ? jsonEncode(body) : null;
     final response = await _withRefresh(
       () => _httpClient.put(Uri.parse('$baseUrl$path'),
-          headers: _headers, body: encoded),
+          headers: _headers(hasBody: encoded != null), body: encoded),
     );
     return _handleResponse(response);
   }
 
   Future<void> delete(String path) async {
-    final headers = Map<String, String>.from(_headers)
-      ..remove('Content-Type');
+    final headers = _headers();
     final response = await _withRefresh(
       () => _httpClient.delete(Uri.parse('$baseUrl$path'), headers: headers),
     );
