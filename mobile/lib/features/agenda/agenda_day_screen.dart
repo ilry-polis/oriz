@@ -15,6 +15,7 @@ import 'widgets/cancel_dialog.dart';
 import 'widgets/create_absence_sheet.dart';
 import 'widgets/payment_sheet.dart';
 import 'widgets/quick_book_sheet.dart';
+import 'widgets/agenda_week_view.dart';
 import 'widgets/skeleton_timeline.dart';
 
 class AgendaDayScreen extends ConsumerStatefulWidget {
@@ -26,6 +27,7 @@ class AgendaDayScreen extends ConsumerStatefulWidget {
 
 class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
   int? _dragOverHour;
+  bool _showWeekView = false;
 
   @override
   void initState() {
@@ -132,6 +134,17 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
           const Text('Agenda', style: AppTypography.title),
           const Spacer(),
           IconButton(
+            icon: Icon(
+              _showWeekView
+                  ? Icons.view_day_rounded
+                  : Icons.calendar_view_week_rounded,
+              color: AppColors.neutral600,
+              size: 24,
+            ),
+            onPressed: () => setState(() => _showWeekView = !_showWeekView),
+            tooltip: _showWeekView ? 'Visão diária' : 'Visão semanal',
+          ),
+          IconButton(
             icon: const Icon(
               Icons.filter_list_rounded,
               color: AppColors.neutral600,
@@ -196,6 +209,15 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
 
     if (agendaState.error != null) {
       return _buildError(agendaState.error!);
+    }
+
+    if (_showWeekView) {
+      return AgendaWeekView(
+        onDayTap: (date) {
+          ref.read(agendaNotifierProvider.notifier).selectDate(date);
+          setState(() => _showWeekView = false);
+        },
+      );
     }
 
     final appointments = agendaState.appointmentsForDay(selectedDate);

@@ -25,6 +25,12 @@ class MoreScreen extends ConsumerWidget {
             onTap: () => context.push('/more/categories'),
           ),
           _MenuItem(
+            icon: Icons.schedule_outlined,
+            title: 'Meus horários',
+            subtitle: 'Configurar horários de trabalho',
+            onTap: () => context.push('/more/working-hours'),
+          ),
+          _MenuItem(
             icon: Icons.attach_money_rounded,
             title: 'Financeiro',
             subtitle: 'Em breve',
