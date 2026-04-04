@@ -47,6 +47,29 @@ export class AppointmentController {
 		});
 	}
 
+	async monthSummary(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId } = request.authContext as StudioAuthContext;
+		const query = request.query as {
+			month: string;
+			professional_id?: string;
+		};
+
+		// month = "2026-04" → dateFrom = "2026-04-01", dateTo = "2026-04-30"
+		const [year, month] = query.month.split("-").map(Number);
+		const dateFrom = `${year}-${String(month).padStart(2, "0")}-01`;
+		const lastDay = new Date(year!, month!, 0).getDate();
+		const dateTo = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+		const data = await this.service.monthSummary(
+			studioId,
+			dateFrom,
+			dateTo,
+			query.professional_id,
+		);
+
+		return reply.send({ data });
+	}
+
 	async getById(request: FastifyRequest, reply: FastifyReply) {
 		const { studioId } = request.authContext as StudioAuthContext;
 		const { id } = request.params as { id: string };

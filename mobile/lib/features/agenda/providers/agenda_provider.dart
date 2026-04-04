@@ -60,14 +60,15 @@ class AgendaState {
   /// Cached data per professional. Key = professionalId (or "" for "all").
   final Map<String, ProfessionalDayData> _cache;
 
-  /// Monthly appointments grouped by day (key = "YYYY-MM-DD").
-  final Map<String, List<Appointment>> monthAppointments;
+  /// Monthly summary grouped by day (key = "YYYY-MM-DD").
+  /// Each value is a map of status → count.
+  final Map<String, Map<String, int>> monthSummary;
 
   const AgendaState({
     required this.selectedDate,
     this.selectedProfessionalId,
     Map<String, ProfessionalDayData>? cache,
-    this.monthAppointments = const {},
+    this.monthSummary = const {},
   }) : _cache = cache ?? const {};
 
   /// Get data for a specific professional (from cache).
@@ -106,7 +107,7 @@ class AgendaState {
       selectedDate: selectedDate,
       selectedProfessionalId: selectedProfessionalId,
       cache: newCache,
-      monthAppointments: monthAppointments,
+      monthSummary: monthSummary,
     );
   }
 
@@ -114,7 +115,7 @@ class AgendaState {
     DateTime? selectedDate,
     String? selectedProfessionalId,
     bool clearProfessional = false,
-    Map<String, List<Appointment>>? monthAppointments,
+    Map<String, Map<String, int>>? monthSummary,
   }) {
     return AgendaState(
       selectedDate: selectedDate ?? this.selectedDate,
@@ -122,7 +123,7 @@ class AgendaState {
           ? null
           : (selectedProfessionalId ?? this.selectedProfessionalId),
       cache: _cache,
-      monthAppointments: monthAppointments ?? this.monthAppointments,
+      monthSummary: monthSummary ?? this.monthSummary,
     );
   }
 }
@@ -150,7 +151,7 @@ class AgendaNotifier extends Notifier<AgendaState> {
     state = AgendaState(
       selectedDate: date,
       selectedProfessionalId: state.selectedProfessionalId,
-      monthAppointments: state.monthAppointments,
+      monthSummary: state.monthSummary,
     );
     await _loadDayData(date, state.selectedProfessionalId);
   }
@@ -173,6 +174,61 @@ class AgendaNotifier extends Notifier<AgendaState> {
     final cached = state.dataFor(professionalId);
     if (cached.hasLoaded || cached.isLoading) return;
     await _loadDayData(state.selectedDate, professionalId);
+  }
+
+  /// Batch preload all professionals in 1 request (no professional_id filter).
+  /// Splits results client-side by professional_id into per-professional caches.
+  Future<void> batchPreloadAll(List<String> professionalIds) async {
+    final date = state.selectedDate;
+    final dateStr =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+    try {
+      final results = await Future.wait([
+        _appointments.listByDate(dateStr),
+        _blockedSlots.listByDateRange(dateStr, dateStr),
+      ]);
+
+      final allAppts = results[0] as List<Appointment>;
+      final allSlots = results[1] as List<BlockedSlot>;
+
+      // Group by professional_id
+      for (final profId in professionalIds) {
+        final profAppts = allAppts
+            .where((a) => a.professionalId == profId)
+            .toList();
+        final profSlots = allSlots
+            .where((b) => b.professionalId == profId)
+            .toList();
+
+        int tStart = 8;
+        int tEnd = 19;
+        for (final a in profAppts) {
+          if (a.startTime.hour < tStart) tStart = a.startTime.hour;
+          if (a.endTime.hour >= tEnd) tEnd = a.endTime.hour + 1;
+        }
+        for (final s in profSlots) {
+          if (s.startTime.hour < tStart) tStart = s.startTime.hour;
+          if (s.endTime.hour >= tEnd) tEnd = s.endTime.hour + 1;
+        }
+
+        state = state._withCache(
+          profId,
+          ProfessionalDayData(
+            appointments: profAppts,
+            blockedSlots: profSlots,
+            timelineStart: tStart,
+            timelineEnd: tEnd,
+            hasLoaded: true,
+          ),
+        );
+      }
+    } catch (_) {
+      // Fall back to individual loads if batch fails
+      for (final profId in professionalIds) {
+        preloadProfessional(profId);
+      }
+    }
   }
 
   Future<void> refresh() async {
@@ -332,25 +388,21 @@ class AgendaNotifier extends Notifier<AgendaState> {
   // ─── Month data (for calendar view) ────────────────────────────────────────
 
   Future<void> loadMonthData(DateTime month) async {
-    final firstDay = DateTime(month.year, month.month, 1);
-    final lastDay = DateTime(month.year, month.month + 1, 0);
-    String fmt(DateTime d) =>
-        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final monthStr =
+        '${month.year}-${month.month.toString().padLeft(2, '0')}';
 
     try {
-      final appts = await _appointments.listByDateRange(
-        fmt(firstDay),
-        fmt(lastDay),
+      final summaries = await _appointments.monthSummary(
+        monthStr,
         professionalId: state.selectedProfessionalId,
       );
 
-      final grouped = <String, List<Appointment>>{};
-      for (final a in appts) {
-        final key = fmt(a.startTime);
-        (grouped[key] ??= []).add(a);
+      final grouped = <String, Map<String, int>>{};
+      for (final s in summaries) {
+        (grouped[s.date] ??= {})[s.status] = s.count;
       }
 
-      state = state.copyWith(monthAppointments: grouped);
+      state = state.copyWith(monthSummary: grouped);
     } catch (_) {
       // Silently fail — month indicators are non-critical
     }

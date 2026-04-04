@@ -52,6 +52,25 @@ class AppointmentRepository {
         .toList();
   }
 
+  /// GET /api/v1/appointments/month-summary?month=YYYY-MM[&professional_id=Z]
+  /// Returns lightweight count data grouped by date and status.
+  Future<List<MonthDaySummary>> monthSummary(
+    String month, {
+    String? professionalId,
+  }) async {
+    final params = StringBuffer(
+      '/api/v1/appointments/month-summary?month=$month',
+    );
+    if (professionalId != null) {
+      params.write('&professional_id=$professionalId');
+    }
+    final response = await _client.get(params.toString());
+    final data = response['data'] as List<dynamic>;
+    return data
+        .map((e) => MonthDaySummary.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   /// GET /api/v1/appointments/available-slots?date=X&professional_id=Y&service_id=Z
   Future<List<AvailableSlot>> getAvailableSlots({
     required String date,

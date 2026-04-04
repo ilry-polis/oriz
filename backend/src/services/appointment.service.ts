@@ -81,6 +81,15 @@ export class AppointmentService {
     return this.appointmentRepo.listByDateRange(studioId, dateFrom, dateTo, options);
   }
 
+  async monthSummary(
+    studioId: string,
+    dateFrom: string,
+    dateTo: string,
+    professionalId?: string,
+  ) {
+    return this.appointmentRepo.monthSummary(studioId, dateFrom, dateTo, professionalId);
+  }
+
   async getById(studioId: string, appointmentId: string): Promise<AppointmentRow> {
     const appt = await this.appointmentRepo.getById(studioId, appointmentId);
     if (!appt) throw new NotFoundError('Appointment not found');

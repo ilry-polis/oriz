@@ -181,6 +181,46 @@ export class AppointmentRepository {
   }
 
   /**
+   * Returns appointment counts grouped by date and status for a month range.
+   * Lightweight aggregation — no joins, no full rows.
+   */
+  async monthSummary(
+    studioId: string,
+    dateFrom: string,
+    dateTo: string,
+    professionalId?: string,
+  ): Promise<{ date: string; status: AppointmentStatus; count: number }[]> {
+    const params: unknown[] = [studioId, dateFrom, dateTo];
+    let professionalClause = "";
+    if (professionalId) {
+      params.push(professionalId);
+      professionalClause = `AND a.professional_id = $${params.length}`;
+    }
+
+    const { rows } = await this.pool.query<{
+      date: string;
+      status: AppointmentStatus;
+      count: string;
+    }>(
+      `SELECT a.date::text, a.status, COUNT(*)::text AS count
+       FROM appointments a
+       WHERE a.studio_id = $1
+         AND a.date >= $2
+         AND a.date <= $3
+         ${professionalClause}
+       GROUP BY a.date, a.status
+       ORDER BY a.date ASC`,
+      params,
+    );
+
+    return rows.map((r) => ({
+      date: r.date,
+      status: r.status,
+      count: Number.parseInt(r.count),
+    }));
+  }
+
+  /**
    * Returns non-cancelled, non-no_show appointments for a professional on a date.
    * Used by slot availability calculation — day-bounded, no pagination needed.
    */

@@ -215,6 +215,26 @@ class AvailableSlot {
   }
 }
 
+class MonthDaySummary {
+  final String date;
+  final String status;
+  final int count;
+
+  const MonthDaySummary({
+    required this.date,
+    required this.status,
+    required this.count,
+  });
+
+  factory MonthDaySummary.fromJson(Map<String, dynamic> json) {
+    return MonthDaySummary(
+      date: json['date'] as String,
+      status: json['status'] as String,
+      count: (json['count'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 class ClientSearchResult {
   final String id;
   final String name;

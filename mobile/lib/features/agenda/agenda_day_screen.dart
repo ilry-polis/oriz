@@ -46,21 +46,22 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
     final myId = ref.read(currentProfessionalIdProvider);
     final notifier = ref.read(agendaNotifierProvider.notifier);
 
-    // Owner is always page 0 — load their agenda
+    // Owner is always page 0
     if (myId != null && myId.isNotEmpty) {
       notifier.selectProfessional(myId);
     } else {
       notifier.selectDate(DateTime.now());
     }
 
-    // Pre-load adjacent professionals for instant swipe
+    // Batch preload ALL professionals in 1 request (2 API calls total)
     final teamState = ref.read(teamProvider);
     if (teamState is TeamLoaded) {
-      final active = teamState.professionals.where((p) => p.isActive).toList();
-      for (final p in active) {
-        if (p.id != myId) {
-          notifier.preloadProfessional(p.id);
-        }
+      final ids = teamState.professionals
+          .where((p) => p.isActive)
+          .map((p) => p.id)
+          .toList();
+      if (ids.length > 1) {
+        notifier.batchPreloadAll(ids);
       }
     }
   }

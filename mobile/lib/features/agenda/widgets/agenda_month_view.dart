@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
-import '../models/appointment_model.dart';
 import '../providers/agenda_provider.dart';
 
 /// Monthly calendar with colored status bars per day (same visual as the old week view).
@@ -59,7 +58,7 @@ class _AgendaMonthViewState extends ConsumerState<AgendaMonthView> {
     final agendaState = ref.watch(agendaNotifierProvider);
     final today = DateTime.now();
     final selectedDate = agendaState.selectedDate;
-    final monthAppts = agendaState.monthAppointments;
+    final summary = agendaState.monthSummary;
 
     final firstOfMonth = DateTime(_displayedMonth.year, _displayedMonth.month, 1);
     final daysInMonth = DateTime(_displayedMonth.year, _displayedMonth.month + 1, 0).day;
@@ -151,7 +150,7 @@ class _AgendaMonthViewState extends ConsumerState<AgendaMonthView> {
                 );
                 final isToday = _isSameDay(date, today);
                 final isSelected = _isSameDay(date, selectedDate);
-                final dayAppts = monthAppts[_fmtDate(date)] ?? [];
+                final daySummary = summary[_fmtDate(date)] ?? {};
 
                 return GestureDetector(
                   onTap: () {
@@ -196,7 +195,7 @@ class _AgendaMonthViewState extends ConsumerState<AgendaMonthView> {
                               horizontal: 3,
                               vertical: 2,
                             ),
-                            child: _DayColumn(appointments: dayAppts),
+                            child: _DayColumn(statusCounts: daySummary),
                           ),
                         ),
                       ],
@@ -232,32 +231,38 @@ class _AgendaMonthViewState extends ConsumerState<AgendaMonthView> {
 // ─── Day column with mini bars ──────────────────────────────────────────────
 
 class _DayColumn extends StatelessWidget {
-  final List<Appointment> appointments;
+  /// Map of status → count (e.g. {"pending": 2, "confirmed": 1})
+  final Map<String, int> statusCounts;
 
-  const _DayColumn({required this.appointments});
+  const _DayColumn({required this.statusCounts});
 
-  Color _statusColor(AppointmentStatus status) {
-    return switch (status) {
-      AppointmentStatus.pending => AppColors.warning,
-      AppointmentStatus.confirmed => AppColors.info,
-      AppointmentStatus.completed => AppColors.success,
-      AppointmentStatus.cancelled => AppColors.error,
-      AppointmentStatus.noShow => AppColors.neutral400,
-    };
-  }
+  static const _statusOrder = ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'];
+
+  static const _statusColors = {
+    'pending': AppColors.warning,
+    'confirmed': AppColors.info,
+    'completed': AppColors.success,
+    'cancelled': AppColors.error,
+    'no_show': AppColors.neutral400,
+  };
 
   @override
   Widget build(BuildContext context) {
-    if (appointments.isEmpty) return const SizedBox.expand();
+    if (statusCounts.isEmpty) return const SizedBox.expand();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ...appointments.take(4).map((a) {
-          final color = _statusColor(a.status);
-          final dimmed = a.status == AppointmentStatus.cancelled ||
-              a.status == AppointmentStatus.noShow;
-          return Opacity(
+    // Build bars: one per status that has count > 0, ordered
+    final bars = <Widget>[];
+    var total = 0;
+    for (final status in _statusOrder) {
+      final count = statusCounts[status] ?? 0;
+      if (count == 0) continue;
+      total += count;
+      final color = _statusColors[status] ?? AppColors.neutral400;
+      final dimmed = status == 'cancelled' || status == 'no_show';
+      // Show one bar per count, max 4 bars total
+      for (var i = 0; i < count && bars.length < 4; i++) {
+        bars.add(
+          Opacity(
             opacity: dimmed ? 0.4 : 1.0,
             child: Container(
               height: 6,
@@ -267,11 +272,18 @@ class _DayColumn extends StatelessWidget {
                 borderRadius: BorderRadius.circular(1.5),
               ),
             ),
-          );
-        }),
-        if (appointments.length > 4)
+          ),
+        );
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ...bars,
+        if (total > 4)
           Text(
-            '+${appointments.length - 4}',
+            '+${total - 4}',
             style: AppTypography.micro.copyWith(
               fontSize: 8,
               color: AppColors.neutral400,

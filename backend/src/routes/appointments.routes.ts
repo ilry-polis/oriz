@@ -86,6 +86,20 @@ export default async function appointmentRoutes(app: FastifyInstance) {
 			app.appointmentController.create(request, reply),
 	});
 
+	// GET /api/v1/appointments/month-summary
+	// Auth: owner+professional
+	app.get("/month-summary", {
+		onRequest: [app.requireStudioMember],
+		schema: {
+			querystring: z.object({
+				month: z.string().regex(/^\d{4}-\d{2}$/),
+				professional_id: z.string().uuid().optional(),
+			}),
+		},
+		handler: async (request, reply) =>
+			app.appointmentController.monthSummary(request, reply),
+	});
+
 	// GET /api/v1/appointments/available-slots
 	// Auth: owner+professional
 	app.get("/available-slots", {
