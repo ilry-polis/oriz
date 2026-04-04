@@ -12,6 +12,8 @@ import type { ProfessionalController } from "../controllers/professional.control
 import type { ServiceCategoryController } from "../controllers/service-category.controller.js";
 import type { ServiceController } from "../controllers/service.controller.js";
 import type { StudioController } from "../controllers/studio.controller.js";
+import type { AppointmentController } from "../controllers/appointment.controller.js";
+import type { BlockedSlotController } from "../controllers/blocked-slot.controller.js";
 import type { AuthContext } from "../middlewares/auth.js";
 
 type HookFn = (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
@@ -35,6 +37,8 @@ declare module "fastify" {
 		anamnesisController: AnamnesisController;
 		auditLogController: AuditLogController;
 		clientNoteController: ClientNoteController;
+		appointmentController: AppointmentController;
+		blockedSlotController: BlockedSlotController;
 	}
 
 	interface FastifyRequest {

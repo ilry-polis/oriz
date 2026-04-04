@@ -20,6 +20,8 @@ import { ProfessionalController } from "./controllers/professional.controller.js
 import { ServiceCategoryController } from "./controllers/service-category.controller.js";
 import { ServiceController } from "./controllers/service.controller.js";
 import { StudioController } from "./controllers/studio.controller.js";
+import { AppointmentController } from "./controllers/appointment.controller.js";
+import { BlockedSlotController } from "./controllers/blocked-slot.controller.js";
 import {
 	buildAuthHook,
 	buildRequireRole,
@@ -37,6 +39,9 @@ import { ProfessionalRepository } from "./repositories/professional.repository.j
 import { ServiceCategoryRepository } from "./repositories/service-category.repository.js";
 import { ServiceRepository } from "./repositories/service.repository.js";
 import { StudioRepository } from "./repositories/studio.repository.js";
+import { AppointmentRepository } from "./repositories/appointment.repository.js";
+import { BlockedSlotRepository } from "./repositories/blocked-slot.repository.js";
+import { PaymentRepository } from "./repositories/payment.repository.js";
 import { registerRoutes } from "./routes/index.js";
 import { AnamnesisService } from "./services/anamnesis.service.js";
 import { AuditLogService } from "./services/audit-log.service.js";
@@ -49,6 +54,8 @@ import { ProfessionalService } from "./services/professional.service.js";
 import { ServiceCategoryService } from "./services/service-category.service.js";
 import { ServiceService } from "./services/service.service.js";
 import { StudioService } from "./services/studio.service.js";
+import { AppointmentService } from "./services/appointment.service.js";
+import { BlockedSlotService } from "./services/blocked-slot.service.js";
 
 const env = parseEnv();
 
@@ -145,6 +152,9 @@ const consentRepo = new ConsentRepository(pool);
 const anamnesisRepo = new AnamnesisRepository(pool);
 const auditLogRepo = new AuditLogRepository(pool);
 const clientNoteRepo = new ClientNoteRepository(pool);
+const appointmentRepo = new AppointmentRepository(pool);
+const blockedSlotRepo = new BlockedSlotRepository(pool);
+const paymentRepo = new PaymentRepository(pool);
 
 // ─── Services ─────────────────────────────────────────────
 const studioService = new StudioService(
@@ -164,6 +174,14 @@ const inviteService = new InviteService(
 const anamnesisService = new AnamnesisService(anamnesisRepo);
 const auditLogService = new AuditLogService(auditLogRepo);
 const clientNoteService = new ClientNoteService(clientNoteRepo);
+const blockedSlotService = new BlockedSlotService(blockedSlotRepo);
+const appointmentService = new AppointmentService(
+	appointmentRepo,
+	professionalRepo,
+	serviceRepo,
+	paymentRepo,
+	blockedSlotService,
+);
 const consentService = new ConsentService(consentRepo);
 const clientService = new ClientService(
 	clientRepo,
@@ -197,6 +215,8 @@ app.decorate(
 	new AnamnesisController(anamnesisService),
 );
 app.decorate("auditLogController", new AuditLogController(auditLogRepo));
+app.decorate("appointmentController", new AppointmentController(appointmentService));
+app.decorate("blockedSlotController", new BlockedSlotController(blockedSlotService));
 app.decorate(
 	"clientNoteController",
 	new ClientNoteController(clientNoteService),
