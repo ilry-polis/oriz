@@ -84,8 +84,7 @@ export class ServiceRepository {
 		let cursorClause = "";
 		if (cursor) {
 			params.push(cursor);
-			// cursor-based pagination: use id as tiebreaker after (category_name, name)
-			cursorClause = `AND s.id > $${params.length}`;
+			cursorClause = `AND (sc.name, s.name, s.id) > (SELECT sc2.name, s2.name, s2.id FROM services s2 LEFT JOIN service_categories sc2 ON sc2.id = s2.category_id WHERE s2.id = $${params.length} AND s2.studio_id = $1)`;
 		}
 
 		const { rows } = await this.pool.query<
@@ -97,7 +96,7 @@ export class ServiceRepository {
        WHERE s.studio_id = $1
          AND s.deleted_at IS NULL
          ${cursorClause}
-       ORDER BY sc.name ASC, s.name ASC
+       ORDER BY sc.name ASC, s.name ASC, s.id ASC
        LIMIT $2`,
 			params,
 		);

@@ -206,13 +206,13 @@ export class ProfessionalRepository {
 			// Insert new links
 			if (serviceIds.length > 0) {
 				const valuePlaceholders = serviceIds
-					.map((_, i) => `($1, $${i + 2})`)
+					.map((_, i) => `(gen_random_uuid(), $1, $2, $${i + 3})`)
 					.join(", ");
 				await client.query(
-					`INSERT INTO professional_services (professional_id, service_id)
+					`INSERT INTO professional_services (id, studio_id, professional_id, service_id)
            VALUES ${valuePlaceholders}
            ON CONFLICT (professional_id, service_id) DO NOTHING`,
-					[professionalId, ...serviceIds],
+					[studioId, professionalId, ...serviceIds],
 				);
 			}
 

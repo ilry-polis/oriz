@@ -6,12 +6,18 @@ export class ClientNoteController {
 	constructor(private service: ClientNoteService) {}
 
 	async create(request: FastifyRequest, reply: FastifyReply) {
-		const { studioId, professionalId } =
-			request.authContext as StudioAuthContext & { professionalId?: string };
+		const { studioId, professionalId } = request.authContext as StudioAuthContext & {
+			professionalId?: string;
+		};
 		const { clientId } = request.params as { clientId: string };
 		const { content } = request.body as { content: string };
 
-		const profId = professionalId ?? (request.authContext as StudioAuthContext).userId;
+		if (!professionalId) {
+			return reply.status(400).send({
+				errors: [{ code: "MISSING_PROFESSIONAL", message: "Professional ID not found for this user" }],
+			});
+		}
+		const profId = professionalId;
 		const result = await this.service.create(
 			studioId,
 			clientId,

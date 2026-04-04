@@ -228,7 +228,8 @@ export class AppointmentService {
     const svc = await this.serviceRepo.getById(studioId, serviceId);
     if (!svc) throw new NotFoundError('Service not found');
 
-    const hours = professional.working_hours as WorkingHours;
+    const hours = professional.working_hours as WorkingHours | null;
+    if (!hours) return [];
     const dayName = getDayName(date);
     const daySlots: TimeSlot[] = hours[dayName] ?? [];
 

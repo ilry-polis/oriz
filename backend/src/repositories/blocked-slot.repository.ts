@@ -133,7 +133,7 @@ export class BlockedSlotRepository {
 
 		if (cursor) {
 			params.push(cursor);
-			conditions.push(`bs.id > $${params.length}`);
+			conditions.push(`(bs.date, bs.id) > (SELECT date, id FROM blocked_slots WHERE id = $${params.length} AND studio_id = $1)`);
 		}
 
 		params.push(limit);

@@ -7,6 +7,7 @@ export type AuthContext = {
 	userId: string;
 	userName?: string;
 	studioId?: string;
+	professionalId?: string;
 	role?: "owner" | "professional";
 };
 
@@ -90,12 +91,15 @@ export function buildAuthHook(
 		// Note: studios table has no is_active column — filter only professionals.is_active
 		const { rows } = await pool.query<{
 			studio_id: string;
+			professional_id: string | null;
 			role: "owner" | "professional";
 		}>(
-			`(SELECT s.id AS studio_id, 'owner' AS role, 1 AS priority
-        FROM studios s WHERE s.owner_id = $1)
+			`(SELECT s.id AS studio_id, p.id AS professional_id, 'owner' AS role, 1 AS priority
+        FROM studios s
+        LEFT JOIN professionals p ON p.studio_id = s.id AND p.user_id = $1
+        WHERE s.owner_id = $1)
        UNION ALL
-       (SELECT p.studio_id, 'professional' AS role, 2 AS priority
+       (SELECT p.studio_id, p.id AS professional_id, 'professional' AS role, 2 AS priority
         FROM professionals p
         JOIN studios s ON s.id = p.studio_id
         WHERE p.user_id = $1 AND p.is_active = true)
@@ -110,6 +114,7 @@ export function buildAuthHook(
 			userId,
 			userName,
 			studioId: membership?.studio_id,
+			professionalId: membership?.professional_id ?? undefined,
 			role: membership?.role,
 		};
 	};
