@@ -87,7 +87,7 @@ export class ClientRepository {
         input.phone ?? null,
         input.email ?? null,
         input.birthDate ?? null,
-        input.tags ? JSON.stringify(input.tags) : null,
+        JSON.stringify(input.tags ?? []),
         input.notes ?? null,
       ],
     );
