@@ -28,8 +28,8 @@ export class BlockedSlotService {
 	constructor(private repo: BlockedSlotRepository) {}
 
 	/**
-	 * List blocked slots with optional filters. Delegates to repository.
-	 * Used by the list API endpoint.
+	 * List blocked slots with optional filters.
+	 * Expands recurring slots into virtual entries for each matching day in the range.
 	 */
 	async list(
 		studioId: string,
@@ -41,7 +41,57 @@ export class BlockedSlotService {
 			limit?: number;
 		} = {},
 	): Promise<BlockedSlotRow[]> {
-		return this.repo.list(studioId, options);
+		const rows = await this.repo.list(studioId, options);
+
+		// If no date range, return raw rows (no expansion possible)
+		if (!options.dateFrom || !options.dateTo) {
+			return rows;
+		}
+
+		const result: BlockedSlotRow[] = [];
+
+		for (const row of rows) {
+			if (row.recurrence_rule === null) {
+				// Sporadic: return as-is
+				result.push(row);
+			} else {
+				// Normalize excluded_dates (pg may return Date objects)
+				const excluded = (row.excluded_dates ?? []).map((d: unknown) =>
+					d instanceof Date ? d.toISOString().slice(0, 10) : String(d),
+				);
+
+				// Recurring: expand into virtual entries for each matching day
+				const dates = expandRecurrenceDates(
+					row.recurrence_rule,
+					options.dateFrom,
+					options.dateTo,
+					excluded,
+				);
+
+				// Extract time portion from original timestamps
+				const startTimePart = extractTime(row.start_time);
+				const endTimePart = extractTime(row.end_time);
+
+				for (const date of dates) {
+					result.push({
+						...row,
+						date,
+						start_time: `${date}T${startTimePart}`,
+						end_time: `${date}T${endTimePart}`,
+					});
+				}
+			}
+		}
+
+		// Sort by date + start_time (normalize in case pg returns Date objects)
+		result.sort((a, b) => {
+			const da = (a.date as unknown) instanceof Date ? (a.date as unknown as Date).toISOString().slice(0, 10) : String(a.date);
+			const db = (b.date as unknown) instanceof Date ? (b.date as unknown as Date).toISOString().slice(0, 10) : String(b.date);
+			if (da !== db) return da < db ? -1 : 1;
+			return String(a.start_time) < String(b.start_time) ? -1 : 1;
+		});
+
+		return result;
 	}
 
 	/**
@@ -140,21 +190,68 @@ function isRecurrenceActiveOnDate(
 	date: string,
 	excludedDates: string[],
 ): boolean {
-	// Check excluded dates first
 	if (excludedDates.includes(date)) {
 		return false;
 	}
 
-	// Check until date (if set, date must be <= until)
 	if (rule.until !== null && date > rule.until) {
 		return false;
 	}
 
-	// Check day of week
-	// Date string is YYYY-MM-DD; parse it as UTC to avoid timezone offset issues
 	const [year, month, day] = date.split("-").map(Number);
 	const d = new Date(Date.UTC(year!, month! - 1, day!));
 	const dayOfWeek = d.getUTCDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
 
 	return rule.days.includes(dayOfWeek);
+}
+
+/**
+ * Returns all ISO date strings within [dateFrom, dateTo] that match the recurrence rule.
+ */
+function expandRecurrenceDates(
+	rule: RecurrenceRule,
+	dateFrom: string,
+	dateTo: string,
+	excludedDates: string[],
+): string[] {
+	const results: string[] = [];
+
+	const [fy, fm, fd] = dateFrom.split("-").map(Number);
+	const [ty, tm, td] = dateTo.split("-").map(Number);
+	const start = new Date(Date.UTC(fy!, fm! - 1, fd!));
+	const end = new Date(Date.UTC(ty!, tm! - 1, td!));
+
+	const current = new Date(start);
+	while (current <= end) {
+		const iso = current.toISOString().slice(0, 10);
+		if (isRecurrenceActiveOnDate(rule, iso, excludedDates)) {
+			results.push(iso);
+		}
+		current.setUTCDate(current.getUTCDate() + 1);
+	}
+
+	return results;
+}
+
+/**
+ * Extracts time portion (HH:MM:SS) from a timestamp.
+ * pg driver may return a Date object or a string depending on column type.
+ */
+function extractTime(timestamp: unknown): string {
+	if (timestamp instanceof Date) {
+		const h = String(timestamp.getHours()).padStart(2, "0");
+		const m = String(timestamp.getMinutes()).padStart(2, "0");
+		const s = String(timestamp.getSeconds()).padStart(2, "0");
+		return `${h}:${m}:${s}`;
+	}
+	const str = String(timestamp);
+	const tIndex = str.indexOf("T");
+	if (tIndex !== -1) {
+		return str.slice(tIndex + 1);
+	}
+	const spaceIndex = str.indexOf(" ");
+	if (spaceIndex !== -1) {
+		return str.slice(spaceIndex + 1);
+	}
+	return str;
 }

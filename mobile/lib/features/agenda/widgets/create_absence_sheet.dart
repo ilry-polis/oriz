@@ -271,7 +271,8 @@ class _CreateAbsenceSheetState extends ConsumerState<CreateAbsenceSheet> {
                 Wrap(
                   spacing: AppSpacing.xs,
                   children: List.generate(7, (i) {
-                    final apiDay = i; // 0=Mon..6=Sun
+                    // UI: 0=Mon..6=Sun → Backend JS getUTCDay(): 0=Sun,1=Mon..6=Sat
+                    final apiDay = (i + 1) % 7;
                     final selected = _recurringDays.contains(apiDay);
                     return FilterChip(
                       label: Text(

@@ -113,14 +113,22 @@ export class BlockedSlotRepository {
 			conditions.push(`bs.professional_id = $${params.length}`);
 		}
 
+		// Sporadic slots: filter by date range
+		// Recurring slots: always include (expanded by service layer)
+		const dateConditions: string[] = [];
 		if (dateFrom) {
 			params.push(dateFrom);
-			conditions.push(`bs.date >= $${params.length}`);
+			dateConditions.push(`bs.date >= $${params.length}`);
 		}
-
 		if (dateTo) {
 			params.push(dateTo);
-			conditions.push(`bs.date <= $${params.length}`);
+			dateConditions.push(`bs.date <= $${params.length}`);
+		}
+
+		if (dateConditions.length > 0) {
+			conditions.push(
+				`((bs.recurrence_rule IS NULL AND ${dateConditions.join(" AND ")}) OR bs.recurrence_rule IS NOT NULL)`,
+			);
 		}
 
 		if (cursor) {

@@ -33,6 +33,25 @@ class AppointmentRepository {
         .toList();
   }
 
+  /// GET /api/v1/appointments?date_from=X&date_to=Y[&professional_id=Z]
+  Future<List<Appointment>> listByDateRange(
+    String dateFrom,
+    String dateTo, {
+    String? professionalId,
+  }) async {
+    final params = StringBuffer(
+      '/api/v1/appointments?date_from=$dateFrom&date_to=$dateTo&limit=100',
+    );
+    if (professionalId != null) {
+      params.write('&professional_id=$professionalId');
+    }
+    final response = await _client.get(params.toString());
+    final data = response['data'] as List<dynamic>;
+    return data
+        .map((e) => Appointment.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   /// GET /api/v1/appointments/available-slots?date=X&professional_id=Y&service_id=Z
   Future<List<AvailableSlot>> getAvailableSlots({
     required String date,

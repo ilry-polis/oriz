@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/app_colors.dart';
 
 /// App shell with bottom navigation for protected routes.
 /// Used by GoRouter ShellRoute.
@@ -24,7 +23,7 @@ class AppShell extends StatelessWidget {
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(
-            top: BorderSide(color: AppColors.neutral200, width: 1),
+            top: BorderSide(color: Color(0x40E5E5E5), width: 0.5),
           ),
         ),
         child: BottomNavigationBar(

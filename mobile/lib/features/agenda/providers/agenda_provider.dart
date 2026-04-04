@@ -5,71 +5,27 @@ import '../models/appointment_model.dart';
 import '../repositories/appointment_repository.dart';
 import '../repositories/blocked_slot_repository.dart';
 
-// ─── State ────────────────────────────────────────────────────────────────
+// ─── Per-professional cached data ─────────────────────────────────────────
 
-class AgendaState {
-  final DateTime selectedDate;
-
-  /// null = all professionals (owner default), set = single professional
-  final String? selectedProfessionalId;
-
+class ProfessionalDayData {
   final List<Appointment> appointments;
   final List<BlockedSlot> blockedSlots;
-
-  /// Start hour of the timeline (from working_hours; defaults to 8)
   final int timelineStart;
-
-  /// End hour of the timeline (from working_hours; defaults to 19)
   final int timelineEnd;
-
   final bool isLoading;
+  final bool hasLoaded;
   final String? error;
 
-  const AgendaState({
-    required this.selectedDate,
-    this.selectedProfessionalId,
+  const ProfessionalDayData({
     this.appointments = const [],
     this.blockedSlots = const [],
     this.timelineStart = 8,
     this.timelineEnd = 19,
     this.isLoading = false,
+    this.hasLoaded = false,
     this.error,
   });
 
-  AgendaState copyWith({
-    DateTime? selectedDate,
-    String? selectedProfessionalId,
-    bool clearProfessional = false,
-    List<Appointment>? appointments,
-    List<BlockedSlot>? blockedSlots,
-    int? timelineStart,
-    int? timelineEnd,
-    bool? isLoading,
-    String? error,
-    bool clearError = false,
-  }) {
-    return AgendaState(
-      selectedDate: selectedDate ?? this.selectedDate,
-      selectedProfessionalId: clearProfessional
-          ? null
-          : (selectedProfessionalId ?? this.selectedProfessionalId),
-      appointments: appointments ?? this.appointments,
-      blockedSlots: blockedSlots ?? this.blockedSlots,
-      timelineStart: timelineStart ?? this.timelineStart,
-      timelineEnd: timelineEnd ?? this.timelineEnd,
-      isLoading: isLoading ?? this.isLoading,
-      error: clearError ? null : (error ?? this.error),
-    );
-  }
-
-  /// Monday of the week containing [selectedDate].
-  DateTime get weekStart =>
-      selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
-
-  /// Sunday of the week.
-  DateTime get weekEnd => weekStart.add(const Duration(days: 6));
-
-  /// Appointments for a specific day.
   List<Appointment> appointmentsForDay(DateTime day) {
     return appointments
         .where(
@@ -81,7 +37,6 @@ class AgendaState {
         .toList();
   }
 
-  /// Blocked slots for a specific day.
   List<BlockedSlot> blockedSlotsForDay(DateTime day) {
     return blockedSlots
         .where(
@@ -91,6 +46,84 @@ class AgendaState {
               b.startTime.day == day.day,
         )
         .toList();
+  }
+}
+
+// ─── State ────────────────────────────────────────────────────────────────
+
+class AgendaState {
+  final DateTime selectedDate;
+
+  /// Currently active professional (the one whose page is visible).
+  final String? selectedProfessionalId;
+
+  /// Cached data per professional. Key = professionalId (or "" for "all").
+  final Map<String, ProfessionalDayData> _cache;
+
+  /// Monthly appointments grouped by day (key = "YYYY-MM-DD").
+  final Map<String, List<Appointment>> monthAppointments;
+
+  const AgendaState({
+    required this.selectedDate,
+    this.selectedProfessionalId,
+    Map<String, ProfessionalDayData>? cache,
+    this.monthAppointments = const {},
+  }) : _cache = cache ?? const {};
+
+  /// Get data for a specific professional (from cache).
+  ProfessionalDayData dataFor(String? professionalId) {
+    return _cache[professionalId ?? ''] ?? const ProfessionalDayData();
+  }
+
+  /// Get data for the currently selected professional.
+  ProfessionalDayData get currentData => dataFor(selectedProfessionalId);
+
+  // Convenience getters for backwards compatibility
+  List<Appointment> get appointments => currentData.appointments;
+  List<BlockedSlot> get blockedSlots => currentData.blockedSlots;
+  int get timelineStart => currentData.timelineStart;
+  int get timelineEnd => currentData.timelineEnd;
+  bool get isLoading => currentData.isLoading;
+  String? get error => currentData.error;
+
+  List<Appointment> appointmentsForDay(DateTime day) =>
+      currentData.appointmentsForDay(day);
+  List<BlockedSlot> blockedSlotsForDay(DateTime day) =>
+      currentData.blockedSlotsForDay(day);
+
+  /// Monday of the week containing [selectedDate].
+  DateTime get weekStart =>
+      selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
+
+  /// Sunday of the week.
+  DateTime get weekEnd => weekStart.add(const Duration(days: 6));
+
+  AgendaState _withCache(String? professionalId, ProfessionalDayData data) {
+    final key = professionalId ?? '';
+    final newCache = Map<String, ProfessionalDayData>.from(_cache);
+    newCache[key] = data;
+    return AgendaState(
+      selectedDate: selectedDate,
+      selectedProfessionalId: selectedProfessionalId,
+      cache: newCache,
+      monthAppointments: monthAppointments,
+    );
+  }
+
+  AgendaState copyWith({
+    DateTime? selectedDate,
+    String? selectedProfessionalId,
+    bool clearProfessional = false,
+    Map<String, List<Appointment>>? monthAppointments,
+  }) {
+    return AgendaState(
+      selectedDate: selectedDate ?? this.selectedDate,
+      selectedProfessionalId: clearProfessional
+          ? null
+          : (selectedProfessionalId ?? this.selectedProfessionalId),
+      cache: _cache,
+      monthAppointments: monthAppointments ?? this.monthAppointments,
+    );
   }
 }
 
@@ -113,7 +146,12 @@ class AgendaNotifier extends Notifier<AgendaState> {
   // ─── Date & Professional selection ──────────────────────────────────────
 
   Future<void> selectDate(DateTime date) async {
-    state = state.copyWith(selectedDate: date, isLoading: true, clearError: true);
+    // Clear all caches — date changed, all data is stale
+    state = AgendaState(
+      selectedDate: date,
+      selectedProfessionalId: state.selectedProfessionalId,
+      monthAppointments: state.monthAppointments,
+    );
     await _loadDayData(date, state.selectedProfessionalId);
   }
 
@@ -121,21 +159,33 @@ class AgendaNotifier extends Notifier<AgendaState> {
     state = state.copyWith(
       selectedProfessionalId: professionalId,
       clearProfessional: professionalId == null,
-      isLoading: true,
-      clearError: true,
     );
+
+    // Only fetch if never loaded for this professional
+    final cached = state.dataFor(professionalId);
+    if (!cached.hasLoaded && !cached.isLoading) {
+      await _loadDayData(state.selectedDate, professionalId);
+    }
+  }
+
+  /// Pre-load data for a professional without switching to them.
+  Future<void> preloadProfessional(String professionalId) async {
+    final cached = state.dataFor(professionalId);
+    if (cached.hasLoaded || cached.isLoading) return;
     await _loadDayData(state.selectedDate, professionalId);
   }
 
   Future<void> refresh() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    // Force reload for current professional
+    state = state._withCache(
+      state.selectedProfessionalId,
+      const ProfessionalDayData(isLoading: true),
+    );
     await _loadDayData(state.selectedDate, state.selectedProfessionalId);
   }
 
   // ─── Appointment CRUD ────────────────────────────────────────────────────
 
-  /// Create a new appointment. Throws [ApiException] on conflict so the UI can
-  /// show a specific error (e.g. TIME_SLOT_TAKEN).
   Future<void> createAppointment({
     required String clientId,
     required String professionalId,
@@ -160,7 +210,10 @@ class AgendaNotifier extends Notifier<AgendaState> {
       await _appointments.reschedule(id, date: date, startTime: startTime);
       await _loadDayData(state.selectedDate, state.selectedProfessionalId);
     } on ApiException catch (e) {
-      state = state.copyWith(error: e.message);
+      state = state._withCache(
+        state.selectedProfessionalId,
+        state.currentData._copyWithError(e.message),
+      );
     }
   }
 
@@ -171,7 +224,10 @@ class AgendaNotifier extends Notifier<AgendaState> {
       await _appointments.confirm(id);
       await _loadDayData(state.selectedDate, state.selectedProfessionalId);
     } on ApiException catch (e) {
-      state = state.copyWith(error: e.message);
+      state = state._withCache(
+        state.selectedProfessionalId,
+        state.currentData._copyWithError(e.message),
+      );
     }
   }
 
@@ -192,7 +248,10 @@ class AgendaNotifier extends Notifier<AgendaState> {
       );
       await _loadDayData(state.selectedDate, state.selectedProfessionalId);
     } on ApiException catch (e) {
-      state = state.copyWith(error: e.message);
+      state = state._withCache(
+        state.selectedProfessionalId,
+        state.currentData._copyWithError(e.message),
+      );
     }
   }
 
@@ -201,7 +260,10 @@ class AgendaNotifier extends Notifier<AgendaState> {
       await _appointments.cancel(id, reason: reason);
       await _loadDayData(state.selectedDate, state.selectedProfessionalId);
     } on ApiException catch (e) {
-      state = state.copyWith(error: e.message);
+      state = state._withCache(
+        state.selectedProfessionalId,
+        state.currentData._copyWithError(e.message),
+      );
     }
   }
 
@@ -210,7 +272,10 @@ class AgendaNotifier extends Notifier<AgendaState> {
       await _appointments.markNoShow(id);
       await _loadDayData(state.selectedDate, state.selectedProfessionalId);
     } on ApiException catch (e) {
-      state = state.copyWith(error: e.message);
+      state = state._withCache(
+        state.selectedProfessionalId,
+        state.currentData._copyWithError(e.message),
+      );
     }
   }
 
@@ -235,18 +300,59 @@ class AgendaNotifier extends Notifier<AgendaState> {
       );
       await refresh();
     } on ApiException catch (e) {
-      state = state.copyWith(error: e.message);
+      state = state._withCache(
+        state.selectedProfessionalId,
+        state.currentData._copyWithError(e.message),
+      );
     }
   }
 
   Future<void> deleteAbsence(String id) async {
     try {
       await _blockedSlots.delete(id);
-      state = state.copyWith(
-        blockedSlots: state.blockedSlots.where((b) => b.id != id).toList(),
+      final current = state.currentData;
+      state = state._withCache(
+        state.selectedProfessionalId,
+        ProfessionalDayData(
+          appointments: current.appointments,
+          blockedSlots: current.blockedSlots.where((b) => b.id != id).toList(),
+          timelineStart: current.timelineStart,
+          timelineEnd: current.timelineEnd,
+          hasLoaded: true,
+        ),
       );
     } on ApiException catch (e) {
-      state = state.copyWith(error: e.message);
+      state = state._withCache(
+        state.selectedProfessionalId,
+        state.currentData._copyWithError(e.message),
+      );
+    }
+  }
+
+  // ─── Month data (for calendar view) ────────────────────────────────────────
+
+  Future<void> loadMonthData(DateTime month) async {
+    final firstDay = DateTime(month.year, month.month, 1);
+    final lastDay = DateTime(month.year, month.month + 1, 0);
+    String fmt(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+    try {
+      final appts = await _appointments.listByDateRange(
+        fmt(firstDay),
+        fmt(lastDay),
+        professionalId: state.selectedProfessionalId,
+      );
+
+      final grouped = <String, List<Appointment>>{};
+      for (final a in appts) {
+        final key = fmt(a.startTime);
+        (grouped[key] ??= []).add(a);
+      }
+
+      state = state.copyWith(monthAppointments: grouped);
+    } catch (_) {
+      // Silently fail — month indicators are non-critical
     }
   }
 
@@ -255,6 +361,15 @@ class AgendaNotifier extends Notifier<AgendaState> {
   Future<void> _loadDayData(DateTime date, String? professionalId) async {
     final dateStr =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+    // Mark loading — but keep existing data visible (no skeleton flash)
+    final existing = state.dataFor(professionalId);
+    if (!existing.hasLoaded) {
+      state = state._withCache(
+        professionalId,
+        const ProfessionalDayData(isLoading: true),
+      );
+    }
 
     try {
       final results = await Future.wait([
@@ -265,9 +380,6 @@ class AgendaNotifier extends Notifier<AgendaState> {
       final appts = results[0] as List<Appointment>;
       final slots = results[1] as List<BlockedSlot>;
 
-      // Derive timeline bounds from appointment data (best-effort).
-      // Full working_hours derivation deferred until professionals/me endpoint
-      // is implemented. Fallback: 8-19 or expand to fit existing appointments.
       int tStart = 8;
       int tEnd = 19;
       for (final a in appts) {
@@ -279,18 +391,40 @@ class AgendaNotifier extends Notifier<AgendaState> {
         if (s.endTime.hour >= tEnd) tEnd = s.endTime.hour + 1;
       }
 
-      state = state.copyWith(
-        appointments: appts,
-        blockedSlots: slots,
-        timelineStart: tStart,
-        timelineEnd: tEnd,
-        isLoading: false,
-        clearError: true,
+      state = state._withCache(
+        professionalId,
+        ProfessionalDayData(
+          appointments: appts,
+          blockedSlots: slots,
+          timelineStart: tStart,
+          timelineEnd: tEnd,
+          hasLoaded: true,
+        ),
       );
     } on ApiException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
+      state = state._withCache(
+        professionalId,
+        state.dataFor(professionalId)._copyWithError(e.message),
+      );
     } on Exception catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state._withCache(
+        professionalId,
+        state.dataFor(professionalId)._copyWithError(e.toString()),
+      );
     }
+  }
+}
+
+// ─── Extension for error copy ─────────────────────────────────────────────
+
+extension _ProfessionalDayDataCopy on ProfessionalDayData {
+  ProfessionalDayData _copyWithError(String message) {
+    return ProfessionalDayData(
+      appointments: appointments,
+      blockedSlots: blockedSlots,
+      timelineStart: timelineStart,
+      timelineEnd: timelineEnd,
+      error: message,
+    );
   }
 }

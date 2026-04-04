@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -31,10 +32,11 @@ class TeamManagementScreen extends ConsumerWidget {
             ),
           ],
           bottom: TabBar(
-            labelColor: AppColors.primary,
+            labelColor: AppColors.neutral900,
             unselectedLabelColor: AppColors.neutral400,
             indicatorColor: AppColors.primary,
-            indicatorWeight: 2.5,
+            indicatorWeight: 2,
+            dividerColor: AppColors.neutral200,
             labelStyle:
                 AppTypography.bodySemibold.copyWith(fontSize: 14),
             unselectedLabelStyle:
@@ -91,10 +93,16 @@ class _TeamTab extends ConsumerWidget {
       TeamLoaded(:final professionals) => RefreshIndicator(
           onRefresh: () => ref.read(teamProvider.notifier).refresh(),
           child: ListView.builder(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
             itemCount: professionals.length,
-            itemBuilder: (_, i) => ProfessionalCard(
-              professional: professionals[i],
-            ),
+            itemBuilder: (_, i) {
+              final pro = professionals[i];
+              final myId = ref.watch(currentProfessionalIdProvider);
+              return ProfessionalCard(
+                professional: pro,
+                isOwner: pro.id == myId,
+              );
+            },
           ),
         ),
     };

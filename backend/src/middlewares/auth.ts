@@ -5,6 +5,7 @@ import { ForbiddenError, UnauthorizedError } from "../utils/errors.js";
 
 export type AuthContext = {
 	userId: string;
+	userName?: string;
 	studioId?: string;
 	role?: "owner" | "professional";
 };
@@ -51,6 +52,7 @@ export function buildAuthHook(
 
 		const token = header.slice(7);
 		let userId: string;
+		let userName: string | undefined;
 
 		try {
 			// Try JWKS first (Supabase cloud, ES256), fall back to HMAC (local, HS256)
@@ -75,6 +77,11 @@ export function buildAuthHook(
 				throw new Error("Missing sub claim");
 			}
 			userId = payload.sub;
+			const userMeta = payload.user_metadata as
+				| Record<string, unknown>
+				| undefined;
+			userName =
+				(userMeta?.full_name as string | undefined) ?? undefined;
 		} catch {
 			throw new UnauthorizedError("Invalid or expired token");
 		}
@@ -101,6 +108,7 @@ export function buildAuthHook(
 
 		request.authContext = {
 			userId,
+			userName,
 			studioId: membership?.studio_id,
 			role: membership?.role,
 		};

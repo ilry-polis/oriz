@@ -52,7 +52,8 @@ class StudioNotFound extends StudioRouteState {
 class StudioExists extends StudioRouteState {
   final bool onboardingComplete;
   final String? professionalId;
-  const StudioExists({required this.onboardingComplete, this.professionalId});
+  final String? studioName;
+  const StudioExists({required this.onboardingComplete, this.professionalId, this.studioName});
 }
 
 class StudioStateNotifier extends Notifier<StudioRouteState> {
@@ -71,8 +72,8 @@ class StudioStateNotifier extends Notifier<StudioRouteState> {
     state = const StudioCheckFailed();
   }
 
-  void setExists({required bool onboardingComplete, String? professionalId}) {
-    state = StudioExists(onboardingComplete: onboardingComplete, professionalId: professionalId);
+  void setExists({required bool onboardingComplete, String? professionalId, String? studioName}) {
+    state = StudioExists(onboardingComplete: onboardingComplete, professionalId: professionalId, studioName: studioName);
   }
 
   void reset() {
@@ -87,6 +88,13 @@ final studioStateProvider =
 final currentProfessionalIdProvider = Provider<String?>((ref) {
   final state = ref.watch(studioStateProvider);
   if (state is StudioExists) return state.professionalId;
+  return null;
+});
+
+/// The current studio name. Null if studio not loaded yet.
+final currentStudioNameProvider = Provider<String?>((ref) {
+  final state = ref.watch(studioStateProvider);
+  if (state is StudioExists) return state.studioName;
   return null;
 });
 
@@ -109,6 +117,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ref.read(studioStateProvider.notifier).setExists(
           onboardingComplete: info.onboardingStep == 'complete',
           professionalId: info.professionalId,
+          studioName: info.studioName,
         );
       }
     } on ApiException catch (e) {

@@ -5,7 +5,7 @@ export class StudioController {
 	constructor(private service: StudioService) {}
 
 	async create(request: FastifyRequest, reply: FastifyReply) {
-		const { userId } = request.authContext;
+		const { userId, userName } = request.authContext;
 		const body = request.body as {
 			name: string;
 			slug: string;
@@ -22,7 +22,7 @@ export class StudioController {
 			address: body.address,
 			description: body.description,
 			ownerId: userId,
-			ownerName: body.name, // Uses studio name as professional name; user can update later in profile
+			ownerName: userName ?? body.name,
 			timezone: body.timezone,
 		});
 
