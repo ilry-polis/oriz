@@ -20,8 +20,8 @@ export const RecurrenceRuleSchema = z.object({
 export const CreateBlockedSlotBody = z.object({
 	professional_id: z.string().uuid(),
 	date: z.string().date(),
-	start_time: z.string().datetime(),
-	end_time: z.string().datetime(),
+	start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Expected HH:mm format'),
+	end_time: z.string().regex(/^\d{2}:\d{2}$/, 'Expected HH:mm format'),
 	title: z.string().min(1).max(200),
 	reason: z.string().optional(),
 	recurrence_rule: RecurrenceRuleSchema.optional(),

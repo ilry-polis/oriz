@@ -151,7 +151,10 @@ export class BlockedSlotRepository {
          (id, studio_id, professional_id, date, start_time, end_time,
           title, reason, recurrence_rule, excluded_dates)
        VALUES
-         (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9)
+         (gen_random_uuid(), $1, $2, $3,
+          ($3::date || ' ' || $4::text)::timestamptz,
+          ($3::date || ' ' || $5::text)::timestamptz,
+          $6, $7, $8, $9)
        RETURNING ${BLOCKED_SLOT_COLUMNS.replace(/bs\./g, "")}`,
 			[
 				input.studioId,
