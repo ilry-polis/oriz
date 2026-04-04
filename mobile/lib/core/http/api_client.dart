@@ -15,10 +15,10 @@ class ApiClient {
   })  : _auth = auth,
         _httpClient = httpClient ?? http.Client();
 
-  Map<String, String> get _headers {
+  Map<String, String> _headers({bool hasBody = false}) {
     final token = _auth.currentSession?.accessToken;
     return {
-      'Content-Type': 'application/json',
+      if (hasBody) 'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
@@ -26,7 +26,7 @@ class ApiClient {
   Future<Map<String, dynamic>> get(String path) async {
     final response = await _httpClient.get(
       Uri.parse('$baseUrl$path'),
-      headers: _headers,
+      headers: _headers(),
     );
     return _handleResponse(response);
   }
@@ -35,10 +35,11 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? body,
   }) async {
+    final encoded = body != null ? jsonEncode(body) : null;
     final response = await _httpClient.post(
       Uri.parse('$baseUrl$path'),
-      headers: _headers,
-      body: body != null ? jsonEncode(body) : null,
+      headers: _headers(hasBody: encoded != null),
+      body: encoded,
     );
     return _handleResponse(response);
   }
@@ -47,10 +48,11 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? body,
   }) async {
+    final encoded = body != null ? jsonEncode(body) : null;
     final response = await _httpClient.patch(
       Uri.parse('$baseUrl$path'),
-      headers: _headers,
-      body: body != null ? jsonEncode(body) : null,
+      headers: _headers(hasBody: encoded != null),
+      body: encoded,
     );
     return _handleResponse(response);
   }
@@ -58,7 +60,7 @@ class ApiClient {
   Future<void> delete(String path) async {
     final response = await _httpClient.delete(
       Uri.parse('$baseUrl$path'),
-      headers: _headers,
+      headers: _headers(),
     );
     if (response.statusCode >= 200 && response.statusCode < 300) return;
     final Map<String, dynamic> body;
