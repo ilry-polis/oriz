@@ -7,10 +7,22 @@ import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../../features/clients/presentation/anamnesis_form_screen.dart';
+import '../../features/clients/presentation/client_detail_screen.dart';
+import '../../features/clients/presentation/client_form_screen.dart';
+import '../../features/clients/presentation/client_list_screen.dart';
+import '../../features/more/presentation/more_screen.dart';
+import '../../features/services_management/presentation/category_management_screen.dart';
+import '../../features/services_management/presentation/service_detail_screen.dart';
+import '../../features/services_management/presentation/service_form_screen.dart';
+import '../../features/services_management/presentation/services_management_screen.dart';
+import '../../features/team/presentation/invite_accept_screen.dart';
+import '../../features/team/presentation/team_management_screen.dart';
 import '../http/api_client.dart';
 import '../../features/onboarding/data/onboarding_repository.dart';
 import '../../features/onboarding/presentation/onboarding_complete_screen.dart';
 import '../../features/onboarding/presentation/onboarding_wizard_screen.dart';
+import '../../features/settings/working_hours_screen.dart';
 import '../shell/app_shell.dart';
 
 /// Listenable that notifies GoRouter when auth state changes.
@@ -29,13 +41,19 @@ class StudioUnknown extends StudioRouteState {
   const StudioUnknown();
 }
 
+class StudioCheckFailed extends StudioRouteState {
+  const StudioCheckFailed();
+}
+
 class StudioNotFound extends StudioRouteState {
   const StudioNotFound();
 }
 
 class StudioExists extends StudioRouteState {
   final bool onboardingComplete;
-  const StudioExists({required this.onboardingComplete});
+  final String? professionalId;
+  final String? studioName;
+  const StudioExists({required this.onboardingComplete, this.professionalId, this.studioName});
 }
 
 class StudioStateNotifier extends Notifier<StudioRouteState> {
@@ -50,8 +68,12 @@ class StudioStateNotifier extends Notifier<StudioRouteState> {
     state = const StudioNotFound();
   }
 
-  void setExists({required bool onboardingComplete}) {
-    state = StudioExists(onboardingComplete: onboardingComplete);
+  void setCheckFailed() {
+    state = const StudioCheckFailed();
+  }
+
+  void setExists({required bool onboardingComplete, String? professionalId, String? studioName}) {
+    state = StudioExists(onboardingComplete: onboardingComplete, professionalId: professionalId, studioName: studioName);
   }
 
   void reset() {
@@ -62,38 +84,68 @@ class StudioStateNotifier extends Notifier<StudioRouteState> {
 final studioStateProvider =
     NotifierProvider<StudioStateNotifier, StudioRouteState>(StudioStateNotifier.new);
 
+/// The logged-in user's professional ID. Null if studio not loaded yet.
+final currentProfessionalIdProvider = Provider<String?>((ref) {
+  final state = ref.watch(studioStateProvider);
+  if (state is StudioExists) return state.professionalId;
+  return null;
+});
+
+/// The current studio name. Null if studio not loaded yet.
+final currentStudioNameProvider = Provider<String?>((ref) {
+  final state = ref.watch(studioStateProvider);
+  if (state is StudioExists) return state.studioName;
+  return null;
+});
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authRepo = ref.read(authRepositoryProvider);
   final authListenable = AuthNotifierListenable(ref);
 
+  int _studioCheckAttempts = 0;
+  const maxAttempts = 3;
+
   Future<void> checkStudio() async {
+    _studioCheckAttempts++;
     try {
       final onboardingRepo = ref.read(onboardingRepositoryProvider);
       final info = await onboardingRepo.getMyStudio();
+      _studioCheckAttempts = 0;
       if (info == null) {
         ref.read(studioStateProvider.notifier).setNotFound();
       } else {
         ref.read(studioStateProvider.notifier).setExists(
           onboardingComplete: info.onboardingStep == 'complete',
+          professionalId: info.professionalId,
+          studioName: info.studioName,
         );
       }
     } on ApiException catch (e) {
-      // 404 = no studio; treat as no studio
       if (e.statusCode == 404) {
+        _studioCheckAttempts = 0;
         ref.read(studioStateProvider.notifier).setNotFound();
+      } else if (_studioCheckAttempts >= maxAttempts) {
+        // After N failed attempts, stop looping — let user see onboarding
+        // which shows a retry button instead of infinite redirect
+        _studioCheckAttempts = 0;
+        ref.read(studioStateProvider.notifier).setCheckFailed();
       }
-      // Other API errors (500, network): keep unknown so redirect doesn't
-      // falsely send user to onboarding. Router will retry on next auth change.
+      // Otherwise keep StudioUnknown — router will retry on next auth change
     } catch (_) {
-      // Network/timeout: keep StudioUnknown — don't assume no studio
+      if (_studioCheckAttempts >= maxAttempts) {
+        _studioCheckAttempts = 0;
+        ref.read(studioStateProvider.notifier).setCheckFailed();
+      }
     }
   }
 
   ref.listen(authNotifierProvider, (prev, next) {
     if (next is AuthAuthenticated && prev is! AuthAuthenticated) {
+      _studioCheckAttempts = 0; // Reset counter on fresh login
       checkStudio();
     }
     if (next is AuthUnauthenticated) {
+      _studioCheckAttempts = 0;
       ref.read(studioStateProvider.notifier).reset();
     }
   });
@@ -117,8 +169,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           path == '/signup' ||
           path == '/forgot-password';
       final isOnboardingRoute = path.startsWith('/onboarding');
+      final isInviteRoute = path.startsWith('/invite/');
 
-      if (!hasSession && !isAuthRoute) return '/login';
+      if (!hasSession && !isAuthRoute && !isInviteRoute) return '/login';
 
       if (hasSession && isAuthRoute) {
         final studio = ref.read(studioStateProvider);
@@ -129,9 +182,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/onboarding';
       }
 
-      if (hasSession && !isAuthRoute && !isOnboardingRoute) {
+      if (hasSession && !isAuthRoute && !isOnboardingRoute && !isInviteRoute) {
         final studio = ref.read(studioStateProvider);
         if (studio is StudioNotFound) return '/onboarding';
+        if (studio is StudioCheckFailed) return '/onboarding';
         if (studio is StudioUnknown) return '/onboarding';
         if (studio is StudioExists && !studio.onboardingComplete) {
           return '/onboarding';
@@ -172,6 +226,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const OnboardingCompleteScreen(),
       ),
 
+      // Invite accept (no shell — standalone)
+      GoRoute(
+        path: '/invite/:token',
+        builder: (_, state) => InviteAcceptScreen(
+          token: state.pathParameters['token']!,
+        ),
+      ),
+
       // Protected routes with shell (bottom nav)
       ShellRoute(
         builder: (_, __, child) => AppShell(child: child),
@@ -182,15 +244,68 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/clients',
-            builder: (_, __) => const _Placeholder('Clientes'),
+            builder: (_, __) => const ClientListScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (_, state) => ClientDetailScreen(
+                  clientId: state.pathParameters['id']!,
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (_, state) => ClientFormScreen(
+                      clientId: state.pathParameters['id'],
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'anamnesis/:category',
+                    builder: (_, state) => AnamnesisFormScreen(
+                      clientId: state.pathParameters['id']!,
+                      category: state.pathParameters['category']!,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           GoRoute(
-            path: '/financial',
-            builder: (_, __) => const _Placeholder('Financeiro'),
+            path: '/services',
+            builder: (_, __) => const ServicesManagementScreen(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (_, state) => ServiceDetailScreen(
+                  serviceId: state.pathParameters['id']!,
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (_, state) => ServiceFormScreen(
+                      serviceId: state.pathParameters['id'],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           GoRoute(
             path: '/more',
-            builder: (_, __) => const _Placeholder('Mais'),
+            builder: (_, __) => const MoreScreen(),
+            routes: [
+              GoRoute(
+                path: 'team',
+                builder: (_, __) => const TeamManagementScreen(),
+              ),
+              GoRoute(
+                path: 'categories',
+                builder: (_, __) => const CategoryManagementScreen(),
+              ),
+              GoRoute(
+                path: 'working-hours',
+                builder: (_, __) => const WorkingHoursScreen(),
+              ),
+            ],
           ),
         ],
       ),

@@ -17,19 +17,19 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Services & Packages
 
-- [ ] **SERV-01**: Owner can create services with name, duration, price, and category
-- [ ] **SERV-02**: Owner can set buffer time between appointments per service
+- [x] **SERV-01**: Owner can create services with name, duration, price, and category
+- [x] **SERV-02**: Owner can set buffer time between appointments per service
 - [ ] **SERV-03**: Owner can create session packages with special pricing
 - [ ] **SERV-04**: Sessions deducted automatically when appointment is completed (not on booking)
 - [ ] **SERV-05**: Packages have configurable expiration date
 
 ### Scheduling
 
-- [ ] **SCHD-01**: Professional views agenda in day and week view
-- [ ] **SCHD-02**: System detects and prevents double-booking with DB-level constraint
-- [ ] **SCHD-03**: Professional can block time slots (vacation, breaks, lunch)
-- [ ] **SCHD-04**: Appointments follow status workflow: confirmed → completed/cancelled/no-show
-- [ ] **SCHD-05**: Business hours configurable per day of week per professional
+- [x] **SCHD-01**: Professional views agenda in day and week view
+- [x] **SCHD-02**: System detects and prevents double-booking with DB-level constraint
+- [x] **SCHD-03**: Professional can block time slots (vacation, breaks, lunch)
+- [x] **SCHD-04**: Appointments follow status workflow: confirmed → completed/cancelled/no-show
+- [x] **SCHD-05**: Business hours configurable per day of week per professional
 
 ### Clients
 
@@ -144,16 +144,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-03 | Phase 1 | Pending |
 | AUTH-04 | Phase 1 | Pending |
 | AUTH-05 | Phase 1 | Pending |
-| SERV-01 | Phase 2 | Pending |
-| SERV-02 | Phase 2 | Pending |
+| SERV-01 | Phase 2 | Complete |
+| SERV-02 | Phase 2 | Complete |
 | SERV-03 | Phase 4 | Pending |
 | SERV-04 | Phase 4 | Pending |
 | SERV-05 | Phase 4 | Pending |
-| SCHD-01 | Phase 3 | Pending |
-| SCHD-02 | Phase 3 | Pending |
-| SCHD-03 | Phase 3 | Pending |
-| SCHD-04 | Phase 3 | Pending |
-| SCHD-05 | Phase 3 | Pending |
+| SCHD-01 | Phase 3 | Complete |
+| SCHD-02 | Phase 3 | Complete |
+| SCHD-03 | Phase 3 | Complete |
+| SCHD-04 | Phase 3 | Complete |
+| SCHD-05 | Phase 3 | Complete |
 | CLNT-01 | Phase 2 | Pending |
 | CLNT-02 | Phase 2 | Pending |
 | CLNT-03 | Phase 2 | Pending |

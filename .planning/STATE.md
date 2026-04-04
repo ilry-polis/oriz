@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-03-13T11:12:08.167Z"
-last_activity: 2026-03-13 — Roadmap created; 45 v1 requirements mapped to 7 phases
+stopped_at: Phase 3 context gathered
+last_updated: "2026-04-03T15:46:20.089Z"
+last_activity: 2026-04-03 — Phase 2 formally completed
 progress:
-  total_phases: 7
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 8
+  completed_phases: 1
+  total_plans: 6
+  completed_plans: 6
+  percent: 25
 ---
 
 # Project State
@@ -21,29 +21,30 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** A profissional nunca mais precisa parar um atendimento para responder WhatsApp — a IA agenda, responde dúvidas e gerencia a agenda automaticamente.
-**Current focus:** Phase 1 — Identity and Foundation
+**Current focus:** Phase 3 — Scheduling Engine
 
 ## Current Position
 
-Phase: 1 of 7 (Identity and Foundation)
+Phase: 3 of 8 (Scheduling Engine)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-03-13 — Roadmap created; 45 v1 requirements mapped to 7 phases
+Last activity: 2026-04-03 — Phase 2 formally completed
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
+- Total plans completed: 6 (Phase 2)
 - Average duration: —
-- Total execution time: 0 hours
+- Total execution time: —
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 1. Identity and Foundation | organic | — | — |
+| 2. Core Domain | 6 plans | completed 2026-04-03 | — |
 
 **Recent Trend:**
 - Last 5 plans: —
@@ -58,10 +59,13 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Roadmap: 7 phases derived from 45 v1 requirements; infrastructure and identity first, AI assistant last
-- Phase 6 (WhatsApp/AI): Requires `/gsd:research-phase` before planning — LangChain.js tool-calling API and Pinecone vs pgvector need verification
-- Phase 5 (External Channels): WhatsApp provider abstraction must be built here before AI integration in Phase 6
-- Phase 4 (Packages): Session deduction on appointment completion (not booking) is a deliberate product decision
+- Phase 1 closed: email/password auth only (social login deferred), no splash screen, no i18n
+- Phase 2 closed: services CRUD, clients + LGPD, anamnesis, team invite flow with WhatsApp, tab bar equipe/convites
+- Roadmap: 8 phases (including 5.1 billing insertion) derived from 45 v1 requirements
+- Phase 6 (WhatsApp/AI): Requires `/gsd:research-phase` before planning
+- Phase 4 (Packages): Session deduction on appointment completion (not booking)
+- Wave-based branching: one branch per wave, pattern `feature/{phase}-wave-{N}-{descrição}`, complete PR cycle before next wave
+- Brevo como provedor de envio transacional: convites para profissionais serão enviados via Brevo (email/WhatsApp)
 
 ### Pending Todos
 
@@ -69,12 +73,13 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 6 (AI): LangChain.js tool-calling API has changed across versions — verify `@langchain/core v0.2` patterns before planning
-- Phase 5 (WhatsApp): Evolution API v2 production behavior under load not officially documented — test early
-- Phase 4 (Financial): Asaas SDK commission split configuration needs validation during planning
+- Phase 6 (AI): LangChain.js tool-calling API has changed across versions — verify before planning
+- Phase 5 (WhatsApp): Evolution API v2 production behavior under load not documented — test early
+- Phase 4 (Financial): Asaas SDK commission split configuration needs validation
+- Phase 3 (Scheduling): RLS atual permite qualquer membro do studio acessar todos os appointments — não diferencia owner vs collaborator no backend. Collaborator pode alterar appointments de outros profissionais via API direta. Hardening de role-based auth granular adiado para fase futura.
 
 ## Session Continuity
 
-Last session: 2026-03-13T11:12:08.165Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-identity-and-foundation/01-CONTEXT.md
+Last session: 2026-04-03T15:46:20.087Z
+Stopped at: Phase 3 context gathered
+Resume file: .planning/phases/03-scheduling-engine/03-CONTEXT.md

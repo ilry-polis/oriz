@@ -115,9 +115,9 @@ void main() {
     });
   });
 
-  group('getServiceCategories', () {
+  group('getGlobalCategories', () {
     test('returns list of categories', () async {
-      when(() => mockClient.get('/api/v1/service-categories')).thenAnswer(
+      when(() => mockClient.get('/api/v1/service-categories?scope=global')).thenAnswer(
         (_) async => {
           'data': [
             {'id': 'c1', 'name': 'Unhas'},
@@ -126,7 +126,7 @@ void main() {
         },
       );
 
-      final result = await repo.getServiceCategories();
+      final result = await repo.getGlobalCategories();
 
       expect(result, hasLength(2));
       expect(result[0].id, 'c1');

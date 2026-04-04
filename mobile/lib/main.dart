@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/http/api_client.dart';
 import 'core/router/app_router.dart';
 import 'core/supabase/supabase_config.dart';
 import 'core/theme/app_theme.dart';
+import 'features/agenda/repositories/appointment_repository.dart';
+import 'features/agenda/repositories/blocked_slot_repository.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/onboarding/data/onboarding_repository.dart';
@@ -36,14 +39,27 @@ void main() async {
 
   await initSupabase(url: supabaseUrl, anonKey: supabaseAnonKey);
 
+  final _apiClient = ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth);
+
   runApp(
     ProviderScope(
       overrides: [
         authRepositoryProvider.overrideWithValue(
           AuthRepository(supabase.auth),
         ),
+        apiClientProvider.overrideWithValue(
+          _apiClient,
+        ),
         onboardingRepositoryProvider.overrideWithValue(
-          OnboardingRepository(
+          OnboardingRepository(_apiClient),
+        ),
+        appointmentRepositoryProvider.overrideWithValue(
+          AppointmentRepository(
+            ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth),
+          ),
+        ),
+        blockedSlotRepositoryProvider.overrideWithValue(
+          BlockedSlotRepository(
             ApiClient(baseUrl: apiBaseUrl, auth: supabase.auth),
           ),
         ),
@@ -65,6 +81,13 @@ class OrizApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       routerConfig: router,
+      locale: const Locale('pt', 'BR'),
+      supportedLocales: const [Locale('pt', 'BR')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
     );
   }
 }

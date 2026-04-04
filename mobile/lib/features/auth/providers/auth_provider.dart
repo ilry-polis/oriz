@@ -54,6 +54,23 @@ class AuthNotifier extends Notifier<AuthStateData> {
   @override
   AuthStateData build() {
     final repo = ref.read(authRepositoryProvider);
+
+    // Listen to Supabase auth events (expired token, sign out, refresh, etc.)
+    final subscription = repo.onAuthStateChange.listen((event) {
+      final eventType = event.event;
+      if (eventType == AuthChangeEvent.signedOut) {
+        _failureCount = 0;
+        state = const AuthUnauthenticated();
+      } else if (eventType == AuthChangeEvent.tokenRefreshed &&
+          event.session != null) {
+        state = AuthAuthenticated(event.session!);
+      } else if (eventType == AuthChangeEvent.signedIn &&
+          event.session != null) {
+        state = AuthAuthenticated(event.session!);
+      }
+    });
+    ref.onDispose(subscription.cancel);
+
     final session = repo.currentSession;
     return session != null
         ? AuthAuthenticated(session)

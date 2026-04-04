@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/app_colors.dart';
 
 /// App shell with bottom navigation for protected routes.
 /// Used by GoRouter ShellRoute.
@@ -12,7 +11,7 @@ class AppShell extends StatelessWidget {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/agenda')) return 0;
     if (location.startsWith('/clients')) return 1;
-    if (location.startsWith('/financial')) return 2;
+    if (location.startsWith('/services')) return 2;
     if (location.startsWith('/more')) return 3;
     return 0;
   }
@@ -24,7 +23,7 @@ class AppShell extends StatelessWidget {
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(
-            top: BorderSide(color: AppColors.neutral200, width: 1),
+            top: BorderSide(color: Color(0x40E5E5E5), width: 0.5),
           ),
         ),
         child: BottomNavigationBar(
@@ -36,7 +35,7 @@ class AppShell extends StatelessWidget {
               case 1:
                 context.go('/clients');
               case 2:
-                context.go('/financial');
+                context.go('/services');
               case 3:
                 context.go('/more');
             }
@@ -53,9 +52,9 @@ class AppShell extends StatelessWidget {
               label: 'Clientes',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.attach_money_rounded),
-              activeIcon: Icon(Icons.attach_money_rounded),
-              label: 'Financeiro',
+              icon: Icon(Icons.auto_awesome_mosaic_outlined),
+              activeIcon: Icon(Icons.auto_awesome_mosaic),
+              label: 'Serviços',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.more_horiz_rounded),

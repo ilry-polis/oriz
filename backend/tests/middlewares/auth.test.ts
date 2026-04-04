@@ -86,6 +86,23 @@ describe('buildAuthHook', () => {
     expect(ctx.role).toBe('owner');
   });
 
+  it('returns no studio when studio is inactive (is_active = false)', async () => {
+    const userId = 'owner-inactive-studio';
+    mockJwtVerify.mockResolvedValueOnce({
+      payload: { sub: userId },
+    });
+    // Query with is_active filter returns no rows for inactive studio
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+    const request = createMockRequest('Bearer valid.jwt.token');
+    await authenticate(request, {} as never);
+
+    const ctx = (request as unknown as { authContext: { userId: string; studioId?: string; role?: string } }).authContext;
+    expect(ctx.userId).toBe(userId);
+    expect(ctx.studioId).toBeUndefined();
+    expect(ctx.role).toBeUndefined();
+  });
+
   it('decorates request with studioId and role when user is a professional', async () => {
     const userId = 'pro-uuid';
     const studioId = 'studio-uuid-2';
