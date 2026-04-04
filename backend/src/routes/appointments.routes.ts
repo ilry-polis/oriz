@@ -27,7 +27,7 @@ export const CreateAppointmentBody = z.object({
 	professional_id: z.string().uuid(),
 	service_id: z.string().uuid(),
 	date: z.string().date(),
-	start_time: z.string().datetime(),
+	start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Expected HH:mm format'),
 	notes: z.string().optional(),
 	source: z.enum(["app", "manual", "web_page", "whatsapp"]).default("app"),
 });
@@ -36,7 +36,7 @@ export const UpdateAppointmentBody = z.object({
 	professional_id: z.string().uuid().optional(),
 	service_id: z.string().uuid().optional(),
 	date: z.string().date().optional(),
-	start_time: z.string().datetime().optional(),
+	start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Expected HH:mm format').optional(),
 	notes: z.string().optional(),
 });
 

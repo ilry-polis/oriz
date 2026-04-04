@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
@@ -29,7 +30,13 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(agendaNotifierProvider.notifier).selectDate(DateTime.now());
+      final profId = ref.read(currentProfessionalIdProvider);
+      final notifier = ref.read(agendaNotifierProvider.notifier);
+      if (profId != null && profId.isNotEmpty) {
+        notifier.selectProfessional(profId);
+      } else {
+        notifier.selectDate(DateTime.now());
+      }
     });
   }
 
@@ -125,7 +132,7 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
               HapticFeedback.lightImpact();
               final agendaState = ref.read(agendaNotifierProvider);
               final profId =
-                  agendaState.selectedProfessionalId ?? 'unknown';
+                  agendaState.selectedProfessionalId ?? ref.read(currentProfessionalIdProvider) ?? '';
               QuickBookSheet.show(
                 context,
                 date: agendaState.selectedDate,
@@ -364,7 +371,7 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
         context,
         date: agendaState.selectedDate,
         professionalId:
-            agendaState.selectedProfessionalId ?? 'unknown',
+            agendaState.selectedProfessionalId ?? ref.read(currentProfessionalIdProvider) ?? '',
         hour: hour,
         minute: 0,
       ),
