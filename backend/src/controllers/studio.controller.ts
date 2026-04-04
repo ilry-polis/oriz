@@ -1,37 +1,37 @@
-import type { FastifyRequest, FastifyReply } from 'fastify';
-import type { StudioService } from '../services/studio.service.js';
+import type { FastifyReply, FastifyRequest } from "fastify";
+import type { StudioService } from "../services/studio.service.js";
 
 export class StudioController {
-  constructor(private service: StudioService) {}
+	constructor(private service: StudioService) {}
 
-  async create(request: FastifyRequest, reply: FastifyReply) {
-    const { userId } = request.authContext;
-    const body = request.body as {
-      name: string;
-      slug: string;
-      phone?: string;
-      address?: string;
-      description?: string;
-      timezone: string;
-    };
+	async create(request: FastifyRequest, reply: FastifyReply) {
+		const { userId } = request.authContext;
+		const body = request.body as {
+			name: string;
+			slug: string;
+			phone?: string;
+			address?: string;
+			description?: string;
+			timezone: string;
+		};
 
-    const result = await this.service.createStudio({
-      name: body.name,
-      slug: body.slug,
-      phone: body.phone,
-      address: body.address,
-      description: body.description,
-      ownerId: userId,
-      ownerName: body.name, // Uses studio name as professional name; user can update later in profile
-      timezone: body.timezone,
-    });
+		const result = await this.service.createStudio({
+			name: body.name,
+			slug: body.slug,
+			phone: body.phone,
+			address: body.address,
+			description: body.description,
+			ownerId: userId,
+			ownerName: body.name, // Uses studio name as professional name; user can update later in profile
+			timezone: body.timezone,
+		});
 
-    return reply.status(201).send({ data: result });
-  }
+		return reply.status(201).send({ data: result });
+	}
 
-  async getMe(request: FastifyRequest, reply: FastifyReply) {
-    const { userId } = request.authContext;
-    const result = await this.service.getMyStudio(userId);
-    return reply.send({ data: result });
-  }
+	async getMe(request: FastifyRequest, reply: FastifyReply) {
+		const { userId } = request.authContext;
+		const result = await this.service.getMyStudio(userId);
+		return reply.send({ data: result });
+	}
 }

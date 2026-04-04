@@ -1,86 +1,112 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_typography.dart';
+import '../../auth/providers/auth_provider.dart';
 
-class _MenuItem {
-  final IconData icon;
-  final String label;
-  final String? route;
-  final VoidCallback? onTap;
-  final Color? color;
-
-  const _MenuItem({
-    required this.icon,
-    required this.label,
-    this.route,
-    this.onTap,
-    this.color,
-  });
-}
-
-class MoreScreen extends StatelessWidget {
+class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final items = [
-      _MenuItem(
-        icon: Icons.schedule_outlined,
-        label: 'Meu horario',
-        route: '/more/working-hours',
-      ),
-      _MenuItem(
-        icon: Icons.settings_outlined,
-        label: 'Configuracoes',
-        onTap: () {},
-      ),
-      _MenuItem(
-        icon: Icons.help_outline_rounded,
-        label: 'Ajuda',
-        onTap: () {},
-      ),
-    ];
-
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm,
-              ),
-              child: const Text('Mais', style: AppTypography.title),
-            ),
-            const Divider(height: 1, color: AppColors.neutral200),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                itemCount: items.length,
-                separatorBuilder: (_, __) =>
-                    const Divider(height: 1, indent: 56, color: AppColors.neutral200),
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  final color = item.color ?? AppColors.neutral900;
-                  return ListTile(
-                    leading: Icon(item.icon, color: color, size: 22),
-                    title: Text(item.label, style: AppTypography.body.copyWith(color: color)),
-                    trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.neutral400, size: 20),
-                    onTap: item.route != null
-                        ? () => context.push(item.route!)
-                        : item.onTap,
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
-                  );
-                },
-              ),
-            ),
-          ],
+      appBar: AppBar(title: const Text('Mais')),
+      body: ListView(
+        children: [
+          _MenuItem(
+            icon: Icons.group_outlined,
+            title: 'Equipe',
+            onTap: () => context.push('/more/team'),
+          ),
+          _MenuItem(
+            icon: Icons.category_outlined,
+            title: 'Categorias',
+            subtitle: 'Gerenciar categorias de serviços',
+            onTap: () => context.push('/more/categories'),
+          ),
+          _MenuItem(
+            icon: Icons.attach_money_rounded,
+            title: 'Financeiro',
+            subtitle: 'Em breve',
+            enabled: false,
+          ),
+          const Divider(height: 1),
+          _MenuItem(
+            icon: Icons.settings_outlined,
+            title: 'Configurações',
+            onTap: () {}, // placeholder
+          ),
+          _MenuItem(
+            icon: Icons.person_outline,
+            title: 'Meu perfil',
+            onTap: () {}, // placeholder
+          ),
+          const Divider(height: 1),
+          _MenuItem(
+            icon: Icons.logout,
+            title: 'Sair',
+            titleColor: AppColors.error,
+            onTap: () => _showLogoutDialog(context, ref),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sair'),
+        content: const Text('Tem certeza que deseja sair?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.read(authNotifierProvider.notifier).signOut();
+            },
+            child: const Text('Sair', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MenuItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Color? titleColor;
+  final VoidCallback? onTap;
+  final bool enabled;
+
+  const _MenuItem({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.titleColor,
+    this.onTap,
+    this.enabled = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: enabled ? null : AppColors.neutral300),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: enabled ? (titleColor ?? AppColors.neutral900) : AppColors.neutral300,
         ),
       ),
+      subtitle: subtitle != null ? Text(subtitle!, style: const TextStyle(color: AppColors.neutral400, fontSize: 12)) : null,
+      trailing: enabled ? const Icon(Icons.chevron_right, color: AppColors.neutral300) : null,
+      onTap: enabled ? onTap : null,
     );
   }
 }

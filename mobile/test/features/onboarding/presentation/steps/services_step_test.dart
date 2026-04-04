@@ -13,7 +13,7 @@ void main() {
 
   setUp(() {
     mockRepo = MockOnboardingRepository();
-    when(() => mockRepo.getServiceCategories()).thenAnswer(
+    when(() => mockRepo.getGlobalCategories()).thenAnswer(
       (_) async => [
         const ServiceCategory(id: 'c1', name: 'Unhas'),
         const ServiceCategory(id: 'c2', name: 'Cilios'),

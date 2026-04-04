@@ -1,13 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { Pool } from "pg";
-import type { AppointmentController } from "../controllers/appointment.controller.js";
-import type { BlockedSlotController } from "../controllers/blocked-slot.controller.js";
+import type { AnamnesisController } from "../controllers/anamnesis.controller.js";
+import type { AuditLogController } from "../controllers/audit-log.controller.js";
+import type { ClientNoteController } from "../controllers/client-note.controller.js";
+import type { ClientController } from "../controllers/client.controller.js";
+import type { ConsentController } from "../controllers/consent.controller.js";
+import type { InviteController } from "../controllers/invite.controller.js";
 import type { OnboardingController } from "../controllers/onboarding.controller.js";
 import type { ProfessionalController } from "../controllers/professional.controller.js";
 import type { ServiceCategoryController } from "../controllers/service-category.controller.js";
 import type { ServiceController } from "../controllers/service.controller.js";
-import type { ClientController } from "../controllers/client.controller.js";
 import type { StudioController } from "../controllers/studio.controller.js";
 import type { AuthContext } from "../middlewares/auth.js";
 
@@ -26,9 +29,12 @@ declare module "fastify" {
 		serviceController: ServiceController;
 		serviceCategoryController: ServiceCategoryController;
 		professionalController: ProfessionalController;
-		appointmentController: AppointmentController;
-		blockedSlotController: BlockedSlotController;
+		inviteController: InviteController;
 		clientController: ClientController;
+		consentController: ConsentController;
+		anamnesisController: AnamnesisController;
+		auditLogController: AuditLogController;
+		clientNoteController: ClientNoteController;
 	}
 
 	interface FastifyRequest {

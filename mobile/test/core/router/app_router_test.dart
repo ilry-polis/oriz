@@ -55,7 +55,7 @@ void main() {
 
   testWidgets('redirects authenticated user without studio to /onboarding', (tester) async {
     when(() => mockOnboarding.getMyStudio()).thenAnswer((_) async => null);
-    when(() => mockOnboarding.getServiceCategories()).thenAnswer((_) async => []);
+    when(() => mockOnboarding.getGlobalCategories()).thenAnswer((_) async => []);
 
     await tester.pumpWidget(buildApp(hasSession: true));
     // Let microtasks resolve: checkStudio → noStudio → redirect → onboarding init

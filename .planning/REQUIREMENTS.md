@@ -17,8 +17,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Services & Packages
 
-- [ ] **SERV-01**: Owner can create services with name, duration, price, and category
-- [ ] **SERV-02**: Owner can set buffer time between appointments per service
+- [x] **SERV-01**: Owner can create services with name, duration, price, and category
+- [x] **SERV-02**: Owner can set buffer time between appointments per service
 - [ ] **SERV-03**: Owner can create session packages with special pricing
 - [ ] **SERV-04**: Sessions deducted automatically when appointment is completed (not on booking)
 - [ ] **SERV-05**: Packages have configurable expiration date
@@ -144,8 +144,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-03 | Phase 1 | Pending |
 | AUTH-04 | Phase 1 | Pending |
 | AUTH-05 | Phase 1 | Pending |
-| SERV-01 | Phase 2 | Pending |
-| SERV-02 | Phase 2 | Pending |
+| SERV-01 | Phase 2 | Complete |
+| SERV-02 | Phase 2 | Complete |
 | SERV-03 | Phase 4 | Pending |
 | SERV-04 | Phase 4 | Pending |
 | SERV-05 | Phase 4 | Pending |

@@ -13,7 +13,7 @@ Oriz is built in eight phases following a strict dependency graph. Infrastructur
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Identity and Foundation** - Auth, studio onboarding, and multi-tenant infrastructure (completed 2026-04-02; social login deferred)
-- [ ] **Phase 2: Core Domain** - Services, clients, and team management
+- [x] **Phase 2: Core Domain** - Services, clients, and team management (completed 2026-04-03)
 - [ ] **Phase 3: Scheduling Engine** - Agenda, conflict detection, and appointment workflows
 - [ ] **Phase 4: Financial and Packages** - Revenue dashboard, payment recording, and session packages
 - [ ] **Phase 5: External Channels** - Public booking page and push notifications
@@ -66,7 +66,15 @@ Plans:
   3. Professional can block time slots (vacation, lunch, breaks) that prevent any booking during those periods
   4. An appointment moves through the status workflow (confirmed → completed, cancelled, or no-show) and the transition is recorded
   5. Business hours per day of week per professional are enforced — no appointment can be booked outside configured hours
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — DB migrations (pending status, overlap constraint, absence fields) + repositories
+- [ ] 03-02-PLAN.md — AppointmentService + BlockedSlotService with TDD (status machine, slot calculation, recurrence)
+- [ ] 03-03-PLAN.md — Controllers + route wiring (connect all appointment and blocked-slot endpoints)
+- [ ] 03-04-PLAN.md — Flutter models, providers, agenda day screen refactor with real API + multi-professional
+- [ ] 03-05-PLAN.md — Flutter booking sheet, payment sheet, appointment detail, cancel dialog
+- [ ] 03-06-PLAN.md — Flutter week view, absence management, working hours configuration
 
 ### Phase 4: Financial and Packages
 **Goal**: Studio owners can track revenue and package sessions; financial data reflects completed work accurately
@@ -132,8 +140,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 5.1 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Identity and Foundation | — | ✅ Completed | 2026-04-02 |
-| 2. Core Domain | 0/6 | Planning complete | - |
-| 3. Scheduling Engine | 5/6 | In progress | - |
+| 2. Core Domain | 6/6 | ✅ Completed | 2026-04-03 |
+| 3. Scheduling Engine | 0/6 | Planning complete | - |
 | 4. Financial and Packages | 0/TBD | Not started | - |
 | 5. External Channels | 0/TBD | Not started | - |
 | 5.1. Billing and Subscription | 0/TBD | Not started | - |

@@ -12,7 +12,7 @@ class AppShell extends StatelessWidget {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/agenda')) return 0;
     if (location.startsWith('/clients')) return 1;
-    if (location.startsWith('/financial')) return 2;
+    if (location.startsWith('/services')) return 2;
     if (location.startsWith('/more')) return 3;
     return 0;
   }
@@ -36,7 +36,7 @@ class AppShell extends StatelessWidget {
               case 1:
                 context.go('/clients');
               case 2:
-                context.go('/financial');
+                context.go('/services');
               case 3:
                 context.go('/more');
             }
@@ -53,9 +53,9 @@ class AppShell extends StatelessWidget {
               label: 'Clientes',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.attach_money_rounded),
-              activeIcon: Icon(Icons.attach_money_rounded),
-              label: 'Financeiro',
+              icon: Icon(Icons.auto_awesome_mosaic_outlined),
+              activeIcon: Icon(Icons.auto_awesome_mosaic),
+              label: 'Serviços',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.more_horiz_rounded),

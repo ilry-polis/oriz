@@ -10,13 +10,13 @@ import '../../providers/onboarding_provider.dart';
 import '../widgets/service_template_card.dart';
 
 class _EditableService {
-  String categoryId;
+  String globalCategoryName;
   String name;
   int durationMinutes;
   int price;
 
   _EditableService({
-    required this.categoryId,
+    required this.globalCategoryName,
     required this.name,
     required this.durationMinutes,
     required this.price,
@@ -33,7 +33,9 @@ class ServicesStep extends ConsumerStatefulWidget {
 class _ServicesStepState extends ConsumerState<ServicesStep> {
   final Set<String> _selectedCategories = {};
   final List<_EditableService> _services = [];
-  Map<String, String> _categoryIdMap = {};
+
+  /// Global categories from backend: name → id
+  Map<String, String> _globalCategoryIdMap = {};
   bool _categoriesLoaded = false;
 
   @override
@@ -45,17 +47,15 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
   Future<void> _loadCategories() async {
     try {
       final repo = ref.read(onboardingRepositoryProvider);
-      final categories = await repo.getServiceCategories();
+      final categories = await repo.getGlobalCategories();
       if (mounted) {
         setState(() {
-          _categoryIdMap = {for (final c in categories) c.name: c.id};
+          _globalCategoryIdMap = {for (final c in categories) c.name: c.id};
           _categoriesLoaded = true;
         });
       }
     } catch (e) {
-      // Categories are optional — templates still work without API IDs.
-      // Log for debugging but don't block the user.
-      debugPrint('Failed to load service categories: $e');
+      debugPrint('Failed to load global categories: $e');
       if (mounted) setState(() => _categoriesLoaded = true);
     }
   }
@@ -64,13 +64,13 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
     setState(() {
       if (_selectedCategories.contains(category)) {
         _selectedCategories.remove(category);
-        _services.removeWhere((s) => s.categoryId == category);
+        _services.removeWhere((s) => s.globalCategoryName == category);
       } else {
         _selectedCategories.add(category);
         final templates = templatesForCategory(category);
         for (final t in templates) {
           _services.add(_EditableService(
-            categoryId: _categoryIdMap[t.category] ?? category,
+            globalCategoryName: t.category,
             name: t.name,
             durationMinutes: t.durationMinutes,
             price: t.price,
@@ -83,7 +83,7 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
   void _addCustomService() {
     setState(() {
       _services.add(_EditableService(
-        categoryId: _categoryIdMap['Outro'] ?? 'custom',
+        globalCategoryName: 'Outro',
         name: '',
         durationMinutes: 30,
         price: 0,
@@ -103,17 +103,45 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
   }
 
   Future<void> _submit() async {
-    final validServices = _services.where((s) => s.name.trim().isNotEmpty).toList();
+    final validServices =
+        _services.where((s) => s.name.trim().isNotEmpty).toList();
     if (validServices.isEmpty) {
       await _skip();
       return;
     }
 
     final notifier = ref.read(onboardingNotifierProvider.notifier);
+    final repo = ref.read(onboardingRepositoryProvider);
+
+    // 1. Collect global category IDs that were selected
+    final selectedGlobalIds = <String>{};
+    for (final svc in validServices) {
+      final globalId = _globalCategoryIdMap[svc.globalCategoryName];
+      if (globalId != null) selectedGlobalIds.add(globalId);
+    }
+
+    // 2. Copy selected globals to studio → get studio category IDs
+    Map<String, String> studioCategoryMap = {};
+    if (selectedGlobalIds.isNotEmpty) {
+      try {
+        final studioCategories =
+            await repo.copyGlobalCategories(selectedGlobalIds.toList());
+        studioCategoryMap = {for (final c in studioCategories) c.name: c.id};
+      } catch (_) {
+        // Fallback: use global IDs directly (services will still work)
+        for (final entry in _globalCategoryIdMap.entries) {
+          studioCategoryMap[entry.key] = entry.value;
+        }
+      }
+    }
+
+    // 3. Create services with studio category IDs
     await notifier.addServices(
       validServices
           .map((s) => ServiceInput(
-                categoryId: s.categoryId,
+                categoryId: studioCategoryMap[s.globalCategoryName] ??
+                    _globalCategoryIdMap[s.globalCategoryName] ??
+                    s.globalCategoryName,
                 name: s.name,
                 durationMinutes: s.durationMinutes,
                 price: s.price,
@@ -129,7 +157,8 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
   @override
   Widget build(BuildContext context) {
     final onboardingState = ref.watch(onboardingNotifierProvider);
-    final isSaving = onboardingState is OnboardingStep && onboardingState.isSaving;
+    final isSaving =
+        onboardingState is OnboardingStep && onboardingState.isSaving;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -137,11 +166,12 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: AppSpacing.lg),
-          Text('Servicos', style: AppTypography.title, textAlign: TextAlign.center),
+          Text('Servicos',
+              style: AppTypography.title, textAlign: TextAlign.center),
           const SizedBox(height: AppSpacing.xs),
-          Text('Passo 2 de 3', style: AppTypography.caption, textAlign: TextAlign.center),
+          Text('Passo 2 de 3',
+              style: AppTypography.caption, textAlign: TextAlign.center),
           const SizedBox(height: AppSpacing.xl),
-
           Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
@@ -160,7 +190,6 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
             }).toList(),
           ),
           const SizedBox(height: AppSpacing.lg),
-
           ...List.generate(_services.length, (i) {
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -169,11 +198,11 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
                 durationMinutes: _services[i].durationMinutes,
                 price: _services[i].price,
                 onRemove: () => _removeService(i),
-                onChanged: (name, dur, price) => _updateService(i, name, dur, price),
+                onChanged: (name, dur, price) =>
+                    _updateService(i, name, dur, price),
               ),
             );
           }),
-
           TextButton.icon(
             onPressed: isSaving ? null : _addCustomService,
             icon: const Icon(Icons.add, size: 18),
@@ -184,7 +213,6 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-
           SizedBox(
             height: 48,
             child: ElevatedButton(
@@ -207,18 +235,19 @@ class _ServicesStepState extends ConsumerState<ServicesStep> {
                       ),
                     )
                   : Text('Proximo',
-                      style: AppTypography.bodySemibold.copyWith(color: Colors.white)),
+                      style: AppTypography.bodySemibold
+                          .copyWith(color: Colors.white)),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-
           Center(
             child: TextButton(
               onPressed: isSaving ? null : _skip,
               style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
               child: Text(
                 'Pular por agora',
-                style: AppTypography.caption.copyWith(color: AppColors.neutral600),
+                style:
+                    AppTypography.caption.copyWith(color: AppColors.neutral600),
               ),
             ),
           ),

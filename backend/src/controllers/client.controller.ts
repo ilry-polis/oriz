@@ -1,51 +1,113 @@
-import type { FastifyRequest, FastifyReply } from 'fastify';
-import type { ClientRepository } from '../repositories/client.repository.js';
-import type { StudioAuthContext } from '../middlewares/auth.js';
+import type { FastifyReply, FastifyRequest } from "fastify";
+import type { z } from "zod";
+import type { StudioAuthContext } from "../middlewares/auth.js";
+import type {
+	CreateClientBody,
+	ListClientsQuery,
+	UpdateClientBody,
+} from "../routes/clients.routes.js";
+import type { ClientService } from "../services/client.service.js";
+
+type CreateClientBodyType = z.infer<typeof CreateClientBody> & {
+	marketing_consent?: boolean;
+};
+type UpdateClientBodyType = z.infer<typeof UpdateClientBody>;
+type ListClientsQueryType = z.infer<typeof ListClientsQuery>;
 
 export class ClientController {
-  constructor(private repo: ClientRepository) {}
+	constructor(private service: ClientService) {}
 
-  async list(request: FastifyRequest, reply: FastifyReply) {
-    const { studioId } = request.authContext as StudioAuthContext;
-    const query = request.query as {
-      search?: string;
-      cursor?: string;
-      limit: number;
-    };
+	async create(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId, userId } = request.authContext as StudioAuthContext;
+		const body = request.body as CreateClientBodyType;
 
-    const result = await this.repo.list(studioId, {
-      search: query.search,
-      cursor: query.cursor,
-      limit: query.limit,
-    });
+		const client = await this.service.createClient(studioId, userId, {
+			name: body.name,
+			phone: body.phone,
+			email: body.email,
+			birth_date: body.birth_date,
+			tags: body.tags,
+			notes: body.notes,
+			marketing_consent: body.marketing_consent,
+		});
 
-    return reply.send({
-      data: result.data,
-      meta: { has_more: result.hasMore },
-    });
-  }
+		return reply.status(201).send({ data: client });
+	}
 
-  async create(request: FastifyRequest, reply: FastifyReply) {
-    const { studioId } = request.authContext as StudioAuthContext;
-    const body = request.body as {
-      name: string;
-      phone?: string;
-      email?: string;
-      birth_date?: string;
-      tags?: string[];
-      notes?: string;
-    };
+	async list(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId } = request.authContext as StudioAuthContext;
+		const query = request.query as ListClientsQueryType;
 
-    const client = await this.repo.create({
-      studioId,
-      name: body.name,
-      phone: body.phone,
-      email: body.email,
-      birthDate: body.birth_date,
-      tags: body.tags,
-      notes: body.notes,
-    });
+		const result = await this.service.listClients(studioId, {
+			search: query.search,
+			tag: query.tag,
+			cursor: query.cursor,
+			limit: query.limit,
+		});
 
-    return reply.status(201).send({ data: client });
-  }
+		return reply.send(result);
+	}
+
+	async getById(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId, userId } = request.authContext as StudioAuthContext;
+		const { id } = request.params as { id: string };
+
+		const client = await this.service.getClientById(studioId, userId, id);
+
+		return reply.send({ data: client });
+	}
+
+	async update(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId, userId } = request.authContext as StudioAuthContext;
+		const { id } = request.params as { id: string };
+		const body = request.body as UpdateClientBodyType;
+
+		const client = await this.service.updateClient(studioId, userId, id, {
+			name: body.name,
+			phone: body.phone,
+			email: body.email,
+			birth_date: body.birth_date,
+			tags: body.tags,
+			notes: body.notes,
+		});
+
+		return reply.send({ data: client });
+	}
+
+	async updateTags(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId } = request.authContext as StudioAuthContext;
+		const { id } = request.params as { id: string };
+		const body = request.body as { tags: string[] };
+
+		const client = await this.service.updateTags(studioId, id, body.tags);
+
+		return reply.send({ data: client });
+	}
+
+	async dataDeletion(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId, userId } = request.authContext as StudioAuthContext;
+		const { clientId } = request.params as { clientId: string };
+
+		const client = await this.service.anonymizeClient(
+			studioId,
+			userId,
+			clientId,
+		);
+
+		return reply.send({ data: client });
+	}
+
+	async listAppointments(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId } = request.authContext as StudioAuthContext;
+		const { id } = request.params as { id: string };
+		const query = request.query as { cursor?: string; limit?: number };
+
+		const result = await this.service.listAppointments(
+			studioId,
+			id,
+			query.cursor,
+			query.limit,
+		);
+		return reply.send(result);
+	}
 }

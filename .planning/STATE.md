@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-05-PLAN.md — Booking, Payment, and Detail Sheets
-last_updated: "2026-04-03T20:09:43.991Z"
-last_activity: 2026-04-02 — Phase 1 formally verified and closed
+stopped_at: Phase 3 context gathered
+last_updated: "2026-04-03T15:46:20.089Z"
+last_activity: 2026-04-03 — Phase 2 formally completed
 progress:
   total_phases: 8
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 6
   completed_plans: 6
-  percent: 12
+  percent: 25
 ---
 
 # Project State
@@ -21,41 +21,36 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** A profissional nunca mais precisa parar um atendimento para responder WhatsApp — a IA agenda, responde dúvidas e gerencia a agenda automaticamente.
-**Current focus:** Phase 2 — Core Domain
+**Current focus:** Phase 3 — Scheduling Engine
 
 ## Current Position
 
-Phase: 2 of 8 (Core Domain)
+Phase: 3 of 8 (Scheduling Engine)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-04-02 — Phase 1 formally verified and closed
+Last activity: 2026-04-03 — Phase 2 formally completed
 
-Progress: [█░░░░░░░░░] 12%
+Progress: [██░░░░░░░░] 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0 (Phase 1 was organic, not GSD-phased)
+- Total plans completed: 6 (Phase 2)
 - Average duration: —
-- Total execution time: 0 hours
+- Total execution time: —
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Identity and Foundation | organic | — | — |
+| 2. Core Domain | 6 plans | completed 2026-04-03 | — |
 
 **Recent Trend:**
 - Last 5 plans: —
 - Trend: —
 
 *Updated after each plan completion*
-| Phase 03-scheduling-engine P01 | 3 | 2 tasks | 6 files |
-| Phase 03-scheduling-engine P02 | 266 | 2 tasks | 7 files |
-| Phase 03-scheduling-engine P03 | 6 | 2 tasks | 8 files |
-| Phase 03-scheduling-engine P04 | 12 | 2 tasks | 12 files |
-| Phase 03-scheduling-engine P06 | 18 | 2 tasks | 7 files |
-| Phase 03-scheduling-engine P05 | 19 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -65,24 +60,12 @@ Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
 - Phase 1 closed: email/password auth only (social login deferred), no splash screen, no i18n
+- Phase 2 closed: services CRUD, clients + LGPD, anamnesis, team invite flow with WhatsApp, tab bar equipe/convites
 - Roadmap: 8 phases (including 5.1 billing insertion) derived from 45 v1 requirements
 - Phase 6 (WhatsApp/AI): Requires `/gsd:research-phase` before planning
 - Phase 4 (Packages): Session deduction on appointment completion (not booking)
-- Feature branches mandatory for all new work
-- [Phase 03-scheduling-engine]: no_show excluded from appointments_no_overlap constraint — rebooking a no-show slot is valid behavior
-- [Phase 03-scheduling-engine]: Recurring blocked slots returned wholesale from listByDateRange — expansion to individual dates is service layer responsibility
-- [Phase 03-scheduling-engine]: confirmation_hours_before added to studios table now (Phase 5.1/6 will consume it) — cheaper than a later migration
-- [Phase 03-scheduling-engine]: Slot interval: 15-minute granularity for getAvailableSlots — balances precision with array size
-- [Phase 03-scheduling-engine]: PaymentRepository created as separate repository — payments table already exists in initial schema (001_initial_schema.sql)
-- [Phase 03-scheduling-engine]: BlockedSlotService.list is distinct from getExpandedForDate — list for API (raw rows), getExpandedForDate for slot computation (TimeRange[])
-- [Phase 03-scheduling-engine]: 'whatsapp' source mapped to 'whatsapp_ai' at controller boundary — API contract uses 'whatsapp', repository enum uses 'whatsapp_ai'
-- [Phase 03-scheduling-engine]: Timeline bounds from appointments data (not working_hours) — professionals/me endpoint not implemented; fallback 8-19 + auto-expand
-- [Phase 03-scheduling-engine]: Multi-professional PageView deferred — requires professionals list endpoint from Phase 02
-- [Phase 03-scheduling-engine]: Working hours screen saves via OnboardingRepository.updateWorkingHours — reuses PATCH /professionals/:id, no new endpoint needed
-- [Phase 03-scheduling-engine]: Week view uses agendaNotifierProvider.blockedSlotsForDay — appointments mock until 03-04 wires auth context
-- [Phase 03-scheduling-engine]: Day-of-week mapping for recurrence: FilterChip index 0-6 = API days 0=Mon..6=Sun
-- [Phase 03-scheduling-engine]: QuickBookSheet is the single booking entry point — both slot tap (pre-filled time) and [+] button use it; professionalId from agendaState.selectedProfessionalId
-- [Phase 03-scheduling-engine]: Amount in PaymentSheet is editable (pre-filled from service price) — handles discounts applied at checkout without API contract change
+- Wave-based branching: one branch per wave, pattern `feature/{phase}-wave-{N}-{descrição}`, complete PR cycle before next wave
+- Brevo como provedor de envio transacional: convites para profissionais serão enviados via Brevo (email/WhatsApp)
 
 ### Pending Todos
 
@@ -93,9 +76,10 @@ None yet.
 - Phase 6 (AI): LangChain.js tool-calling API has changed across versions — verify before planning
 - Phase 5 (WhatsApp): Evolution API v2 production behavior under load not documented — test early
 - Phase 4 (Financial): Asaas SDK commission split configuration needs validation
+- Phase 3 (Scheduling): RLS atual permite qualquer membro do studio acessar todos os appointments — não diferencia owner vs collaborator no backend. Collaborator pode alterar appointments de outros profissionais via API direta. Hardening de role-based auth granular adiado para fase futura.
 
 ## Session Continuity
 
-Last session: 2026-04-03T20:09:43.989Z
-Stopped at: Completed 03-05-PLAN.md — Booking, Payment, and Detail Sheets
-Resume file: None
+Last session: 2026-04-03T15:46:20.087Z
+Stopped at: Phase 3 context gathered
+Resume file: .planning/phases/03-scheduling-engine/03-CONTEXT.md
