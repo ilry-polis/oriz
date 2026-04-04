@@ -66,7 +66,7 @@ export class ServiceCategoryRepository {
        RETURNING id, studio_id, name, icon, position, is_active, created_at`,
 			[studioId, name, icon ?? null, position ?? null],
 		);
-		return rows[0];
+		return rows[0]!;
 	}
 
 	async update(
@@ -121,7 +121,7 @@ export class ServiceCategoryRepository {
 			`SELECT COUNT(*)::text as count FROM services WHERE category_id = $1 AND deleted_at IS NULL`,
 			[id],
 		);
-		return Number.parseInt(rows[0].count) > 0;
+		return Number.parseInt(rows[0]?.count ?? "0") > 0;
 	}
 
 	/** Copy selected global categories to studio-specific ones. Returns created rows. */

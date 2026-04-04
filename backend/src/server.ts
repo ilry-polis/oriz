@@ -5,7 +5,7 @@ import {
 	serializerCompiler,
 	validatorCompiler,
 } from "fastify-type-provider-zod";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { createPool } from "./config/database.js";
 import { parseEnv } from "./config/env.js";
 import { createSupabaseAdmin } from "./config/supabase.js";

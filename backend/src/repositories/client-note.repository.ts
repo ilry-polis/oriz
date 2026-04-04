@@ -24,7 +24,7 @@ export class ClientNoteRepository {
 			 RETURNING id, studio_id, client_id, professional_id, content, created_at`,
 			[studioId, clientId, professionalId, content],
 		);
-		return rows[0];
+		return rows[0]!;
 	}
 
 	async listByClient(

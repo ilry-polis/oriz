@@ -210,7 +210,6 @@ export class InviteService {
 		}
 
 		const authUserId = authData.user.id;
-		let professionalId: string | null = null;
 
 		try {
 			// Step 3: create professional row
@@ -222,8 +221,6 @@ export class InviteService {
 				commissionValue: Number(invite.commission_value),
 				cardFeePolicy: invite.card_fee_policy,
 			});
-			professionalId = professional.id;
-
 			// Step 4: link services (atomic replace — empty first, then insert)
 			if (invite.service_ids?.length) {
 				await this.professionalRepo.replaceServiceLinks(
@@ -236,13 +233,13 @@ export class InviteService {
 			// Step 5: mark invite used
 			await this.inviteRepo.markUsed(token);
 
-			// Step 6: create session for immediate login
-			const { data: sessionData } =
-				await this.supabaseAdmin.auth.admin.createSession({
-					user_id: authUserId,
-				});
+			// Step 6: return user info (client handles login separately)
+			// Note: Supabase admin API doesn't support createSession directly.
+			// The mobile app should prompt the user to log in after accepting.
+			const { data: userData } =
+				await this.supabaseAdmin.auth.admin.getUserById(authUserId);
 
-			return sessionData?.session ?? sessionData;
+			return { user: userData.user };
 		} catch (err) {
 			// Compensating action: delete the auth user to keep state consistent
 			// professionalId being null means the professional row was not created yet

@@ -88,7 +88,7 @@ export class ProfessionalRepository {
 				data.cardFeePolicy,
 			],
 		);
-		return rows[0];
+		return rows[0]!;
 	}
 
 	/**

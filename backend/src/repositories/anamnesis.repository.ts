@@ -27,7 +27,7 @@ export class AnamnesisRepository {
 			 RETURNING id, studio_id, client_id, service_category_id, fields, created_at, updated_at`,
 			[studioId, clientId, serviceCategoryId, JSON.stringify(fields)],
 		);
-		return rows[0];
+		return rows[0]!;
 	}
 
 	async getByClientAndCategory(

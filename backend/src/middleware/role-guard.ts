@@ -1,6 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { StudioAuthContext } from "../middlewares/auth.js";
-import { ForbiddenError } from "../utils/errors.js";
 
 /**
  * requireOwner — Fastify preHandler hook.

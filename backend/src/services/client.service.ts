@@ -59,7 +59,7 @@ export class ClientService {
 
 	async createClient(
 		studioId: string,
-		userId: string,
+		_userId: string,
 		data: CreateClientParams,
 	): Promise<ClientRow> {
 		const { marketing_consent, ...clientData } = data;
@@ -174,7 +174,7 @@ export class ClientService {
 			data,
 			meta: {
 				has_more: hasMore,
-				next_cursor: hasMore ? data[data.length - 1].id : null,
+				next_cursor: hasMore ? data[data.length - 1]?.id ?? null : null,
 			},
 		};
 	}

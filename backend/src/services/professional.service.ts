@@ -42,7 +42,7 @@ export class ProfessionalService {
 			data,
 			meta: {
 				has_more: hasMore,
-				next_cursor: hasMore ? data[data.length - 1].id : null,
+				next_cursor: hasMore ? data[data.length - 1]?.id ?? null : null,
 			},
 		};
 	}

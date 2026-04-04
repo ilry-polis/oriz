@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
 
 // ─── Zod Schemas ───────────────────────────────────────────
@@ -101,17 +101,16 @@ export default async function publicStudioRoutes(app: FastifyInstance) {
 			rateLimit: {
 				max: 3,
 				timeWindow: "1 minute",
-				keyGenerator: (request: {
-					ip: string;
-					body?: { client_phone?: string };
-				}) =>
-					request.body?.client_phone
-						? `${request.ip}:${request.body.client_phone}`
-						: request.ip,
+				keyGenerator: (request: FastifyRequest) => {
+					const body = request.body as { client_phone?: string } | undefined;
+					return body?.client_phone
+						? `${request.ip}:${body.client_phone}`
+						: request.ip;
+				},
 			},
 		},
 		schema: { params: SlugParam, body: PublicBookingBody },
-		handler: async (_request, _reply) => {
+		handler: async (_request: FastifyRequest, _reply: FastifyReply) => {
 			// → PublicStudioController.createAppointment
 			// Service layer MUST enforce per-phone rate limit (1/min) via Redis
 			// to prevent abuse from rotating IPs with same phone
