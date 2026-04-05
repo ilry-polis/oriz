@@ -395,6 +395,37 @@ export class AppointmentRepository {
       throw err;
     }
   }
+
+  /**
+   * List completed appointments with only duration_minutes field.
+   * Used by FinancialService.occupancyRate to sum used minutes.
+   * Lightweight query: no JOINs needed beyond what's already on the appointment.
+   */
+  async listCompletedByDateRange(
+    studioId: string,
+    dateFrom: string,
+    dateTo: string,
+    professionalId?: string,
+  ): Promise<{ duration_minutes: number }[]> {
+    const params: unknown[] = [studioId, dateFrom, dateTo];
+    let professionalClause = '';
+    if (professionalId) {
+      params.push(professionalId);
+      professionalClause = `AND a.professional_id = $${params.length}`;
+    }
+
+    const { rows } = await this.pool.query<{ duration_minutes: number }>(
+      `SELECT s.duration_minutes
+       FROM appointments a
+       JOIN services s ON s.id = a.service_id
+       WHERE a.studio_id = $1
+         AND a.date BETWEEN $2 AND $3
+         AND a.status = 'completed'
+         ${professionalClause}`,
+      params,
+    );
+    return rows;
+  }
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
