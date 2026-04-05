@@ -142,23 +142,30 @@ class FinancialDashboardNotifier
       final dateStr = fmt.format(date);
       final (dateFrom, dateTo) = period.dateRange(date);
 
-      final results = await Future.wait([
-        repo.getSummary(period: period.apiValue, date: dateStr),
-        repo.listPayments(
-          dateFrom: dateFrom,
-          dateTo: dateTo,
-          method: filterMethod,
-          professionalId: filterProfessionalId,
-        ),
-        repo.getBreakdownByProfessional(dateFrom: dateFrom, dateTo: dateTo),
-        repo.getBreakdownByService(dateFrom: dateFrom, dateTo: dateTo),
-      ]);
+      final summaryFuture =
+          repo.getSummary(period: period.apiValue, date: dateStr);
+      final paymentsFuture = repo.listPayments(
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        method: filterMethod,
+        professionalId: filterProfessionalId,
+      );
+      final breakdownProFuture =
+          repo.getBreakdownByProfessional(dateFrom: dateFrom, dateTo: dateTo);
+      final breakdownSvcFuture =
+          repo.getBreakdownByService(dateFrom: dateFrom, dateTo: dateTo);
 
-      final summary = results[0] as FinancialSummaryModel;
-      final paymentsResult = results[1]
-          as ({List<PaymentListItem> items, bool hasMore, String? cursor});
-      final breakdownPro = results[2] as List<BreakdownItem>;
-      final breakdownSvc = results[3] as List<BreakdownItem>;
+      final results = await (
+        summaryFuture,
+        paymentsFuture,
+        breakdownProFuture,
+        breakdownSvcFuture,
+      ).wait;
+
+      final summary = results.$1;
+      final paymentsResult = results.$2;
+      final breakdownPro = results.$3;
+      final breakdownSvc = results.$4;
 
       state = FinancialDashboardLoaded(
         summary: summary,
