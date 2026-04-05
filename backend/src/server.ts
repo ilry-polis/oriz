@@ -51,6 +51,7 @@ import { PackageRepository } from "./repositories/package.repository.js";
 import { PackageSubscriptionRepository } from "./repositories/package-subscription.repository.js";
 import { CommissionRepository } from "./repositories/commission.repository.js";
 import { FinancialRepository } from "./repositories/financial.repository.js";
+import { createFinancialRefreshQueue } from "./jobs/financial-refresh.job.js";
 import { registerRoutes } from "./routes/index.js";
 import { AnamnesisService } from "./services/anamnesis.service.js";
 import { AuditLogService } from "./services/audit-log.service.js";
@@ -191,15 +192,21 @@ const anamnesisService = new AnamnesisService(anamnesisRepo);
 const auditLogService = new AuditLogService(auditLogRepo);
 const clientNoteService = new ClientNoteService(clientNoteRepo);
 const blockedSlotService = new BlockedSlotService(blockedSlotRepo);
+const commissionService = new CommissionService(commissionRepo, professionalRepo, studioRepo);
+const financialRefreshQueue = createFinancialRefreshQueue(pool, env.REDIS_URL);
 const appointmentService = new AppointmentService(
 	appointmentRepo,
 	professionalRepo,
 	serviceRepo,
 	paymentRepo,
 	blockedSlotService,
+	commissionService,
+	packageSubRepo,
+	packageRepo,
+	studioRepo,
+	financialRefreshQueue,
 );
 const packageService = new PackageService(packageRepo, packageSubRepo, serviceRepo, paymentRepo);
-const commissionService = new CommissionService(commissionRepo, professionalRepo, studioRepo);
 const financialService = new FinancialService(financialRepo, appointmentRepo, professionalRepo, paymentRepo);
 const consentService = new ConsentService(consentRepo);
 const clientService = new ClientService(
