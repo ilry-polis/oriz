@@ -136,7 +136,8 @@ export class PackageRepository {
 				input.validityDays,
 			],
 		);
-		return rows[0]!;
+		// rows[0] is always defined after a successful INSERT RETURNING
+		return rows[0] as PackageRow;
 	}
 
 	async update(
@@ -196,7 +197,7 @@ export class PackageRepository {
 			   AND status = 'active'`,
 			[packageId, studioId],
 		);
-		const activeCount = parseInt(countRows[0]?.count ?? "0", 10);
+		const activeCount = Number.parseInt(countRows[0]?.count ?? "0", 10);
 		if (activeCount > 0) {
 			throw new ConflictError(
 				"PACKAGE_HAS_SUBSCRIPTIONS",

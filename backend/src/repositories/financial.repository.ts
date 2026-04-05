@@ -1,84 +1,84 @@
-import type { Pool } from 'pg';
+import type { Pool } from "pg";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 export type LiveQueryResult = {
-  total_revenue: number;     // in centavos
-  avg_ticket: number;        // in centavos
-  total_appointments: number;
+	total_revenue: number; // in centavos
+	avg_ticket: number; // in centavos
+	total_appointments: number;
 };
 
 export type MaterializedViewRow = {
-  studio_id: string;
-  period_year: number;
-  period_month: number;
-  total_revenue: number;
-  avg_ticket: number;
-  total_appointments: number;
+	studio_id: string;
+	period_year: number;
+	period_month: number;
+	total_revenue: number;
+	avg_ticket: number;
+	total_appointments: number;
 };
 
 export type BreakdownByProfessional = {
-  professional_id: string;
-  professional_name: string;
-  total_amount: number;
-  percentage: number;
+	professional_id: string;
+	professional_name: string;
+	total_amount: number;
+	percentage: number;
 };
 
 export type BreakdownByService = {
-  service_id: string;
-  service_name: string;
-  total_amount: number;
-  percentage: number;
+	service_id: string;
+	service_name: string;
+	total_amount: number;
+	percentage: number;
 };
 
 // ─── Repository ────────────────────────────────────────────────────────────
 
 export class FinancialRepository {
-  constructor(private pool: Pool) {}
+	constructor(private pool: Pool) {}
 
-  /**
-   * Get monthly summary from the materialized view financial_summaries.
-   * Returns null if no data exists yet for the given month.
-   */
-  async getFromMaterializedView(
-    studioId: string,
-    year: number,
-    month: number,
-  ): Promise<LiveQueryResult | null> {
-    const { rows } = await this.pool.query<MaterializedViewRow>(
-      `SELECT studio_id, period_year, period_month,
+	/**
+	 * Get monthly summary from the materialized view financial_summaries.
+	 * Returns null if no data exists yet for the given month.
+	 */
+	async getFromMaterializedView(
+		studioId: string,
+		year: number,
+		month: number,
+	): Promise<LiveQueryResult | null> {
+		const { rows } = await this.pool.query<MaterializedViewRow>(
+			`SELECT studio_id, period_year, period_month,
               total_revenue, avg_ticket, total_appointments
        FROM financial_summaries
        WHERE studio_id = $1
          AND period_year = $2
          AND period_month = $3
        LIMIT 1`,
-      [studioId, year, month],
-    );
+			[studioId, year, month],
+		);
 
-    if (!rows[0]) return null;
+		if (!rows[0]) return null;
 
-    const row = rows[0];
-    return {
-      total_revenue: row.total_revenue,
-      avg_ticket: row.avg_ticket,
-      total_appointments: row.total_appointments,
-    };
-  }
+		const row = rows[0];
+		return {
+			total_revenue: row.total_revenue,
+			avg_ticket: row.avg_ticket,
+			total_appointments: row.total_appointments,
+		};
+	}
 
-  /**
-   * Live query for day/week granularity.
-   * Groups by appointment_id first to handle split payments correctly,
-   * then computes revenue/avg_ticket/count.
-   * Uses appointments(studio_id, date) index for efficiency.
-   */
-  async getLiveQuery(
-    studioId: string,
-    dateFrom: string,
-    dateTo: string,
-  ): Promise<LiveQueryResult> {
-    const { rows } = await this.pool.query<LiveQueryResult>(
-      `WITH appointment_totals AS (
+	/**
+	 * Live query for day/week granularity.
+	 * Groups by appointment_id first to handle split payments correctly,
+	 * then computes revenue/avg_ticket/count.
+	 * Uses appointments(studio_id, date) index for efficiency.
+	 */
+	async getLiveQuery(
+		studioId: string,
+		dateFrom: string,
+		dateTo: string,
+	): Promise<LiveQueryResult> {
+		const { rows } = await this.pool.query<LiveQueryResult>(
+			`WITH appointment_totals AS (
          SELECT p.appointment_id,
                 SUM(p.amount) AS appointment_total
          FROM payments p
@@ -93,29 +93,31 @@ export class FinancialRepository {
          COALESCE(AVG(appointment_total), 0)::int AS avg_ticket,
          COUNT(*)::int AS total_appointments
        FROM appointment_totals`,
-      [studioId, dateFrom, dateTo],
-    );
+			[studioId, dateFrom, dateTo],
+		);
 
-    return rows[0] ?? { total_revenue: 0, avg_ticket: 0, total_appointments: 0 };
-  }
+		return (
+			rows[0] ?? { total_revenue: 0, avg_ticket: 0, total_appointments: 0 }
+		);
+	}
 
-  /**
-   * Revenue breakdown by professional, ranked by total descending.
-   * Uses net amount (amount - discount_amount where applicable).
-   * Leverages appointments(studio_id, date) index.
-   */
-  async breakdownByProfessional(
-    studioId: string,
-    dateFrom: string,
-    dateTo: string,
-  ): Promise<BreakdownByProfessional[]> {
-    const { rows } = await this.pool.query<{
-      professional_id: string;
-      professional_name: string;
-      total_amount: string;
-      percentage: string;
-    }>(
-      `WITH totals AS (
+	/**
+	 * Revenue breakdown by professional, ranked by total descending.
+	 * Uses net amount (amount - discount_amount where applicable).
+	 * Leverages appointments(studio_id, date) index.
+	 */
+	async breakdownByProfessional(
+		studioId: string,
+		dateFrom: string,
+		dateTo: string,
+	): Promise<BreakdownByProfessional[]> {
+		const { rows } = await this.pool.query<{
+			professional_id: string;
+			professional_name: string;
+			total_amount: string;
+			percentage: string;
+		}>(
+			`WITH totals AS (
          SELECT a.professional_id,
                 pr.name AS professional_name,
                 SUM(p.amount)::int AS total_amount
@@ -137,33 +139,33 @@ export class FinancialRepository {
               END AS percentage
        FROM totals t, grand_total gt
        ORDER BY t.total_amount DESC`,
-      [studioId, dateFrom, dateTo],
-    );
+			[studioId, dateFrom, dateTo],
+		);
 
-    return rows.map((r) => ({
-      professional_id: r.professional_id,
-      professional_name: r.professional_name,
-      total_amount: Number(r.total_amount),
-      percentage: Number(r.percentage),
-    }));
-  }
+		return rows.map((r) => ({
+			professional_id: r.professional_id,
+			professional_name: r.professional_name,
+			total_amount: Number(r.total_amount),
+			percentage: Number(r.percentage),
+		}));
+	}
 
-  /**
-   * Revenue breakdown by service, ranked by total descending.
-   * Leverages appointments(studio_id, date) index.
-   */
-  async breakdownByService(
-    studioId: string,
-    dateFrom: string,
-    dateTo: string,
-  ): Promise<BreakdownByService[]> {
-    const { rows } = await this.pool.query<{
-      service_id: string;
-      service_name: string;
-      total_amount: string;
-      percentage: string;
-    }>(
-      `WITH totals AS (
+	/**
+	 * Revenue breakdown by service, ranked by total descending.
+	 * Leverages appointments(studio_id, date) index.
+	 */
+	async breakdownByService(
+		studioId: string,
+		dateFrom: string,
+		dateTo: string,
+	): Promise<BreakdownByService[]> {
+		const { rows } = await this.pool.query<{
+			service_id: string;
+			service_name: string;
+			total_amount: string;
+			percentage: string;
+		}>(
+			`WITH totals AS (
          SELECT a.service_id,
                 s.name AS service_name,
                 SUM(p.amount)::int AS total_amount
@@ -185,14 +187,14 @@ export class FinancialRepository {
               END AS percentage
        FROM totals t, grand_total gt
        ORDER BY t.total_amount DESC`,
-      [studioId, dateFrom, dateTo],
-    );
+			[studioId, dateFrom, dateTo],
+		);
 
-    return rows.map((r) => ({
-      service_id: r.service_id,
-      service_name: r.service_name,
-      total_amount: Number(r.total_amount),
-      percentage: Number(r.percentage),
-    }));
-  }
+		return rows.map((r) => ({
+			service_id: r.service_id,
+			service_name: r.service_name,
+			total_amount: Number(r.total_amount),
+			percentage: Number(r.percentage),
+		}));
+	}
 }

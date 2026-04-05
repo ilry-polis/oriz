@@ -66,7 +66,8 @@ export class PackageSubscriptionRepository {
 				input.expiresAt,
 			],
 		);
-		return rows[0]!;
+		// rows[0] is always defined after a successful INSERT RETURNING
+		return rows[0] as PackageSubscriptionRow;
 	}
 
 	/**
@@ -164,7 +165,7 @@ export class PackageSubscriptionRepository {
 		let cursorClause = "";
 		if (cursor) {
 			const { rows: cursorRows } = await this.pool.query<{ id: string }>(
-				`SELECT id FROM package_subscriptions WHERE id = $1 AND studio_id = $2`,
+				"SELECT id FROM package_subscriptions WHERE id = $1 AND studio_id = $2",
 				[cursor, studioId],
 			);
 			if (cursorRows[0]) {
@@ -174,9 +175,7 @@ export class PackageSubscriptionRepository {
 		}
 
 		const whereClause =
-			filters.length > 0
-				? `AND ${filters.join(" AND ")}`
-				: "";
+			filters.length > 0 ? `AND ${filters.join(" AND ")}` : "";
 
 		const { rows } = await this.pool.query<PackageSubscriptionRow>(
 			`SELECT ${SUBSCRIPTION_COLUMNS}
