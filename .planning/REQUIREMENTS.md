@@ -50,10 +50,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Financial
 
-- [ ] **FINC-01**: Owner views revenue dashboard by day/week/month
-- [ ] **FINC-02**: Owner views revenue breakdown by professional and by service
-- [ ] **FINC-03**: Owner views average ticket value
-- [ ] **FINC-04**: Owner views agenda occupancy rate
+- [x] **FINC-01**: Owner views revenue dashboard by day/week/month
+- [x] **FINC-02**: Owner views revenue breakdown by professional and by service
+- [x] **FINC-03**: Owner views average ticket value
+- [x] **FINC-04**: Owner views agenda occupancy rate
 - [ ] **FINC-05**: Owner records payment method per appointment (cash, PIX, debit, credit)
 
 ### Public Page
@@ -165,10 +165,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEAM-03 | Phase 2 | Pending |
 | TEAM-04 | Phase 2 | Pending |
 | TEAM-05 | Phase 2 | Pending |
-| FINC-01 | Phase 4 | Pending |
-| FINC-02 | Phase 4 | Pending |
-| FINC-03 | Phase 4 | Pending |
-| FINC-04 | Phase 4 | Pending |
+| FINC-01 | Phase 4 | Complete |
+| FINC-02 | Phase 4 | Complete |
+| FINC-03 | Phase 4 | Complete |
+| FINC-04 | Phase 4 | Complete |
 | FINC-05 | Phase 4 | Pending |
 | PAGE-01 | Phase 5 | Pending |
 | PAGE-02 | Phase 5 | Pending |

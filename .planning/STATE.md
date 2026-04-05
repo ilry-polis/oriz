@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 4 context gathered
-last_updated: "2026-04-05T15:30:00.262Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-04-05T19:24:21.393Z"
 last_activity: 2026-04-05 — Phase 3 completed (UAT 15/15 passed)
 progress:
   total_phases: 8
   completed_phases: 2
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 18
+  completed_plans: 14
   percent: 37
 ---
 
@@ -52,6 +52,8 @@ Progress: [████░░░░░░] 37%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 04-financial-and-packages P02 | 35 | 2 tasks | 16 files |
+| Phase 04 P01 | 9 | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -68,6 +70,12 @@ Recent decisions affecting current work:
 - Phase 4 (Packages): Session deduction on appointment completion (not booking)
 - Wave-based branching: one branch per wave, pattern `feature/{phase}-wave-{N}-{descrição}`, complete PR cycle before next wave
 - Brevo como provedor de envio transacional: convites para profissionais serão enviados via Brevo (email/WhatsApp)
+- [Phase 04-financial-and-packages]: commission_value stored in basis points (e.g., 4000 = 40.00%) for integer-safe percentage math in centavo calculations
+- [Phase 04-financial-and-packages]: FinancialService.summary routes day/week to live query, month to materialized view — balances freshness vs performance
+- [Phase 04-financial-and-packages]: financial routes use requireStudioMember (not requireOwner) so collaborators can access their dashboard data
+- [Phase 04]: Payment type='pacote' recorded on subscription creation with nullable appointment_id
+- [Phase 04]: Atomic deductSession uses UPDATE...WHERE status='active' AND expires_at > NOW() RETURNING
+- [Phase 04]: financial_summaries view rebuilt: CTE groups by appointment_id to avoid double-counting split payments
 
 ### Pending Todos
 
@@ -82,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T15:30:00.260Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-financial-and-packages/04-CONTEXT.md
+Last session: 2026-04-05T19:24:21.391Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None
