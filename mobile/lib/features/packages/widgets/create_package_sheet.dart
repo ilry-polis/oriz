@@ -207,7 +207,7 @@ class _CreatePackageSheetState extends ConsumerState<CreatePackageSheet> {
                             labelStyle: AppTypography.caption.copyWith(
                               color: selected
                                   ? AppColors.primary
-                                  : AppColors.neutral700,
+                                  : AppColors.neutral600,
                             ),
                           );
                         }).toList(),
