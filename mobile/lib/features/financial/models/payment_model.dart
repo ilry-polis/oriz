@@ -22,10 +22,16 @@ class PaymentListItem {
   });
 
   factory PaymentListItem.fromJson(Map<String, dynamic> json) {
+    int toInt(dynamic v) {
+      if (v == null) return 0;
+      if (v is num) return v.toInt();
+      return int.tryParse(v.toString()) ?? 0;
+    }
+
     return PaymentListItem(
       id: json['id'] as String,
-      amount: (json['amount'] as num?)?.toInt() ?? 0,
-      discountAmount: (json['discount_amount'] as num?)?.toInt() ?? 0,
+      amount: toInt(json['amount']),
+      discountAmount: toInt(json['discount_amount']),
       method: json['method'] as String? ?? '',
       clientName: json['client_name'] as String? ?? '',
       professionalName: json['professional_name'] as String? ?? '',

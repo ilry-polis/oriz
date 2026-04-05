@@ -17,12 +17,24 @@ class FinancialSummaryModel {
 
   factory FinancialSummaryModel.fromJson(Map<String, dynamic> json) {
     return FinancialSummaryModel(
-      totalRevenue: (json['total_revenue'] as num?)?.toInt() ?? 0,
-      avgTicket: (json['avg_ticket'] as num?)?.toInt() ?? 0,
-      totalAppointments: (json['total_appointments'] as num?)?.toInt() ?? 0,
-      occupancyRate: (json['occupancy_rate'] as num?)?.toDouble() ?? 0.0,
+      totalRevenue: _toInt(json['total_revenue']),
+      avgTicket: _toInt(json['avg_ticket']),
+      totalAppointments: _toInt(json['total_appointments']),
+      occupancyRate: _toDouble(json['occupancy_rate']),
       period: json['period'] as String? ?? '',
     );
+  }
+
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
+
+  static double _toDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is num) return v.toDouble();
+    return double.tryParse(v.toString()) ?? 0.0;
   }
 
   static final _currencyFormat = NumberFormat.currency(
@@ -64,8 +76,8 @@ class BreakdownItem {
       name: json['professional_name'] as String? ??
           json['service_name'] as String? ??
           '',
-      totalAmount: (json['total_amount'] as num?)?.toInt() ?? 0,
-      percentage: (json['percentage'] as num?)?.toDouble() ?? 0.0,
+      totalAmount: FinancialSummaryModel._toInt(json['total_amount']),
+      percentage: FinancialSummaryModel._toDouble(json['percentage']),
     );
   }
 
