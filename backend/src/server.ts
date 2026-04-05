@@ -22,6 +22,11 @@ import { ServiceController } from "./controllers/service.controller.js";
 import { StudioController } from "./controllers/studio.controller.js";
 import { AppointmentController } from "./controllers/appointment.controller.js";
 import { BlockedSlotController } from "./controllers/blocked-slot.controller.js";
+import { PackageController } from "./controllers/package.controller.js";
+import { PackageSubscriptionController } from "./controllers/package-subscription.controller.js";
+import { FinancialController } from "./controllers/financial.controller.js";
+import { CommissionController } from "./controllers/commission.controller.js";
+import { PaymentController } from "./controllers/payment.controller.js";
 import {
 	buildAuthHook,
 	buildRequireRole,
@@ -42,6 +47,10 @@ import { StudioRepository } from "./repositories/studio.repository.js";
 import { AppointmentRepository } from "./repositories/appointment.repository.js";
 import { BlockedSlotRepository } from "./repositories/blocked-slot.repository.js";
 import { PaymentRepository } from "./repositories/payment.repository.js";
+import { PackageRepository } from "./repositories/package.repository.js";
+import { PackageSubscriptionRepository } from "./repositories/package-subscription.repository.js";
+import { CommissionRepository } from "./repositories/commission.repository.js";
+import { FinancialRepository } from "./repositories/financial.repository.js";
 import { registerRoutes } from "./routes/index.js";
 import { AnamnesisService } from "./services/anamnesis.service.js";
 import { AuditLogService } from "./services/audit-log.service.js";
@@ -56,6 +65,9 @@ import { ServiceService } from "./services/service.service.js";
 import { StudioService } from "./services/studio.service.js";
 import { AppointmentService } from "./services/appointment.service.js";
 import { BlockedSlotService } from "./services/blocked-slot.service.js";
+import { PackageService } from "./services/package.service.js";
+import { CommissionService } from "./services/commission.service.js";
+import { FinancialService } from "./services/financial.service.js";
 
 const env = parseEnv();
 
@@ -155,6 +167,10 @@ const clientNoteRepo = new ClientNoteRepository(pool);
 const appointmentRepo = new AppointmentRepository(pool);
 const blockedSlotRepo = new BlockedSlotRepository(pool);
 const paymentRepo = new PaymentRepository(pool);
+const packageRepo = new PackageRepository(pool);
+const packageSubRepo = new PackageSubscriptionRepository(pool);
+const commissionRepo = new CommissionRepository(pool);
+const financialRepo = new FinancialRepository(pool);
 
 // ─── Services ─────────────────────────────────────────────
 const studioService = new StudioService(
@@ -182,6 +198,9 @@ const appointmentService = new AppointmentService(
 	paymentRepo,
 	blockedSlotService,
 );
+const packageService = new PackageService(packageRepo, packageSubRepo, serviceRepo, paymentRepo);
+const commissionService = new CommissionService(commissionRepo, professionalRepo, studioRepo);
+const financialService = new FinancialService(financialRepo, appointmentRepo, professionalRepo, paymentRepo);
 const consentService = new ConsentService(consentRepo);
 const clientService = new ClientService(
 	clientRepo,
@@ -217,6 +236,11 @@ app.decorate(
 app.decorate("auditLogController", new AuditLogController(auditLogRepo));
 app.decorate("appointmentController", new AppointmentController(appointmentService));
 app.decorate("blockedSlotController", new BlockedSlotController(blockedSlotService));
+app.decorate("packageController", new PackageController(packageService));
+app.decorate("packageSubscriptionController", new PackageSubscriptionController(packageService));
+app.decorate("financialController", new FinancialController(financialService));
+app.decorate("commissionController", new CommissionController(commissionService));
+app.decorate("paymentController", new PaymentController(financialService));
 app.decorate(
 	"clientNoteController",
 	new ClientNoteController(clientNoteService),

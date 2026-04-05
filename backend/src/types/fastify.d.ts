@@ -2,18 +2,23 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { Pool } from "pg";
 import type { AnamnesisController } from "../controllers/anamnesis.controller.js";
+import type { AppointmentController } from "../controllers/appointment.controller.js";
 import type { AuditLogController } from "../controllers/audit-log.controller.js";
+import type { BlockedSlotController } from "../controllers/blocked-slot.controller.js";
 import type { ClientNoteController } from "../controllers/client-note.controller.js";
 import type { ClientController } from "../controllers/client.controller.js";
+import type { CommissionController } from "../controllers/commission.controller.js";
 import type { ConsentController } from "../controllers/consent.controller.js";
+import type { FinancialController } from "../controllers/financial.controller.js";
 import type { InviteController } from "../controllers/invite.controller.js";
 import type { OnboardingController } from "../controllers/onboarding.controller.js";
+import type { PackageSubscriptionController } from "../controllers/package-subscription.controller.js";
+import type { PackageController } from "../controllers/package.controller.js";
+import type { PaymentController } from "../controllers/payment.controller.js";
 import type { ProfessionalController } from "../controllers/professional.controller.js";
 import type { ServiceCategoryController } from "../controllers/service-category.controller.js";
 import type { ServiceController } from "../controllers/service.controller.js";
 import type { StudioController } from "../controllers/studio.controller.js";
-import type { AppointmentController } from "../controllers/appointment.controller.js";
-import type { BlockedSlotController } from "../controllers/blocked-slot.controller.js";
 import type { AuthContext } from "../middlewares/auth.js";
 
 type HookFn = (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
@@ -39,6 +44,11 @@ declare module "fastify" {
 		clientNoteController: ClientNoteController;
 		appointmentController: AppointmentController;
 		blockedSlotController: BlockedSlotController;
+		packageController: PackageController;
+		packageSubscriptionController: PackageSubscriptionController;
+		financialController: FinancialController;
+		commissionController: CommissionController;
+		paymentController: PaymentController;
 	}
 
 	interface FastifyRequest {

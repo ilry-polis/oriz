@@ -16,6 +16,11 @@ export const PayCommissionsBody = z.object({
 	commission_ids: z.array(z.string().uuid()).min(1).max(100),
 });
 
+export const CommissionSummaryQuery = z.object({
+	period_start: z.string().date().optional(),
+	period_end: z.string().date().optional(),
+});
+
 // ─── Route Plugin ──────────────────────────────────────────
 
 export default async function commissionRoutes(app: FastifyInstance) {
@@ -26,9 +31,17 @@ export default async function commissionRoutes(app: FastifyInstance) {
 	// Auth: owner
 	app.get("/", {
 		schema: { querystring: ListCommissionsQuery },
-		handler: async (_request, _reply) => {
-			// → CommissionController.list
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.commissionController.list(request, reply);
+		},
+	});
+
+	// GET /api/v1/commissions/summary
+	// Auth: owner — aggregate by professional
+	app.get("/summary", {
+		schema: { querystring: CommissionSummaryQuery },
+		handler: async (request, reply) => {
+			return app.commissionController.sumByProfessional(request, reply);
 		},
 	});
 
@@ -36,9 +49,8 @@ export default async function commissionRoutes(app: FastifyInstance) {
 	// Auth: owner
 	app.post("/pay", {
 		schema: { body: PayCommissionsBody },
-		handler: async (_request, _reply) => {
-			// → CommissionController.pay
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.commissionController.pay(request, reply);
 		},
 	});
 }
