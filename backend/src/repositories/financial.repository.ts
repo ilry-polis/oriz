@@ -31,6 +31,19 @@ export type BreakdownByService = {
 	percentage: number;
 };
 
+export type BreakdownByMethod = {
+	method: string;
+	total_amount: number;
+	count: number;
+	percentage: number;
+};
+
+export type DailyRevenueRow = {
+	date: string;
+	total_amount: number;
+	appointment_count: number;
+};
+
 // ─── Repository ────────────────────────────────────────────────────────────
 
 export class FinancialRepository {
@@ -195,6 +208,89 @@ export class FinancialRepository {
 			service_name: r.service_name,
 			total_amount: Number(r.total_amount),
 			percentage: Number(r.percentage),
+		}));
+	}
+
+	/**
+	 * Revenue breakdown by payment method, ranked by total descending.
+	 * Uses net amount (amount - discount_amount).
+	 * Leverages appointments(studio_id, date) index.
+	 */
+	async breakdownByMethod(
+		studioId: string,
+		dateFrom: string,
+		dateTo: string,
+	): Promise<BreakdownByMethod[]> {
+		const { rows } = await this.pool.query<{
+			method: string;
+			total_amount: string;
+			count: string;
+			percentage: string;
+		}>(
+			`WITH totals AS (
+         SELECT p.method,
+                SUM(p.amount - p.discount_amount)::int AS total_amount,
+                COUNT(*)::int AS count
+         FROM payments p
+         JOIN appointments a ON a.id = p.appointment_id
+         WHERE a.studio_id = $1
+           AND a.date BETWEEN $2 AND $3
+           AND a.status = 'completed'
+         GROUP BY p.method
+       ),
+       grand_total AS (SELECT SUM(total_amount) AS gt FROM totals)
+       SELECT t.method,
+              t.total_amount,
+              t.count,
+              CASE WHEN gt.gt > 0
+                   THEN ROUND(t.total_amount::numeric / gt.gt * 100, 2)
+                   ELSE 0
+              END AS percentage
+       FROM totals t, grand_total gt
+       ORDER BY t.total_amount DESC`,
+			[studioId, dateFrom, dateTo],
+		);
+
+		return rows.map((r) => ({
+			method: r.method,
+			total_amount: Number(r.total_amount),
+			count: Number(r.count),
+			percentage: Number(r.percentage),
+		}));
+	}
+
+	/**
+	 * Daily revenue for charting. Returns one row per day in range,
+	 * ordered by date ascending.
+	 * Leverages appointments(studio_id, date) index.
+	 */
+	async dailyRevenue(
+		studioId: string,
+		dateFrom: string,
+		dateTo: string,
+	): Promise<DailyRevenueRow[]> {
+		const { rows } = await this.pool.query<{
+			date: string;
+			total_amount: string;
+			appointment_count: string;
+		}>(
+			`SELECT a.date,
+              SUM(p.amount - p.discount_amount)::int AS total_amount,
+              COUNT(DISTINCT a.id)::int AS appointment_count
+       FROM payments p
+       JOIN appointments a ON a.id = p.appointment_id
+       WHERE a.studio_id = $1
+         AND a.date BETWEEN $2 AND $3
+         AND a.status = 'completed'
+       GROUP BY a.date
+       ORDER BY a.date ASC`,
+			[studioId, dateFrom, dateTo],
+		);
+
+		return rows.map((r) => ({
+			date: r.date,
+			total_amount: Number(r.total_amount),
+			appointment_count: Number(r.appointment_count),
 		}));
 	}
 }

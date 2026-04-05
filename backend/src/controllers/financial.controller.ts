@@ -110,4 +110,50 @@ export class FinancialController {
 
 		return reply.send({ data });
 	}
+
+	/**
+	 * GET /api/v1/financial/breakdown/methods
+	 * Returns revenue breakdown ranked by payment method with percentage share.
+	 */
+	async breakdownByMethod(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId } = request.authContext as StudioAuthContext;
+
+		const query = request.query as {
+			date_from?: string;
+			date_to?: string;
+		};
+
+		const today = new Date().toISOString().slice(0, 10);
+		const dateFrom = query.date_from ?? `${today.slice(0, 7)}-01`;
+		const dateTo = query.date_to ?? today;
+
+		const data = await this.service.breakdownByMethod(
+			studioId,
+			dateFrom,
+			dateTo,
+		);
+
+		return reply.send({ data });
+	}
+
+	/**
+	 * GET /api/v1/financial/chart/revenue
+	 * Returns daily revenue series for chart rendering.
+	 */
+	async chartRevenue(request: FastifyRequest, reply: FastifyReply) {
+		const { studioId } = request.authContext as StudioAuthContext;
+
+		const query = request.query as {
+			date_from?: string;
+			date_to?: string;
+		};
+
+		const today = new Date().toISOString().slice(0, 10);
+		const dateFrom = query.date_from ?? `${today.slice(0, 7)}-01`;
+		const dateTo = query.date_to ?? today;
+
+		const data = await this.service.dailyRevenue(studioId, dateFrom, dateTo);
+
+		return reply.send({ data });
+	}
 }

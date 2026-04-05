@@ -1,7 +1,9 @@
 import type { AppointmentRepository } from "../repositories/appointment.repository.js";
 import type {
+	BreakdownByMethod,
 	BreakdownByProfessional,
 	BreakdownByService,
+	DailyRevenueRow,
 	FinancialRepository,
 	LiveQueryResult,
 } from "../repositories/financial.repository.js";
@@ -162,6 +164,22 @@ export class FinancialService {
 		dateTo: string,
 	): Promise<BreakdownByService[]> {
 		return this.financialRepo.breakdownByService(studioId, dateFrom, dateTo);
+	}
+
+	async breakdownByMethod(
+		studioId: string,
+		dateFrom: string,
+		dateTo: string,
+	): Promise<BreakdownByMethod[]> {
+		return this.financialRepo.breakdownByMethod(studioId, dateFrom, dateTo);
+	}
+
+	async dailyRevenue(
+		studioId: string,
+		dateFrom: string,
+		dateTo: string,
+	): Promise<DailyRevenueRow[]> {
+		return this.financialRepo.dailyRevenue(studioId, dateFrom, dateTo);
 	}
 
 	async listPayments(

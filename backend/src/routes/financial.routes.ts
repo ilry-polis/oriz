@@ -47,6 +47,24 @@ export default async function financialRoutes(app: FastifyInstance) {
 			return app.financialController.breakdownByService(request, reply);
 		},
 	});
+
+	// GET /api/v1/financial/breakdown/methods
+	// Auth: owner or professional
+	app.get("/breakdown/methods", {
+		schema: { querystring: FinancialBreakdownQuery },
+		handler: async (request, reply) => {
+			return app.financialController.breakdownByMethod(request, reply);
+		},
+	});
+
+	// GET /api/v1/financial/chart/revenue
+	// Auth: owner or professional
+	app.get("/chart/revenue", {
+		schema: { querystring: FinancialBreakdownQuery },
+		handler: async (request, reply) => {
+			return app.financialController.chartRevenue(request, reply);
+		},
+	});
 }
 
 export const autoPrefix = "/api/v1/financial";
