@@ -317,6 +317,26 @@ class AgendaNotifier extends Notifier<AgendaState> {
     }
   }
 
+  /// Extended completion that supports payments array, discount, and package subscription.
+  /// Returns the complete response data for handling lastSession dialog.
+  Future<Map<String, dynamic>> completeAppointmentFull(
+    String id, {
+    String? packageSubscriptionId,
+    List<Map<String, dynamic>>? payments,
+    int? discountAmount,
+    String? discountReason,
+  }) async {
+    final result = await _appointments.completeFull(
+      id,
+      packageSubscriptionId: packageSubscriptionId,
+      payments: payments,
+      discountAmount: discountAmount,
+      discountReason: discountReason,
+    );
+    await _loadDayData(state.selectedDate, state.selectedProfessionalId);
+    return result;
+  }
+
   Future<void> cancelAppointment(String id, {String? reason}) async {
     try {
       await _appointments.cancel(id, reason: reason);

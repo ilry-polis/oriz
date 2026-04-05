@@ -125,6 +125,35 @@ class AppointmentRepository {
     return Appointment.fromJson(response['data'] as Map<String, dynamic>);
   }
 
+  /// POST /api/v1/appointments/:id/complete (extended — payments array, discount, package)
+  /// Returns the full response map: { appointment, lastSession?, sessionsRemaining? }
+  Future<Map<String, dynamic>> completeFull(
+    String id, {
+    String? packageSubscriptionId,
+    List<Map<String, dynamic>>? payments,
+    int? discountAmount,
+    String? discountReason,
+  }) async {
+    final body = <String, dynamic>{};
+    if (packageSubscriptionId != null) {
+      body['package_subscription_id'] = packageSubscriptionId;
+    }
+    if (payments != null && payments.isNotEmpty) {
+      body['payments'] = payments;
+    }
+    if (discountAmount != null && discountAmount > 0) {
+      body['discount_amount'] = discountAmount;
+    }
+    if (discountReason != null && discountReason.isNotEmpty) {
+      body['discount_reason'] = discountReason;
+    }
+    final response = await _client.post(
+      '/api/v1/appointments/$id/complete',
+      body: body.isEmpty ? null : body,
+    );
+    return response as Map<String, dynamic>;
+  }
+
   /// POST /api/v1/appointments/:id/cancel
   Future<Appointment> cancel(String id, {String? reason}) async {
     final body = reason != null ? {'cancellation_reason': reason} : null;
