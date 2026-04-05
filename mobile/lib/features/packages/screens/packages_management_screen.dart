@@ -135,53 +135,60 @@ class PackagesManagementScreen extends ConsumerWidget {
       (grouped[key] ??= []).add(pkg);
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      children: [
-        for (final entry in grouped.entries) ...[
-          Padding(
-            padding: const EdgeInsets.only(
-              bottom: AppSpacing.xs,
-              top: AppSpacing.sm,
-            ),
-            child: Text(
-              entry.key.toUpperCase(),
-              style: AppTypography.micro.copyWith(
-                color: AppColors.neutral400,
-                letterSpacing: 0.8,
+    return RefreshIndicator(
+      onRefresh: () => ref.read(packageProvider.notifier).refresh(),
+      child: ListView(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        children: [
+          for (final entry in grouped.entries) ...[
+            Padding(
+              padding: const EdgeInsets.only(
+                left: AppSpacing.md,
+                right: AppSpacing.md,
+                bottom: AppSpacing.xs,
+                top: AppSpacing.sm,
+              ),
+              child: Text(
+                entry.key.toUpperCase(),
+                style: AppTypography.micro.copyWith(
+                  color: AppColors.neutral400,
+                  letterSpacing: 0.8,
+                ),
               ),
             ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.neutral100,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.neutral200),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.neutral100,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(color: AppColors.neutral200),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (int i = 0; i < entry.value.length; i++) ...[
+                      if (i > 0)
+                        const Divider(
+                          color: AppColors.neutral200,
+                          height: 1,
+                          indent: AppSpacing.md,
+                        ),
+                      _PackageRow(
+                        package: entry.value[i],
+                        onDelete: () =>
+                            _confirmDelete(context, ref, entry.value[i]),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (int i = 0; i < entry.value.length; i++) ...[
-                  if (i > 0)
-                    const Divider(
-                      color: AppColors.neutral200,
-                      height: 1,
-                      indent: AppSpacing.md,
-                    ),
-                  _PackageRow(
-                    package: entry.value[i],
-                    onDelete: () =>
-                        _confirmDelete(context, ref, entry.value[i]),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.sm),
+          ],
         ],
-        const SizedBox(height: 80), // FAB clearance
-      ],
+      ),
     );
   }
 
