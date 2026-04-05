@@ -6,10 +6,13 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../models/financial_summary_model.dart';
 
+enum ChartPeriod { day, week, month }
+
 class RevenueBarChart extends StatefulWidget {
   final List<DailyRevenue> data;
+  final ChartPeriod period;
 
-  const RevenueBarChart({super.key, required this.data});
+  const RevenueBarChart({super.key, required this.data, this.period = ChartPeriod.month});
 
   @override
   State<RevenueBarChart> createState() => _RevenueBarChartState();
@@ -18,11 +21,38 @@ class RevenueBarChart extends StatefulWidget {
 class _RevenueBarChartState extends State<RevenueBarChart> {
   int? _touchedIndex;
 
+  static const _weekdayLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
   static final _currencyFormat = NumberFormat.currency(
     locale: 'pt_BR',
     symbol: 'R\$',
     decimalDigits: 2,
   );
+
+  String? _labelForIndex(int index, String dateStr) {
+    switch (widget.period) {
+      case ChartPeriod.day:
+        // Single bar — show "Hoje" or the date
+        return dateStr.length >= 10 ? dateStr.substring(8, 10) : dateStr;
+      case ChartPeriod.week:
+        // 7 bars — show weekday abbreviation
+        if (dateStr.length >= 10) {
+          final parsed = DateTime.tryParse(dateStr);
+          if (parsed != null) {
+            return _weekdayLabels[(parsed.weekday - 1) % 7];
+          }
+        }
+        return dateStr;
+      case ChartPeriod.month:
+        // ~30 bars — show day number, skip to avoid crowding
+        final day = dateStr.length >= 10 ? dateStr.substring(8, 10) : dateStr;
+        final step = (widget.data.length / 7).ceil().clamp(1, 99);
+        if (index % step != 0 && index != widget.data.length - 1) {
+          return null;
+        }
+        return day;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,18 +121,13 @@ class _RevenueBarChartState extends State<RevenueBarChart> {
                   if (index < 0 || index >= widget.data.length) {
                     return const SizedBox.shrink();
                   }
-                  final date = widget.data[index].date;
-                  // Show abbreviated day (last 2 chars of 'yyyy-MM-dd')
-                  final day = date.length >= 10 ? date.substring(8, 10) : date;
-                  // Show every nth label to avoid crowding
-                  final step = (widget.data.length / 7).ceil().clamp(1, 99);
-                  if (index % step != 0 && index != widget.data.length - 1) {
-                    return const SizedBox.shrink();
-                  }
+                  final dateStr = widget.data[index].date;
+                  final label = _labelForIndex(index, dateStr);
+                  if (label == null) return const SizedBox.shrink();
                   return Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      day,
+                      label,
                       style: AppTypography.micro.copyWith(
                         fontSize: 10,
                         color: AppColors.neutral400,
@@ -180,8 +205,9 @@ class _RevenueBarChartState extends State<RevenueBarChart> {
 
 class RevenueBarChartCard extends StatelessWidget {
   final List<DailyRevenue> data;
+  final ChartPeriod period;
 
-  const RevenueBarChartCard({super.key, required this.data});
+  const RevenueBarChartCard({super.key, required this.data, this.period = ChartPeriod.month});
 
   @override
   Widget build(BuildContext context) {
@@ -192,7 +218,7 @@ class RevenueBarChartCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.neutral200),
       ),
-      child: RevenueBarChart(data: data),
+      child: RevenueBarChart(data: data, period: period),
     );
   }
 }

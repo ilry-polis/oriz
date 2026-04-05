@@ -362,6 +362,28 @@ class _PeriodSelector extends StatelessWidget {
 class _GraficosTab extends ConsumerWidget {
   const _GraficosTab();
 
+  static String _chartLabel(FinancialPeriod period) {
+    switch (period) {
+      case FinancialPeriod.day:
+        return 'FATURAMENTO DO DIA';
+      case FinancialPeriod.week:
+        return 'FATURAMENTO DA SEMANA';
+      case FinancialPeriod.month:
+        return 'FATURAMENTO DO MÊS';
+    }
+  }
+
+  static ChartPeriod _toChartPeriod(FinancialPeriod period) {
+    switch (period) {
+      case FinancialPeriod.day:
+        return ChartPeriod.day;
+      case FinancialPeriod.week:
+        return ChartPeriod.week;
+      case FinancialPeriod.month:
+        return ChartPeriod.month;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashState = ref.watch(financialDashboardProvider);
@@ -407,14 +429,17 @@ class _GraficosTab extends ConsumerWidget {
 
           // ── Revenue bar chart ──
           Text(
-            'FATURAMENTO POR DIA',
+            _chartLabel(state.period),
             style: AppTypography.micro.copyWith(
               color: AppColors.neutral400,
               letterSpacing: 0.8,
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          RevenueBarChartCard(data: state.dailyRevenue),
+          RevenueBarChartCard(
+            data: state.dailyRevenue,
+            period: _toChartPeriod(state.period),
+          ),
           const SizedBox(height: AppSpacing.md),
 
           // ── Donut: por método de pagamento ──
