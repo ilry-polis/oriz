@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 04-05-PLAN.md
-last_updated: "2026-04-05T19:49:13.570Z"
+stopped_at: "Completed 04-06-PLAN.md Task 1 — checkpoint:human-verify pending"
+last_updated: "2026-04-05T19:54:55.418Z"
 last_activity: 2026-04-05 — Phase 3 completed (UAT 15/15 passed)
 progress:
   total_phases: 8
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 18
-  completed_plans: 17
+  completed_plans: 18
   percent: 37
 ---
 
@@ -57,6 +57,7 @@ Progress: [████░░░░░░] 37%
 | Phase 04-financial-and-packages P03 | 15 | 2 tasks | 6 files |
 | Phase 04-financial-and-packages P04 | 45 | 2 tasks | 14 files |
 | Phase 04-financial-and-packages P05 | 15 | 2 tasks | 11 files |
+| Phase 04-financial-and-packages P06 | 20 | 1 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Recent decisions affecting current work:
 - [Phase 04-financial-and-packages]: FutureProvider.autoDispose.family used for CommissionDetail — FamilyNotifier does not exist in Riverpod 3.x
 - [Phase 04-financial-and-packages]: CommissionPeriod is a value object (not enum) to support monthly and biweekly boundaries with next/previous navigation
 - [Phase 04-financial-and-packages]: updatePackage (not update) used on PackageNotifier AsyncNotifier to avoid Riverpod built-in name conflict
+- [Phase 04-financial-and-packages]: Package check at completion time via live API (not stored in Appointment model) — avoids stale data
+- [Phase 04-financial-and-packages]: Last-session renewal is a TODO stub — full renewal creation deferred to future phase
 
 ### Pending Todos
 
@@ -98,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T19:49:13.568Z
-Stopped at: Completed 04-05-PLAN.md
+Last session: 2026-04-05T19:54:55.417Z
+Stopped at: Completed 04-06-PLAN.md Task 1 — checkpoint:human-verify pending
 Resume file: None

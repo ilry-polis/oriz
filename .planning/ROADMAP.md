@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Identity and Foundation** - Auth, studio onboarding, and multi-tenant infrastructure (completed 2026-04-02; social login deferred)
 - [x] **Phase 2: Core Domain** - Services, clients, and team management (completed 2026-04-03)
 - [x] **Phase 3: Scheduling Engine** - Agenda, conflict detection, and appointment workflows (completed 2026-04-05; UAT 15/15 passed)
-- [ ] **Phase 4: Financial and Packages** - Revenue dashboard, payment recording, and session packages
+- [x] **Phase 4: Financial and Packages** - Revenue dashboard, payment recording, and session packages (completed 2026-04-05)
 - [ ] **Phase 5: External Channels** - Public booking page and push notifications
 - [ ] **Phase 5.1: Billing and Subscription** - INSERTED — SaaS plans, payment gateway, feature gating
 - [ ] **Phase 6: WhatsApp and AI Assistant** - AI scheduling agent and WhatsApp integration
@@ -150,7 +150,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 5.1 → 6 → 7
 | 1. Identity and Foundation | — | Completed | 2026-04-02 |
 | 2. Core Domain | 6/6 | Completed | 2026-04-03 |
 | 3. Scheduling Engine | 6/6 | Completed | 2026-04-05 |
-| 4. Financial and Packages | 5/6 | In Progress|  |
+| 4. Financial and Packages | 6/6 | Complete   | 2026-04-05 |
 | 5. External Channels | 0/TBD | Not started | - |
 | 5.1. Billing and Subscription | 0/TBD | Not started | - |
 | 6. WhatsApp and AI Assistant | 0/TBD | Not started | - |
