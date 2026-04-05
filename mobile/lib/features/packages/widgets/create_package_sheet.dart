@@ -56,7 +56,7 @@ class _CreatePackageSheetState extends ConsumerState<CreatePackageSheet> {
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _sessionsController = TextEditingController();
-  final _validityController = TextEditingController(text: '30');
+  final _validityController = TextEditingController();
 
   final Set<String> _selectedServiceIds = {};
   bool _saving = false;
