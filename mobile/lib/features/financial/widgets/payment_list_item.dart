@@ -113,16 +113,14 @@ class _MethodIcon extends StatelessWidget {
 
   (IconData, Color) _iconAndColor() {
     switch (method) {
-      case 'credit_card':
+      case 'credit':
         return (Icons.credit_card_rounded, AppColors.info);
-      case 'debit_card':
+      case 'debit':
         return (Icons.credit_card_rounded, AppColors.primary);
       case 'pix':
         return (Icons.qr_code_rounded, AppColors.success);
       case 'cash':
         return (Icons.payments_outlined, AppColors.warning);
-      case 'voucher':
-        return (Icons.loyalty_rounded, AppColors.accent);
       default:
         return (Icons.attach_money, AppColors.neutral600);
     }

@@ -404,8 +404,8 @@ class _FilterChipsRow extends StatelessWidget {
 
   static const _methods = {
     'pix': 'Pix',
-    'credit_card': 'Crédito',
-    'debit_card': 'Débito',
+    'credit': 'Crédito',
+    'debit': 'Débito',
     'cash': 'Dinheiro',
   };
 

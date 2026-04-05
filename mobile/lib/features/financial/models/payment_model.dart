@@ -58,16 +58,14 @@ class PaymentListItem {
 
   String get methodLabel {
     switch (method) {
-      case 'credit_card':
+      case 'credit':
         return 'Crédito';
-      case 'debit_card':
+      case 'debit':
         return 'Débito';
       case 'pix':
         return 'Pix';
       case 'cash':
         return 'Dinheiro';
-      case 'voucher':
-        return 'Voucher';
       default:
         return method;
     }
