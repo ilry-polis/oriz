@@ -25,6 +25,7 @@ import '../../features/onboarding/presentation/onboarding_wizard_screen.dart';
 import '../../features/financial/providers/commission_provider.dart';
 import '../../features/financial/screens/commission_detail_screen.dart';
 import '../../features/financial/screens/financial_dashboard_screen.dart';
+import '../../features/financial/screens/payments_list_screen.dart';
 import '../../features/packages/screens/packages_management_screen.dart';
 import '../../features/settings/working_hours_screen.dart';
 import '../shell/app_shell.dart';
@@ -317,6 +318,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'financial',
                 builder: (_, __) => const FinancialDashboardScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'payments',
+                    builder: (_, __) => const PaymentsListScreen(),
+                  ),
                   GoRoute(
                     path: 'commissions/:professionalId',
                     builder: (_, state) {

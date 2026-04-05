@@ -63,6 +63,8 @@ class FinancialDashboardLoaded extends FinancialDashboardState {
   final List<PaymentListItem> payments;
   final List<BreakdownItem> breakdownByProfessional;
   final List<BreakdownItem> breakdownByService;
+  final List<MethodBreakdown> breakdownByMethod;
+  final List<DailyRevenue> dailyRevenue;
   final bool hasMorePayments;
   final String? paymentsCursor;
   final FinancialPeriod period;
@@ -75,6 +77,8 @@ class FinancialDashboardLoaded extends FinancialDashboardState {
     required this.payments,
     required this.breakdownByProfessional,
     required this.breakdownByService,
+    required this.breakdownByMethod,
+    required this.dailyRevenue,
     required this.hasMorePayments,
     this.paymentsCursor,
     required this.period,
@@ -88,6 +92,8 @@ class FinancialDashboardLoaded extends FinancialDashboardState {
     List<PaymentListItem>? payments,
     List<BreakdownItem>? breakdownByProfessional,
     List<BreakdownItem>? breakdownByService,
+    List<MethodBreakdown>? breakdownByMethod,
+    List<DailyRevenue>? dailyRevenue,
     bool? hasMorePayments,
     String? paymentsCursor,
     FinancialPeriod? period,
@@ -103,6 +109,8 @@ class FinancialDashboardLoaded extends FinancialDashboardState {
       breakdownByProfessional:
           breakdownByProfessional ?? this.breakdownByProfessional,
       breakdownByService: breakdownByService ?? this.breakdownByService,
+      breakdownByMethod: breakdownByMethod ?? this.breakdownByMethod,
+      dailyRevenue: dailyRevenue ?? this.dailyRevenue,
       hasMorePayments: hasMorePayments ?? this.hasMorePayments,
       paymentsCursor: paymentsCursor ?? this.paymentsCursor,
       period: period ?? this.period,
@@ -155,24 +163,34 @@ class FinancialDashboardNotifier
           repo.getBreakdownByProfessional(dateFrom: dateFrom, dateTo: dateTo);
       final breakdownSvcFuture =
           repo.getBreakdownByService(dateFrom: dateFrom, dateTo: dateTo);
+      final breakdownMethodFuture =
+          repo.getBreakdownByMethod(dateFrom: dateFrom, dateTo: dateTo);
+      final dailyRevenueFuture =
+          repo.getChartRevenue(dateFrom: dateFrom, dateTo: dateTo);
 
       final results = await (
         summaryFuture,
         paymentsFuture,
         breakdownProFuture,
         breakdownSvcFuture,
+        breakdownMethodFuture,
+        dailyRevenueFuture,
       ).wait;
 
       final summary = results.$1;
       final paymentsResult = results.$2;
       final breakdownPro = results.$3;
       final breakdownSvc = results.$4;
+      final breakdownMethod = results.$5;
+      final dailyRev = results.$6;
 
       state = FinancialDashboardLoaded(
         summary: summary,
         payments: paymentsResult.items,
         breakdownByProfessional: breakdownPro,
         breakdownByService: breakdownSvc,
+        breakdownByMethod: breakdownMethod,
+        dailyRevenue: dailyRev,
         hasMorePayments: paymentsResult.hasMore,
         paymentsCursor: paymentsResult.cursor,
         period: period,

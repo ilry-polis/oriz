@@ -51,6 +51,32 @@ class FinancialRepository {
         .toList();
   }
 
+  Future<List<MethodBreakdown>> getBreakdownByMethod({
+    required String dateFrom,
+    required String dateTo,
+  }) async {
+    final response = await _api.get(
+      '/api/v1/financial/breakdown/methods?date_from=$dateFrom&date_to=$dateTo',
+    );
+    final data = response['data'] as List;
+    return data
+        .map((e) => MethodBreakdown.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<DailyRevenue>> getChartRevenue({
+    required String dateFrom,
+    required String dateTo,
+  }) async {
+    final response = await _api.get(
+      '/api/v1/financial/chart/revenue?date_from=$dateFrom&date_to=$dateTo',
+    );
+    final data = response['data'] as List;
+    return data
+        .map((e) => DailyRevenue.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<({List<PaymentListItem> items, bool hasMore, String? cursor})>
       listPayments({
     required String dateFrom,

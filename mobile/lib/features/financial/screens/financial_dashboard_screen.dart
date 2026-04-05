@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -14,7 +12,9 @@ import '../providers/financial_provider.dart';
 import '../repositories/commission_repository.dart';
 import '../widgets/breakdown_section.dart';
 import '../widgets/kpi_card.dart';
+import '../widgets/method_donut_chart.dart';
 import '../widgets/payment_list_item.dart';
+import '../widgets/revenue_bar_chart.dart';
 
 class FinancialDashboardScreen extends ConsumerStatefulWidget {
   const FinancialDashboardScreen({super.key});
@@ -229,6 +229,22 @@ class _ResumoTab extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
+          // ── Revenue bar chart ──
+          Text(
+            'FATURAMENTO POR DIA',
+            style: AppTypography.micro.copyWith(
+              color: AppColors.neutral400,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          RevenueBarChartCard(data: state.dailyRevenue),
+          const SizedBox(height: AppSpacing.md),
+
+          // ── Method donut chart ──
+          MethodDonutChartCard(data: state.breakdownByMethod),
+          const SizedBox(height: AppSpacing.md),
+
           // ── Filter chips ──
           _FilterChipsRow(
             selectedMethod: state.filterMethod,
@@ -240,7 +256,7 @@ class _ResumoTab extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // ── Payments list ──
+          // ── Payments list (max 5, with "Ver tudo" link) ──
           if (state.payments.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
@@ -264,12 +280,27 @@ class _ResumoTab extends ConsumerWidget {
               ),
             )
           else ...[
-            Text(
-              'PAGAMENTOS RECENTES',
-              style: AppTypography.micro.copyWith(
-                color: AppColors.neutral400,
-                letterSpacing: 0.8,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'PAGAMENTOS RECENTES',
+                  style: AppTypography.micro.copyWith(
+                    color: AppColors.neutral400,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => context.push('/more/financial/payments'),
+                  child: Text(
+                    'Ver tudo',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.primary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.sm),
             Container(
@@ -281,8 +312,7 @@ class _ResumoTab extends ConsumerWidget {
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: state.payments.length +
-                    (state.hasMorePayments ? 1 : 0),
+                itemCount: state.payments.take(5).length,
                 separatorBuilder: (_, __) => const Divider(
                   height: 1,
                   thickness: 1,
@@ -290,25 +320,6 @@ class _ResumoTab extends ConsumerWidget {
                   indent: AppSpacing.md,
                 ),
                 itemBuilder: (context, index) {
-                  if (index == state.payments.length) {
-                    return Padding(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      child: Center(
-                        child: TextButton(
-                          onPressed: () => ref
-                              .read(financialDashboardProvider.notifier)
-                              .loadMorePayments(),
-                          child: Text(
-                            'Carregar mais',
-                            style: AppTypography.body.copyWith(
-                              color: AppColors.primary,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }
                   return PaymentListItemWidget(
                     payment: state.payments[index],
                   );

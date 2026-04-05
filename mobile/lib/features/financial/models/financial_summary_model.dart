@@ -1,5 +1,71 @@
 import 'package:intl/intl.dart';
 
+class MethodBreakdown {
+  final String method;
+  final int totalAmount; // centavos
+  final int count;
+  final double percentage;
+
+  const MethodBreakdown({
+    required this.method,
+    required this.totalAmount,
+    required this.count,
+    required this.percentage,
+  });
+
+  factory MethodBreakdown.fromJson(Map<String, dynamic> json) {
+    return MethodBreakdown(
+      method: json['method'] as String? ?? '',
+      totalAmount: FinancialSummaryModel._toInt(json['total_amount']),
+      count: FinancialSummaryModel._toInt(json['count']),
+      percentage: FinancialSummaryModel._toDouble(json['percentage']),
+    );
+  }
+
+  String get methodLabel {
+    switch (method) {
+      case 'credit':
+        return 'Crédito';
+      case 'debit':
+        return 'Débito';
+      case 'pix':
+        return 'Pix';
+      case 'cash':
+        return 'Dinheiro';
+      default:
+        return method;
+    }
+  }
+
+  static final _currencyFormat = NumberFormat.currency(
+    locale: 'pt_BR',
+    symbol: 'R\$',
+    decimalDigits: 2,
+  );
+
+  String get formattedAmount => _currencyFormat.format(totalAmount / 100.0);
+}
+
+class DailyRevenue {
+  final String date; // 'yyyy-MM-dd'
+  final int totalAmount; // centavos
+  final int appointmentCount;
+
+  const DailyRevenue({
+    required this.date,
+    required this.totalAmount,
+    required this.appointmentCount,
+  });
+
+  factory DailyRevenue.fromJson(Map<String, dynamic> json) {
+    return DailyRevenue(
+      date: json['date'] as String? ?? '',
+      totalAmount: FinancialSummaryModel._toInt(json['total_amount']),
+      appointmentCount: FinancialSummaryModel._toInt(json['appointment_count']),
+    );
+  }
+}
+
 class FinancialSummaryModel {
   final int totalRevenue; // centavos
   final int avgTicket; // centavos
