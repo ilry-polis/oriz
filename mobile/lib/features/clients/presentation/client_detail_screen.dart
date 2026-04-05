@@ -11,6 +11,9 @@ import '../data/client_repository.dart';
 import '../domain/client_model.dart';
 import '../providers/client_provider.dart';
 import 'widgets/tag_chip.dart';
+import '../../packages/models/package_subscription_model.dart';
+import '../../packages/repositories/package_repository.dart';
+import '../../packages/widgets/sell_package_sheet.dart';
 
 String _formatPhone(String phone) {
   final digits = phone.replaceAll(RegExp(r'\D'), '');
@@ -51,7 +54,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadNotes();
   }
 
@@ -351,6 +354,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen>
               controller: _tabController,
               tabs: const [
                 Tab(text: 'Histórico'),
+                Tab(text: 'Pacotes'),
                 Tab(text: 'Anamnese'),
                 Tab(text: 'Notas'),
               ],
@@ -360,6 +364,10 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen>
                 controller: _tabController,
                 children: [
                   _HistoricoTab(clientId: widget.clientId),
+                  _PacotesTab(
+                    clientId: widget.clientId,
+                    clientName: client.name,
+                  ),
                   _AnamneseTab(clientId: widget.clientId),
                   _NotasTab(
                     notes: _notes,
@@ -413,6 +421,329 @@ class _HistoricoTab extends ConsumerWidget {
     );
   }
 }
+
+// ─── Pacotes Tab ─────────────────────────────────────────────────────────────
+
+class _PacotesTab extends ConsumerStatefulWidget {
+  final String clientId;
+  final String clientName;
+
+  const _PacotesTab({required this.clientId, required this.clientName});
+
+  @override
+  ConsumerState<_PacotesTab> createState() => _PacotesTabState();
+}
+
+class _PacotesTabState extends ConsumerState<_PacotesTab> {
+  List<PackageSubscriptionModel> _subscriptions = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSubscriptions();
+  }
+
+  Future<void> _loadSubscriptions() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final repo = ref.read(packageRepositoryProvider);
+      final result =
+          await repo.listSubscriptions(clientId: widget.clientId, limit: 50);
+      if (mounted) {
+        setState(() {
+          _subscriptions = result.items;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = e.toString();
+        });
+      }
+    }
+  }
+
+  Future<void> _sellPackage() async {
+    final sold = await SellPackageSheet.show(
+      context,
+      clientId: widget.clientId,
+      clientName: widget.clientName,
+    );
+    if (sold == true) {
+      await _loadSubscriptions();
+    }
+  }
+
+  Future<void> _extendExpiry(PackageSubscriptionModel sub) async {
+    final now = DateTime.now();
+    final initialDate = sub.expiresAt.isAfter(now) ? sub.expiresAt : now;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate.add(const Duration(days: 30)),
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 730)),
+    );
+    if (picked == null || !mounted) return;
+    try {
+      final repo = ref.read(packageRepositoryProvider);
+      await repo.extendExpiry(
+        subscriptionId: sub.id,
+        newExpiresAt: picked,
+      );
+      await _loadSubscriptions();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Validade estendida'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_error!, style: AppTypography.caption),
+            const SizedBox(height: AppSpacing.sm),
+            TextButton(
+              onPressed: _loadSubscriptions,
+              child: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Sell button header
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Pacotes ativos',
+                style:
+                    AppTypography.bodySemibold,
+              ),
+              TextButton.icon(
+                onPressed: _sellPackage,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Vender pacote'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  textStyle: AppTypography.caption
+                      .copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _subscriptions.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.card_giftcard_outlined,
+                        size: 40,
+                        color: AppColors.neutral300,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        'Nenhum pacote ativo',
+                        style: AppTypography.body
+                            .copyWith(color: AppColors.neutral600),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      TextButton(
+                        onPressed: _sellPackage,
+                        child: const Text('Vender pacote'),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs,
+                  ),
+                  itemCount: _subscriptions.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppSpacing.xs),
+                  itemBuilder: (_, i) {
+                    final sub = _subscriptions[i];
+                    return _SubscriptionCard(
+                      subscription: sub,
+                      onExtend: () => _extendExpiry(sub),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SubscriptionCard extends StatelessWidget {
+  final PackageSubscriptionModel subscription;
+  final VoidCallback onExtend;
+
+  const _SubscriptionCard({
+    required this.subscription,
+    required this.onExtend,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sub = subscription;
+    final isExpired = sub.isExpired;
+    final isActive = sub.isActive;
+
+    Color statusColor;
+    String statusLabel;
+    if (sub.status == SubscriptionStatus.depleted) {
+      statusColor = AppColors.neutral400;
+      statusLabel = 'Esgotado';
+    } else if (isExpired) {
+      statusColor = AppColors.error;
+      statusLabel = 'Expirado';
+    } else if (isActive) {
+      statusColor = AppColors.success;
+      statusLabel = 'Ativo';
+    } else {
+      statusColor = AppColors.neutral400;
+      statusLabel = sub.statusLabel;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.neutral100,
+        border: Border.all(
+          color: isExpired ? AppColors.errorSoft : AppColors.neutral200,
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  sub.packageName ?? 'Pacote',
+                  style: AppTypography.bodySemibold,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                ),
+                child: Text(
+                  statusLabel,
+                  style: AppTypography.micro.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          // Progress bar
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  child: LinearProgressIndicator(
+                    value: sub.progressFraction,
+                    backgroundColor: AppColors.neutral200,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isExpired ? AppColors.neutral400 : AppColors.primary,
+                    ),
+                    minHeight: 6,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                '${sub.sessionsUsed}/${sub.sessionsTotal}',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.neutral600,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Expira: ${sub.formattedExpiry}',
+                style: AppTypography.micro.copyWith(
+                  color: isExpired ? AppColors.error : AppColors.neutral400,
+                ),
+              ),
+              if (isExpired)
+                GestureDetector(
+                  onTap: onExtend,
+                  child: Text(
+                    'Estender validade',
+                    style: AppTypography.micro.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Anamnese Tab ──────────────────────────────────────────────────────────────
 
 class _AnamneseTab extends StatelessWidget {
   final String clientId;

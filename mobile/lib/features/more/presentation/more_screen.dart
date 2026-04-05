@@ -67,6 +67,22 @@ class MoreScreen extends ConsumerWidget {
 
           const SizedBox(height: AppSpacing.lg),
 
+          // ── Services section ──
+          _SectionLabel(label: 'Servicos'),
+          const SizedBox(height: AppSpacing.sm),
+          _SectionCard(
+            children: [
+              _MenuRow(
+                icon: Icons.card_giftcard_outlined,
+                title: 'Pacotes',
+                subtitle: 'Gerenciar pacotes de sessoes',
+                onTap: () => context.push('/more/packages'),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
           // ── Financial section ──
           _SectionLabel(label: 'Financeiro'),
           const SizedBox(height: AppSpacing.sm),
