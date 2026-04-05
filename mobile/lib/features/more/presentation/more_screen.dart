@@ -75,8 +75,8 @@ class MoreScreen extends ConsumerWidget {
               _MenuRow(
                 icon: Icons.attach_money_rounded,
                 title: 'Financeiro',
-                subtitle: 'Em breve',
-                enabled: false,
+                subtitle: 'Receitas, pagamentos e comissões',
+                onTap: () => context.push('/more/financial'),
               ),
             ],
           ),

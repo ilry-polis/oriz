@@ -22,6 +22,9 @@ import '../http/api_client.dart';
 import '../../features/onboarding/data/onboarding_repository.dart';
 import '../../features/onboarding/presentation/onboarding_complete_screen.dart';
 import '../../features/onboarding/presentation/onboarding_wizard_screen.dart';
+import '../../features/financial/providers/commission_provider.dart';
+import '../../features/financial/screens/commission_detail_screen.dart';
+import '../../features/financial/screens/financial_dashboard_screen.dart';
 import '../../features/settings/working_hours_screen.dart';
 import '../shell/app_shell.dart';
 
@@ -304,6 +307,26 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'working-hours',
                 builder: (_, __) => const WorkingHoursScreen(),
+              ),
+              GoRoute(
+                path: 'financial',
+                builder: (_, __) => const FinancialDashboardScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'commissions/:professionalId',
+                    builder: (_, state) {
+                      final professionalId =
+                          state.pathParameters['professionalId']!;
+                      final period = state.extra is CommissionPeriod
+                          ? state.extra as CommissionPeriod
+                          : CommissionPeriod.currentMonth();
+                      return CommissionDetailScreen(
+                        professionalId: professionalId,
+                        period: period,
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),

@@ -148,6 +148,12 @@ class CommissionDetailError extends CommissionDetailState {
   const CommissionDetailError(this.message);
 }
 
+// ─── Detail params ─────────────────────────────────────────────
+typedef CommissionDetailParams = ({
+  String professionalId,
+  CommissionPeriod period
+});
+
 // ─── Notifier ─────────────────────────────────────────────────
 class CommissionNotifier extends Notifier<CommissionState> {
   @override
@@ -225,42 +231,22 @@ final commissionProvider =
     NotifierProvider<CommissionNotifier, CommissionState>(
         CommissionNotifier.new);
 
-// ─── Detail Notifier ──────────────────────────────────────────
-class CommissionDetailNotifier
-    extends FamilyNotifier<CommissionDetailState, ({String professionalId, CommissionPeriod period})> {
-  @override
-  CommissionDetailState build(
-      ({String professionalId, CommissionPeriod period}) arg) {
-    _load(arg.professionalId, arg.period);
-    return const CommissionDetailLoading();
-  }
-
-  Future<void> _load(
-    String professionalId,
-    CommissionPeriod period,
-  ) async {
-    state = const CommissionDetailLoading();
-    try {
-      final repo = ref.read(commissionRepositoryProvider);
-      final result = await repo.list(
-        professionalId: professionalId,
-        periodStart: period.startStr,
-        periodEnd: period.endStr,
-        limit: 100,
-      );
-      state = CommissionDetailLoaded(
-        commissions: result.items,
-        professionalId: professionalId,
-      );
-    } catch (e) {
-      state = CommissionDetailError(e.toString());
-    }
-  }
-}
-
-final commissionDetailProvider = NotifierProvider.family<
-    CommissionDetailNotifier,
-    CommissionDetailState,
-    ({String professionalId, CommissionPeriod period})>(
-  CommissionDetailNotifier.new,
+// ─── Detail Provider (FutureProvider.family) ──────────────────
+/// Loads the individual commissions for one professional in a given period.
+/// Using FutureProvider.family for simple read-only async data.
+final commissionDetailProvider = FutureProvider.autoDispose
+    .family<CommissionDetailLoaded, CommissionDetailParams>(
+  (ref, params) async {
+    final repo = ref.read(commissionRepositoryProvider);
+    final result = await repo.list(
+      professionalId: params.professionalId,
+      periodStart: params.period.startStr,
+      periodEnd: params.period.endStr,
+      limit: 100,
+    );
+    return CommissionDetailLoaded(
+      commissions: result.items,
+      professionalId: params.professionalId,
+    );
+  },
 );
