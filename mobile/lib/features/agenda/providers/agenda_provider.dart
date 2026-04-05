@@ -60,16 +60,22 @@ class AgendaState {
   /// Cached data per professional. Key = professionalId (or "" for "all").
   final Map<String, ProfessionalDayData> _cache;
 
-  /// Monthly summary grouped by day (key = "YYYY-MM-DD").
-  /// Each value is a map of status → count.
-  final Map<String, Map<String, int>> monthSummary;
+  /// Monthly summary per professional, grouped by day.
+  /// Outer key = professionalId (or "" for all), inner key = "YYYY-MM-DD",
+  /// value = map of status → count.
+  final Map<String, Map<String, Map<String, int>>> _monthSummaryCache;
 
   const AgendaState({
     required this.selectedDate,
     this.selectedProfessionalId,
     Map<String, ProfessionalDayData>? cache,
-    this.monthSummary = const {},
-  }) : _cache = cache ?? const {};
+    Map<String, Map<String, Map<String, int>>>? monthSummaryCache,
+  }) : _cache = cache ?? const {},
+       _monthSummaryCache = monthSummaryCache ?? const {};
+
+  /// Get month summary for the currently selected professional.
+  Map<String, Map<String, int>> get monthSummary =>
+      _monthSummaryCache[selectedProfessionalId ?? ''] ?? const {};
 
   /// Get data for a specific professional (from cache).
   ProfessionalDayData dataFor(String? professionalId) {
@@ -107,7 +113,7 @@ class AgendaState {
       selectedDate: selectedDate,
       selectedProfessionalId: selectedProfessionalId,
       cache: newCache,
-      monthSummary: monthSummary,
+      monthSummaryCache: _monthSummaryCache,
     );
   }
 
@@ -115,7 +121,7 @@ class AgendaState {
     DateTime? selectedDate,
     String? selectedProfessionalId,
     bool clearProfessional = false,
-    Map<String, Map<String, int>>? monthSummary,
+    Map<String, Map<String, Map<String, int>>>? monthSummaryCache,
   }) {
     return AgendaState(
       selectedDate: selectedDate ?? this.selectedDate,
@@ -123,7 +129,7 @@ class AgendaState {
           ? null
           : (selectedProfessionalId ?? this.selectedProfessionalId),
       cache: _cache,
-      monthSummary: monthSummary ?? this.monthSummary,
+      monthSummaryCache: monthSummaryCache ?? _monthSummaryCache,
     );
   }
 }
@@ -147,11 +153,11 @@ class AgendaNotifier extends Notifier<AgendaState> {
   // ─── Date & Professional selection ──────────────────────────────────────
 
   Future<void> selectDate(DateTime date) async {
-    // Clear all caches — date changed, all data is stale
+    // Clear day caches — date changed, day data is stale (keep month cache)
     state = AgendaState(
       selectedDate: date,
       selectedProfessionalId: state.selectedProfessionalId,
-      monthSummary: state.monthSummary,
+      monthSummaryCache: state._monthSummaryCache,
     );
     await _loadDayData(date, state.selectedProfessionalId);
   }
@@ -387,14 +393,15 @@ class AgendaNotifier extends Notifier<AgendaState> {
 
   // ─── Month data (for calendar view) ────────────────────────────────────────
 
-  Future<void> loadMonthData(DateTime month) async {
+  Future<void> loadMonthData(DateTime month, {String? professionalId}) async {
+    final profKey = professionalId ?? state.selectedProfessionalId ?? '';
     final monthStr =
         '${month.year}-${month.month.toString().padLeft(2, '0')}';
 
     try {
       final summaries = await _appointments.monthSummary(
         monthStr,
-        professionalId: state.selectedProfessionalId,
+        professionalId: professionalId ?? state.selectedProfessionalId,
       );
 
       final grouped = <String, Map<String, int>>{};
@@ -402,7 +409,13 @@ class AgendaNotifier extends Notifier<AgendaState> {
         (grouped[s.date] ??= {})[s.status] = s.count;
       }
 
-      state = state.copyWith(monthSummary: grouped);
+      // Store under the professional key that was requested (not current)
+      final newCache = Map<String, Map<String, Map<String, int>>>.from(
+        state._monthSummaryCache,
+      );
+      newCache[profKey] = grouped;
+
+      state = state.copyWith(monthSummaryCache: newCache);
     } catch (_) {
       // Silently fail — month indicators are non-critical
     }
