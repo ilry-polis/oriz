@@ -19,6 +19,7 @@ class AgendaMonthView extends ConsumerStatefulWidget {
 
 class _AgendaMonthViewState extends ConsumerState<AgendaMonthView> {
   late DateTime _displayedMonth;
+  String? _lastLoadedProfessionalId;
 
   static const _dayLabels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
   static const _monthNames = [
@@ -29,8 +30,9 @@ class _AgendaMonthViewState extends ConsumerState<AgendaMonthView> {
   @override
   void initState() {
     super.initState();
-    final selected = ref.read(agendaNotifierProvider).selectedDate;
-    _displayedMonth = DateTime(selected.year, selected.month);
+    final agendaState = ref.read(agendaNotifierProvider);
+    _displayedMonth = DateTime(agendaState.selectedDate.year, agendaState.selectedDate.month);
+    _lastLoadedProfessionalId = agendaState.selectedProfessionalId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(agendaNotifierProvider.notifier).loadMonthData(_displayedMonth);
     });
@@ -59,6 +61,15 @@ class _AgendaMonthViewState extends ConsumerState<AgendaMonthView> {
     final today = DateTime.now();
     final selectedDate = agendaState.selectedDate;
     final summary = agendaState.monthSummary;
+
+    // Reload month data when the selected professional changes
+    final currentProfId = agendaState.selectedProfessionalId;
+    if (currentProfId != _lastLoadedProfessionalId) {
+      _lastLoadedProfessionalId = currentProfId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(agendaNotifierProvider.notifier).loadMonthData(_displayedMonth);
+      });
+    }
 
     final firstOfMonth = DateTime(_displayedMonth.year, _displayedMonth.month, 1);
     final daysInMonth = DateTime(_displayedMonth.year, _displayedMonth.month + 1, 0).day;

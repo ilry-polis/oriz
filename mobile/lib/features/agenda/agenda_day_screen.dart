@@ -138,10 +138,20 @@ class _AgendaDayScreenState extends ConsumerState<AgendaDayScreen> {
     HapticFeedback.selectionClick();
     setState(() => _currentPage = page);
     final prof = professionals[page];
-    ref.read(agendaNotifierProvider.notifier).selectProfessional(prof.id);
+    final notifier = ref.read(agendaNotifierProvider.notifier);
+    notifier.selectProfessional(prof.id);
+
+    // Reload month data for the new professional when in month view
+    if (_showMonthView) {
+      final agendaState = ref.read(agendaNotifierProvider);
+      final month = agendaState.selectedDate;
+      notifier.loadMonthData(
+        DateTime(month.year, month.month),
+        professionalId: prof.id,
+      );
+    }
 
     // Pre-load adjacent pages
-    final notifier = ref.read(agendaNotifierProvider.notifier);
     if (page + 1 < professionals.length) {
       notifier.preloadProfessional(professionals[page + 1].id);
     }
