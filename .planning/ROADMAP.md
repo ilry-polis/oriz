@@ -150,7 +150,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 5.1 → 6 → 7
 | 1. Identity and Foundation | — | Completed | 2026-04-02 |
 | 2. Core Domain | 6/6 | Completed | 2026-04-03 |
 | 3. Scheduling Engine | 6/6 | Completed | 2026-04-05 |
-| 4. Financial and Packages | 4/6 | In Progress|  |
+| 4. Financial and Packages | 5/6 | In Progress|  |
 | 5. External Channels | 0/TBD | Not started | - |
 | 5.1. Billing and Subscription | 0/TBD | Not started | - |
 | 6. WhatsApp and AI Assistant | 0/TBD | Not started | - |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-04-05T19:36:51.801Z"
+stopped_at: Completed 04-05-PLAN.md
+last_updated: "2026-04-05T19:49:13.570Z"
 last_activity: 2026-04-05 — Phase 3 completed (UAT 15/15 passed)
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 18
-  completed_plans: 16
+  completed_plans: 17
   percent: 37
 ---
 
@@ -56,6 +56,7 @@ Progress: [████░░░░░░] 37%
 | Phase 04 P01 | 9 | 2 tasks | 13 files |
 | Phase 04-financial-and-packages P03 | 15 | 2 tasks | 6 files |
 | Phase 04-financial-and-packages P04 | 45 | 2 tasks | 14 files |
+| Phase 04-financial-and-packages P05 | 15 | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,7 @@ Recent decisions affecting current work:
 - [Phase 04-financial-and-packages]: FinancialRefreshQueue: BullMQ with Redis when available, in-process debounced fallback (5s per studioId) otherwise
 - [Phase 04-financial-and-packages]: FutureProvider.autoDispose.family used for CommissionDetail — FamilyNotifier does not exist in Riverpod 3.x
 - [Phase 04-financial-and-packages]: CommissionPeriod is a value object (not enum) to support monthly and biweekly boundaries with next/previous navigation
+- [Phase 04-financial-and-packages]: updatePackage (not update) used on PackageNotifier AsyncNotifier to avoid Riverpod built-in name conflict
 
 ### Pending Todos
 
@@ -96,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T19:36:51.799Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-04-05T19:49:13.568Z
+Stopped at: Completed 04-05-PLAN.md
 Resume file: None
