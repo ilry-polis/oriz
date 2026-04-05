@@ -33,7 +33,7 @@ class _FinancialDashboardScreenState
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _scrollController.addListener(_onScroll);
   }
 
@@ -68,6 +68,7 @@ class _FinancialDashboardScreenState
           unselectedLabelStyle: AppTypography.body.copyWith(fontSize: 14),
           tabs: const [
             Tab(text: 'Resumo'),
+            Tab(text: 'Gráficos'),
             Tab(text: 'Comissões'),
           ],
         ),
@@ -76,6 +77,7 @@ class _FinancialDashboardScreenState
         controller: _tabController,
         children: [
           _ResumoTab(scrollController: _scrollController),
+          const _GraficosTab(),
           const _ComissoesTab(),
         ],
       ),
@@ -241,21 +243,6 @@ class _ResumoTab extends ConsumerWidget {
           RevenueBarChartCard(data: state.dailyRevenue),
           const SizedBox(height: AppSpacing.md),
 
-          // ── Method donut chart ──
-          MethodDonutChartCard(data: state.breakdownByMethod),
-          const SizedBox(height: AppSpacing.md),
-
-          // ── Filter chips ──
-          _FilterChipsRow(
-            selectedMethod: state.filterMethod,
-            onMethodChanged: (m) =>
-                ref.read(financialDashboardProvider.notifier).applyFilters(
-                      method: m,
-                      professionalId: state.filterProfessionalId,
-                    ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-
           // ── Payments list (max 5, with "Ver tudo" link) ──
           if (state.payments.isEmpty)
             Padding(
@@ -327,26 +314,6 @@ class _ResumoTab extends ConsumerWidget {
               ),
             ),
           ],
-          const SizedBox(height: AppSpacing.md),
-
-          // ── Breakdowns ──
-          Text(
-            'DETALHAMENTO',
-            style: AppTypography.micro.copyWith(
-              color: AppColors.neutral400,
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          BreakdownSection(
-            title: 'Por profissional',
-            items: state.breakdownByProfessional,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          BreakdownSection(
-            title: 'Por serviço',
-            items: state.breakdownByService,
-          ),
           const SizedBox(height: AppSpacing.xl),
         ],
       ),
@@ -403,89 +370,87 @@ class _PeriodSelector extends StatelessWidget {
   }
 }
 
-// ─── Filter Chips Row ─────────────────────────────────────────
-class _FilterChipsRow extends StatelessWidget {
-  final String? selectedMethod;
-  final ValueChanged<String?> onMethodChanged;
-
-  const _FilterChipsRow({
-    required this.selectedMethod,
-    required this.onMethodChanged,
-  });
-
-  static const _methods = {
-    'pix': 'Pix',
-    'credit': 'Crédito',
-    'debit': 'Débito',
-    'cash': 'Dinheiro',
-  };
+// ─── Gráficos Tab ────────────────────────────────────────────
+class _GraficosTab extends ConsumerWidget {
+  const _GraficosTab();
 
   @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dashState = ref.watch(financialDashboardProvider);
+
+    if (dashState is FinancialDashboardLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (dashState is FinancialDashboardError) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            const SizedBox(height: AppSpacing.md),
+            Text('Erro ao carregar gráficos', style: AppTypography.bodySemibold),
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton(
+              onPressed: () =>
+                  ref.read(financialDashboardProvider.notifier).refresh(),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+              child: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final state = dashState as FinancialDashboardLoaded;
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(financialDashboardProvider.notifier).refresh(),
+      child: ListView(
+        padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          _FilterChip(
-            label: 'Todos',
-            selected: selectedMethod == null,
-            onTap: () => onMethodChanged(null),
+          // ── Period selector ──
+          _PeriodSelector(
+            selected: state.period,
+            onChanged: (p) =>
+                ref.read(financialDashboardProvider.notifier).changePeriod(p),
           ),
-          ..._methods.entries.map(
-            (e) => Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.xs),
-              child: _FilterChip(
-                label: e.value,
-                selected: selectedMethod == e.key,
-                onTap: () => onMethodChanged(
-                    selectedMethod == e.key ? null : e.key),
-              ),
+          const SizedBox(height: AppSpacing.md),
+
+          // ── Donut: por método de pagamento ──
+          MethodDonutChartCard(data: state.breakdownByMethod),
+          const SizedBox(height: AppSpacing.md),
+
+          // ── Breakdown: por serviço ──
+          Text(
+            'RECEITA POR SERVIÇO',
+            style: AppTypography.micro.copyWith(
+              color: AppColors.neutral400,
+              letterSpacing: 0.8,
             ),
           ),
+          const SizedBox(height: AppSpacing.sm),
+          BreakdownSection(
+            title: 'Por serviço',
+            items: state.breakdownByService,
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // ── Breakdown: por profissional ──
+          Text(
+            'RECEITA POR PROFISSIONAL',
+            style: AppTypography.micro.copyWith(
+              color: AppColors.neutral400,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          BreakdownSection(
+            title: 'Por profissional',
+            items: state.breakdownByProfessional,
+          ),
+          const SizedBox(height: AppSpacing.xl),
         ],
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: 6,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(AppRadius.full),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.neutral200,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTypography.caption.copyWith(
-            color: selected ? Colors.white : AppColors.neutral600,
-            fontSize: 12,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
       ),
     );
   }
