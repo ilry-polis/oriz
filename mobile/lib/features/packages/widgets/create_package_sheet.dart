@@ -54,7 +54,6 @@ class _CreatePackageSheetState extends ConsumerState<CreatePackageSheet> {
   final _validityController = TextEditingController(text: '30');
 
   String? _selectedServiceId;
-  String? _selectedServiceName;
   bool _saving = false;
   List<ServiceModel> _services = [];
   bool _loadingServices = true;
@@ -65,7 +64,6 @@ class _CreatePackageSheetState extends ConsumerState<CreatePackageSheet> {
   void initState() {
     super.initState();
     _selectedServiceId = widget.preselectedServiceId;
-    _selectedServiceName = widget.preselectedServiceName;
     if (!_hasPreselectedService) {
       _loadServices();
     } else {
@@ -200,10 +198,6 @@ class _CreatePackageSheetState extends ConsumerState<CreatePackageSheet> {
                             onChanged: (val) {
                               setState(() {
                                 _selectedServiceId = val;
-                                _selectedServiceName = _services
-                                    .firstWhere((s) => s.id == val,
-                                        orElse: () => _services.first)
-                                    .name;
                               });
                             },
                             validator: (v) =>
