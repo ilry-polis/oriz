@@ -6,18 +6,19 @@ import { ConflictError } from "../utils/errors.js";
 export type PackageRow = {
 	id: string;
 	studio_id: string;
-	service_id: string;
 	name: string;
 	total_sessions: number;
 	price: number;
 	validity_days: number;
 	created_at: string;
 	updated_at: string;
+	service_ids?: string[];
+	service_names?: string[];
 };
 
 export type CreatePackageInput = {
 	studioId: string;
-	serviceId: string;
+	serviceIds: string[];
 	name: string;
 	totalSessions: number;
 	price: number;
@@ -40,7 +41,6 @@ export type ListPackagesResult = {
 const PACKAGE_COLUMNS = `
   id,
   studio_id,
-  service_id,
   name,
   total_sessions,
   price,
@@ -65,7 +65,7 @@ export class PackageRepository {
 		let serviceFilter = "";
 		if (serviceId) {
 			params.push(serviceId);
-			serviceFilter = `AND service_id = $${params.length}`;
+			serviceFilter = `AND p.id IN (SELECT package_id FROM package_services WHERE service_id = $${params.length})`;
 		}
 
 		let cursorClause = "";
@@ -82,17 +82,22 @@ export class PackageRepository {
 			if (cursorRows[0]) {
 				const c = cursorRows[0];
 				params.push(c.pkg_name, c.pkg_id);
-				cursorClause = `AND (name, id) > ($${params.length - 1}, $${params.length})`;
+				cursorClause = `AND (p.name, p.id) > ($${params.length - 1}, $${params.length})`;
 			}
 		}
 
 		const { rows } = await this.pool.query<PackageRow>(
-			`SELECT ${PACKAGE_COLUMNS}
-			 FROM packages
-			 WHERE studio_id = $1
+			`SELECT p.${PACKAGE_COLUMNS.split(",\n").map((c) => c.trim()).join(", p.")},
+			        COALESCE(array_agg(ps.service_id) FILTER (WHERE ps.service_id IS NOT NULL), '{}') AS service_ids,
+			        COALESCE(array_agg(s.name) FILTER (WHERE s.name IS NOT NULL), '{}') AS service_names
+			 FROM packages p
+			 LEFT JOIN package_services ps ON ps.package_id = p.id
+			 LEFT JOIN services s ON s.id = ps.service_id
+			 WHERE p.studio_id = $1
 			   ${serviceFilter}
 			   ${cursorClause}
-			 ORDER BY name ASC, id ASC
+			 GROUP BY p.id
+			 ORDER BY p.name ASC, p.id ASC
 			 LIMIT $2`,
 			params,
 		);
@@ -111,33 +116,61 @@ export class PackageRepository {
 		packageId: string,
 	): Promise<PackageRow | null> {
 		const { rows } = await this.pool.query<PackageRow>(
-			`SELECT ${PACKAGE_COLUMNS}
-			 FROM packages
-			 WHERE studio_id = $1
-			   AND id = $2`,
+			`SELECT p.id, p.studio_id, p.name, p.total_sessions, p.price,
+			        p.validity_days, p.created_at, p.updated_at,
+			        COALESCE(array_agg(ps.service_id) FILTER (WHERE ps.service_id IS NOT NULL), '{}') AS service_ids,
+			        COALESCE(array_agg(s.name) FILTER (WHERE s.name IS NOT NULL), '{}') AS service_names
+			 FROM packages p
+			 LEFT JOIN package_services ps ON ps.package_id = p.id
+			 LEFT JOIN services s ON s.id = ps.service_id
+			 WHERE p.studio_id = $1
+			   AND p.id = $2
+			 GROUP BY p.id`,
 			[studioId, packageId],
 		);
 		return rows[0] ?? null;
 	}
 
 	async create(input: CreatePackageInput): Promise<PackageRow> {
-		const { rows } = await this.pool.query<PackageRow>(
-			`INSERT INTO packages
-			   (id, studio_id, service_id, name, total_sessions, price, validity_days)
-			 VALUES
-			   (gen_random_uuid(), $1, $2, $3, $4, $5, $6)
-			 RETURNING ${PACKAGE_COLUMNS}`,
-			[
-				input.studioId,
-				input.serviceId,
-				input.name,
-				input.totalSessions,
-				input.price,
-				input.validityDays,
-			],
-		);
-		// rows[0] is always defined after a successful INSERT RETURNING
-		return rows[0] as PackageRow;
+		const client = await this.pool.connect();
+		try {
+			await client.query("BEGIN");
+
+			const { rows } = await client.query<PackageRow>(
+				`INSERT INTO packages
+				   (id, studio_id, name, total_sessions, price, validity_days)
+				 VALUES
+				   (gen_random_uuid(), $1, $2, $3, $4, $5)
+				 RETURNING ${PACKAGE_COLUMNS}`,
+				[
+					input.studioId,
+					input.name,
+					input.totalSessions,
+					input.price,
+					input.validityDays,
+				],
+			);
+			const pkg = rows[0] as PackageRow;
+
+			// Insert junction rows
+			for (const serviceId of input.serviceIds) {
+				await client.query(
+					`INSERT INTO package_services (package_id, service_id, studio_id)
+					 VALUES ($1, $2, $3)`,
+					[pkg.id, serviceId, input.studioId],
+				);
+			}
+
+			await client.query("COMMIT");
+
+			pkg.service_ids = input.serviceIds;
+			return pkg;
+		} catch (err) {
+			await client.query("ROLLBACK");
+			throw err;
+		} finally {
+			client.release();
+		}
 	}
 
 	async update(
@@ -176,15 +209,14 @@ export class PackageRepository {
 		params.push(packageId);
 		const idParam = params.length;
 
-		const { rows } = await this.pool.query<PackageRow>(
+		await this.pool.query(
 			`UPDATE packages
 			 SET ${setClauses.join(", ")}
 			 WHERE studio_id = $${studioParam}
-			   AND id = $${idParam}
-			 RETURNING ${PACKAGE_COLUMNS}`,
+			   AND id = $${idParam}`,
 			params,
 		);
-		return rows[0] ?? null;
+		return this.getById(studioId, packageId);
 	}
 
 	async delete(studioId: string, packageId: string): Promise<void> {

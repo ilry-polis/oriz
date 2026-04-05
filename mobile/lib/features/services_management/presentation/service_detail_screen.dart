@@ -397,7 +397,7 @@ class _PackagesSection extends ConsumerWidget {
               return const SizedBox.shrink();
             }
             final packages = listState.items
-                .where((p) => p.serviceId == serviceId)
+                .where((p) => p.serviceIds.contains(serviceId))
                 .toList();
 
             if (packages.isEmpty) {

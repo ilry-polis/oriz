@@ -11,24 +11,29 @@ import '../../services_management/domain/service_model.dart';
 import '../providers/package_provider.dart';
 
 /// Bottom sheet for creating a new session package.
-/// If [preselectedServiceId] and [preselectedServiceName] are provided,
-/// the service picker is hidden and the service is pre-filled.
+/// If [preselectedServiceIds] and [preselectedServiceNames] are provided,
+/// the service picker is hidden and the services are pre-filled.
 class CreatePackageSheet extends ConsumerStatefulWidget {
-  final String? preselectedServiceId;
-  final String? preselectedServiceName;
+  final List<String>? preselectedServiceIds;
+  final List<String>? preselectedServiceNames;
 
   const CreatePackageSheet({
     super.key,
-    this.preselectedServiceId,
-    this.preselectedServiceName,
+    this.preselectedServiceIds,
+    this.preselectedServiceNames,
   });
 
   static Future<bool?> show(
     BuildContext context, {
+    List<String>? serviceIds,
+    List<String>? serviceNames,
+    // Legacy single-service convenience
     String? serviceId,
     String? serviceName,
   }) {
     HapticFeedback.lightImpact();
+    final ids = serviceIds ?? (serviceId != null ? [serviceId] : null);
+    final names = serviceNames ?? (serviceName != null ? [serviceName] : null);
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -36,8 +41,8 @@ class CreatePackageSheet extends ConsumerStatefulWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
       builder: (_) => CreatePackageSheet(
-        preselectedServiceId: serviceId,
-        preselectedServiceName: serviceName,
+        preselectedServiceIds: ids,
+        preselectedServiceNames: names,
       ),
     );
   }
@@ -53,21 +58,23 @@ class _CreatePackageSheetState extends ConsumerState<CreatePackageSheet> {
   final _sessionsController = TextEditingController();
   final _validityController = TextEditingController(text: '30');
 
-  String? _selectedServiceId;
+  final Set<String> _selectedServiceIds = {};
   bool _saving = false;
   List<ServiceModel> _services = [];
   bool _loadingServices = true;
 
-  bool get _hasPreselectedService => widget.preselectedServiceId != null;
+  bool get _hasPreselectedServices =>
+      widget.preselectedServiceIds != null &&
+      widget.preselectedServiceIds!.isNotEmpty;
 
   @override
   void initState() {
     super.initState();
-    _selectedServiceId = widget.preselectedServiceId;
-    if (!_hasPreselectedService) {
-      _loadServices();
-    } else {
+    if (_hasPreselectedServices) {
+      _selectedServiceIds.addAll(widget.preselectedServiceIds!);
       setState(() => _loadingServices = false);
+    } else {
+      _loadServices();
     }
   }
 
@@ -97,9 +104,9 @@ class _CreatePackageSheetState extends ConsumerState<CreatePackageSheet> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedServiceId == null) {
+    if (_selectedServiceIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione um serviço')),
+        const SnackBar(content: Text('Selecione ao menos um serviço')),
       );
       return;
     }
@@ -107,7 +114,7 @@ class _CreatePackageSheetState extends ConsumerState<CreatePackageSheet> {
 
     try {
       await ref.read(packageProvider.notifier).create(
-            serviceId: _selectedServiceId!,
+            serviceIds: _selectedServiceIds.toList(),
             name: _nameController.text.trim(),
             totalSessions: int.parse(_sessionsController.text.trim()),
             price: BrazilianCurrencyFormatter.parseCents(_priceController.text),
@@ -170,52 +177,57 @@ class _CreatePackageSheetState extends ConsumerState<CreatePackageSheet> {
                   const SizedBox(height: AppSpacing.md),
 
                   // Service picker (hidden if preselected)
-                  if (!_hasPreselectedService) ...[
-                    Text('Serviço',
+                  if (!_hasPreselectedServices) ...[
+                    Text('Serviços',
                         style: AppTypography.caption
                             .copyWith(color: AppColors.neutral600)),
                     const SizedBox(height: AppSpacing.xs),
-                    _loadingServices
-                        ? const Center(child: CircularProgressIndicator())
-                        : DropdownButtonFormField<String>(
-                            value: _selectedServiceId,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.sm),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 14),
-                              hintText: 'Selecionar serviço',
-                            ),
-                            items: _services
-                                .map((s) => DropdownMenuItem(
-                                      value: s.id,
-                                      child: Text(s.name,
-                                          style: AppTypography.body),
-                                    ))
-                                .toList(),
-                            onChanged: (val) {
+                    if (_loadingServices)
+                      const Center(child: CircularProgressIndicator())
+                    else
+                      Wrap(
+                        spacing: AppSpacing.xs,
+                        runSpacing: 4,
+                        children: _services.map((s) {
+                          final selected = _selectedServiceIds.contains(s.id);
+                          return FilterChip(
+                            label: Text(s.name),
+                            selected: selected,
+                            onSelected: (val) {
                               setState(() {
-                                _selectedServiceId = val;
+                                if (val) {
+                                  _selectedServiceIds.add(s.id);
+                                } else {
+                                  _selectedServiceIds.remove(s.id);
+                                }
                               });
                             },
-                            validator: (v) =>
-                                v == null ? 'Selecione um serviço' : null,
-                          ),
+                            selectedColor: AppColors.accentSoft,
+                            checkmarkColor: AppColors.primary,
+                            labelStyle: AppTypography.caption.copyWith(
+                              color: selected
+                                  ? AppColors.primary
+                                  : AppColors.neutral700,
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     const SizedBox(height: AppSpacing.md),
                   ] else ...[
-                    // Show preselected service as read-only chip
-                    Row(
+                    // Show preselected services as read-only chips
+                    Wrap(
+                      spacing: AppSpacing.xs,
+                      runSpacing: 4,
                       children: [
                         const Icon(Icons.category_outlined,
                             size: 16, color: AppColors.neutral400),
                         const SizedBox(width: AppSpacing.xs),
-                        Text(
-                          widget.preselectedServiceName ?? 'Serviço selecionado',
-                          style: AppTypography.caption
-                              .copyWith(color: AppColors.neutral600),
-                        ),
+                        for (final name
+                            in widget.preselectedServiceNames ?? <String>[])
+                          Chip(
+                            label: Text(name, style: AppTypography.caption),
+                            visualDensity: VisualDensity.compact,
+                          ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.md),

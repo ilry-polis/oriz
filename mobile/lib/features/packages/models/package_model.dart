@@ -2,8 +2,8 @@ import 'package:intl/intl.dart';
 
 class PackageModel {
   final String id;
-  final String serviceId;
-  final String? serviceName;
+  final List<String> serviceIds;
+  final List<String> serviceNames;
   final String name;
   final int totalSessions;
   final int price; // in centavos
@@ -12,8 +12,8 @@ class PackageModel {
 
   const PackageModel({
     required this.id,
-    required this.serviceId,
-    this.serviceName,
+    this.serviceIds = const [],
+    this.serviceNames = const [],
     required this.name,
     required this.totalSessions,
     required this.price,
@@ -24,8 +24,14 @@ class PackageModel {
   factory PackageModel.fromJson(Map<String, dynamic> json) {
     return PackageModel(
       id: json['id'] as String,
-      serviceId: json['service_id'] as String,
-      serviceName: json['service_name'] as String?,
+      serviceIds: (json['service_ids'] as List?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      serviceNames: (json['service_names'] as List?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       name: json['name'] as String,
       totalSessions: json['total_sessions'] as int,
       price: json['price'] as int,
@@ -33,6 +39,10 @@ class PackageModel {
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
+
+  /// Comma-separated service names for display.
+  String get serviceLabel =>
+      serviceNames.isNotEmpty ? serviceNames.join(', ') : 'Sem serviço';
 
   String get formattedPrice {
     final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');

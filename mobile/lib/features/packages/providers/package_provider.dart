@@ -80,7 +80,7 @@ class PackageNotifier extends AsyncNotifier<PackageListState> {
   }
 
   Future<void> create({
-    required String serviceId,
+    required List<String> serviceIds,
     required String name,
     required int totalSessions,
     required int price,
@@ -88,7 +88,7 @@ class PackageNotifier extends AsyncNotifier<PackageListState> {
   }) async {
     final repo = ref.read(packageRepositoryProvider);
     final created = await repo.create(
-      serviceId: serviceId,
+      serviceIds: serviceIds,
       name: name,
       totalSessions: totalSessions,
       price: price,

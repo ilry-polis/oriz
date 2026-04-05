@@ -43,14 +43,14 @@ class PackageRepository {
 
   /// Create a new package.
   Future<PackageModel> create({
-    required String serviceId,
+    required List<String> serviceIds,
     required String name,
     required int totalSessions,
     required int price,
     required int validityDays,
   }) async {
     final response = await _api.post('/api/v1/packages', body: {
-      'service_id': serviceId,
+      'service_ids': serviceIds,
       'name': name,
       'total_sessions': totalSessions,
       'price': price,

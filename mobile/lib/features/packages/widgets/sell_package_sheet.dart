@@ -166,7 +166,8 @@ class _SellPackageSheetState extends ConsumerState<SellPackageSheet> {
                   if (listState is PackageListLoaded) {
                     final packages = widget.serviceId != null
                         ? listState.items
-                            .where((p) => p.serviceId == widget.serviceId)
+                            .where((p) =>
+                                p.serviceIds.contains(widget.serviceId))
                             .toList()
                         : listState.items;
 
@@ -249,9 +250,9 @@ class _SellPackageSheetState extends ConsumerState<SellPackageSheet> {
                                           color: AppColors.neutral600,
                                         ),
                                       ),
-                                      if (pkg.serviceName != null)
+                                      if (pkg.serviceNames.isNotEmpty)
                                         Text(
-                                          pkg.serviceName!,
+                                          pkg.serviceLabel,
                                           style: AppTypography.micro.copyWith(
                                             color: AppColors.neutral400,
                                           ),

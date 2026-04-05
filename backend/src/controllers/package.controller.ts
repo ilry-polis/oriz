@@ -40,7 +40,7 @@ export class PackageController {
 	async create(request: FastifyRequest, reply: FastifyReply) {
 		const { studioId } = request.authContext as StudioAuthContext;
 		const body = request.body as {
-			service_id: string;
+			service_ids: string[];
 			name: string;
 			total_sessions: number;
 			price: number;
@@ -48,7 +48,7 @@ export class PackageController {
 		};
 
 		const data = await this.service.create(studioId, {
-			serviceId: body.service_id,
+			serviceIds: body.service_ids,
 			name: body.name,
 			totalSessions: body.total_sessions,
 			price: body.price,

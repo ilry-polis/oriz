@@ -17,7 +17,7 @@ import { NotFoundError } from "../utils/errors.js";
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 export type CreatePackageParams = {
-	serviceId: string;
+	serviceIds: string[];
 	name: string;
 	totalSessions: number;
 	price: number;
@@ -56,14 +56,21 @@ export class PackageService {
 		studioId: string,
 		params: CreatePackageParams,
 	): Promise<PackageRow> {
-		const svc = await this.serviceRepo.getById(studioId, params.serviceId);
-		if (!svc) {
-			throw new NotFoundError(`Service not found: ${params.serviceId}`);
+		if (params.serviceIds.length === 0) {
+			throw new NotFoundError("At least one service is required");
+		}
+
+		// Validate all services exist and belong to this studio
+		for (const serviceId of params.serviceIds) {
+			const svc = await this.serviceRepo.getById(studioId, serviceId);
+			if (!svc) {
+				throw new NotFoundError(`Service not found: ${serviceId}`);
+			}
 		}
 
 		return this.packageRepo.create({
 			studioId,
-			serviceId: params.serviceId,
+			serviceIds: params.serviceIds,
 			name: params.name,
 			totalSessions: params.totalSessions,
 			price: params.price,

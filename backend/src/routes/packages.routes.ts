@@ -10,7 +10,7 @@ export const ListPackagesQuery = z.object({
 });
 
 export const CreatePackageBody = z.object({
-	service_id: z.string().uuid(),
+	service_ids: z.array(z.string().uuid()).min(1),
 	name: z.string().min(1),
 	total_sessions: z.number().int().min(1),
 	price: z.number().int().min(0),

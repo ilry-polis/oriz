@@ -21,13 +21,14 @@ function makePackage(overrides: Partial<PackageRow> = {}): PackageRow {
 	return {
 		id: "pkg-1",
 		studio_id: "studio-A",
-		service_id: "svc-1",
 		name: "Pacote Cílios 10 sessões",
 		total_sessions: 10,
 		price: 150000, // R$1500,00
 		validity_days: 180,
 		created_at: "2026-01-01T00:00:00Z",
 		updated_at: "2026-01-01T00:00:00Z",
+		service_ids: ["svc-1"],
+		service_names: ["Cílios Volume Russo"],
 		...overrides,
 	};
 }
@@ -116,14 +117,14 @@ describe("PackageService", () => {
 	// ─── Package CRUD ─────────────────────────────────────────────────────────
 
 	describe("create", () => {
-		it("succeeds with valid service_id", async () => {
+		it("succeeds with valid service_ids", async () => {
 			const svc = makeService();
 			const pkg = makePackage();
 			(serviceRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(svc);
 			(packageRepo.create as ReturnType<typeof vi.fn>).mockResolvedValue(pkg);
 
 			const result = await service.create("studio-A", {
-				serviceId: "svc-1",
+				serviceIds: ["svc-1"],
 				name: "Pacote Cílios 10 sessões",
 				totalSessions: 10,
 				price: 150000,
@@ -134,7 +135,7 @@ describe("PackageService", () => {
 			expect(serviceRepo.getById).toHaveBeenCalledWith("studio-A", "svc-1");
 			expect(packageRepo.create).toHaveBeenCalledWith({
 				studioId: "studio-A",
-				serviceId: "svc-1",
+				serviceIds: ["svc-1"],
 				name: "Pacote Cílios 10 sessões",
 				totalSessions: 10,
 				price: 150000,
@@ -142,12 +143,45 @@ describe("PackageService", () => {
 			});
 		});
 
+		it("succeeds with multiple service_ids", async () => {
+			const svc1 = makeService({ id: "svc-1" });
+			const svc2 = makeService({ id: "svc-2", name: "Pedicure" });
+			const pkg = makePackage({ service_ids: ["svc-1", "svc-2"] });
+			(serviceRepo.getById as ReturnType<typeof vi.fn>)
+				.mockResolvedValueOnce(svc1)
+				.mockResolvedValueOnce(svc2);
+			(packageRepo.create as ReturnType<typeof vi.fn>).mockResolvedValue(pkg);
+
+			const result = await service.create("studio-A", {
+				serviceIds: ["svc-1", "svc-2"],
+				name: "Pacote Mãos + Pés",
+				totalSessions: 10,
+				price: 200000,
+				validityDays: 90,
+			});
+
+			expect(result.service_ids).toEqual(["svc-1", "svc-2"]);
+			expect(serviceRepo.getById).toHaveBeenCalledTimes(2);
+		});
+
 		it("fails with unknown service_id (NotFoundError)", async () => {
 			(serviceRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
 			await expect(
 				service.create("studio-A", {
-					serviceId: "nonexistent-svc",
+					serviceIds: ["nonexistent-svc"],
+					name: "Pacote",
+					totalSessions: 5,
+					price: 50000,
+					validityDays: 90,
+				}),
+			).rejects.toThrow(NotFoundError);
+		});
+
+		it("fails with empty service_ids array", async () => {
+			await expect(
+				service.create("studio-A", {
+					serviceIds: [],
 					name: "Pacote",
 					totalSessions: 5,
 					price: 50000,
@@ -285,7 +319,7 @@ describe("PackageService", () => {
 
 			await expect(
 				service.create("studio-A", {
-					serviceId: "svc-from-studio-B",
+					serviceIds: ["svc-from-studio-B"],
 					name: "Pacote",
 					totalSessions: 5,
 					price: 50000,

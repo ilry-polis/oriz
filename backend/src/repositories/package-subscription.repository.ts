@@ -101,7 +101,7 @@ export class PackageSubscriptionRepository {
 
 	/**
 	 * Returns the active (non-expired) subscription for a client+service pair.
-	 * Joins packages to filter by service_id.
+	 * Joins package_services to find packages that include this service.
 	 */
 	async getActiveForClientService(
 		studioId: string,
@@ -121,10 +121,10 @@ export class PackageSubscriptionRepository {
 			   ps.created_at,
 			   ps.updated_at
 			 FROM package_subscriptions ps
-			 JOIN packages pk ON pk.id = ps.package_id
+			 JOIN package_services pks ON pks.package_id = ps.package_id
 			 WHERE ps.studio_id = $1
 			   AND ps.client_id = $2
-			   AND pk.service_id = $3
+			   AND pks.service_id = $3
 			   AND ps.status = 'active'
 			   AND ps.expires_at > NOW()
 			 ORDER BY ps.expires_at ASC

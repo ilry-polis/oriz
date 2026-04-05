@@ -136,10 +136,10 @@ class PackagesManagementScreen extends ConsumerWidget {
     WidgetRef ref,
     List<PackageModel> packages,
   ) {
-    // Group packages by service name
+    // Group packages by combined service names label
     final grouped = <String, List<PackageModel>>{};
     for (final pkg in packages) {
-      final key = pkg.serviceName ?? 'Outros';
+      final key = pkg.serviceLabel;
       (grouped[key] ??= []).add(pkg);
     }
 
