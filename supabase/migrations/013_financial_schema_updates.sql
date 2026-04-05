@@ -67,6 +67,7 @@ SELECT
   EXTRACT(YEAR  FROM pa.period_at)::INTEGER AS period_year,
   EXTRACT(MONTH FROM pa.period_at)::INTEGER AS period_month,
   SUM(pa.net_amount)                         AS total_revenue,
+  COUNT(pa.appointment_id)                   AS total_appointments,
   COALESCE(SUM(comm.total_professional), 0)  AS total_commissions,
   CASE WHEN COUNT(pa.appointment_id) > 0
     THEN SUM(pa.net_amount) / COUNT(pa.appointment_id)
