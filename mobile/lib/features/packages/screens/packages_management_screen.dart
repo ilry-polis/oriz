@@ -20,18 +20,10 @@ class PackagesManagementScreen extends ConsumerWidget {
         title: const Text('Pacotes'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Atualizar',
-            onPressed: () => ref.read(packageProvider.notifier).refresh(),
+            icon: const Icon(Icons.add),
+            onPressed: () => _showCreateSheet(context, ref),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateSheet(context, ref),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Novo pacote'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
       ),
       body: asyncState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
