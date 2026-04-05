@@ -20,7 +20,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SERV-01**: Owner can create services with name, duration, price, and category
 - [x] **SERV-02**: Owner can set buffer time between appointments per service
 - [x] **SERV-03**: Owner can create session packages with special pricing
-- [ ] **SERV-04**: Sessions deducted automatically when appointment is completed (not on booking)
+- [x] **SERV-04**: Sessions deducted automatically when appointment is completed (not on booking)
 - [x] **SERV-05**: Packages have configurable expiration date
 
 ### Scheduling
@@ -54,7 +54,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **FINC-02**: Owner views revenue breakdown by professional and by service
 - [x] **FINC-03**: Owner views average ticket value
 - [x] **FINC-04**: Owner views agenda occupancy rate
-- [ ] **FINC-05**: Owner records payment method per appointment (cash, PIX, debit, credit)
+- [x] **FINC-05**: Owner records payment method per appointment (cash, PIX, debit, credit)
 
 ### Public Page
 
@@ -147,7 +147,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SERV-01 | Phase 2 | Complete |
 | SERV-02 | Phase 2 | Complete |
 | SERV-03 | Phase 4 | Complete |
-| SERV-04 | Phase 4 | Pending |
+| SERV-04 | Phase 4 | Complete |
 | SERV-05 | Phase 4 | Complete |
 | SCHD-01 | Phase 3 | Complete |
 | SCHD-02 | Phase 3 | Complete |
@@ -169,7 +169,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FINC-02 | Phase 4 | Complete |
 | FINC-03 | Phase 4 | Complete |
 | FINC-04 | Phase 4 | Complete |
-| FINC-05 | Phase 4 | Pending |
+| FINC-05 | Phase 4 | Complete |
 | PAGE-01 | Phase 5 | Pending |
 | PAGE-02 | Phase 5 | Pending |
 | PAGE-03 | Phase 5 | Pending |

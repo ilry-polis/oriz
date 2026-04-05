@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-04-05T19:24:21.393Z"
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-04-05T19:33:48.234Z"
 last_activity: 2026-04-05 — Phase 3 completed (UAT 15/15 passed)
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 18
-  completed_plans: 14
+  completed_plans: 15
   percent: 37
 ---
 
@@ -54,6 +54,7 @@ Progress: [████░░░░░░] 37%
 *Updated after each plan completion*
 | Phase 04-financial-and-packages P02 | 35 | 2 tasks | 16 files |
 | Phase 04 P01 | 9 | 2 tasks | 13 files |
+| Phase 04-financial-and-packages P03 | 15 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,8 @@ Recent decisions affecting current work:
 - [Phase 04]: Payment type='pacote' recorded on subscription creation with nullable appointment_id
 - [Phase 04]: Atomic deductSession uses UPDATE...WHERE status='active' AND expires_at > NOW() RETURNING
 - [Phase 04]: financial_summaries view rebuilt: CTE groups by appointment_id to avoid double-counting split payments
+- [Phase 04-financial-and-packages]: completeAppointment returns { appointment, lastSession?, sessionsRemaining? } — package and payment paths unified
+- [Phase 04-financial-and-packages]: FinancialRefreshQueue: BullMQ with Redis when available, in-process debounced fallback (5s per studioId) otherwise
 
 ### Pending Todos
 
@@ -90,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T19:24:21.391Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-04-05T19:33:48.232Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
