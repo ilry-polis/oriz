@@ -125,7 +125,7 @@ class FinancialDashboardNotifier
     extends Notifier<FinancialDashboardState> {
   @override
   FinancialDashboardState build() {
-    _load(period: FinancialPeriod.month, date: DateTime.now());
+    _load(period: FinancialPeriod.month, date: DateTime.now(), showLoading: true);
     return const FinancialDashboardLoading();
   }
 
@@ -134,8 +134,9 @@ class FinancialDashboardNotifier
     required DateTime date,
     String? filterMethod,
     String? filterProfessionalId,
+    bool showLoading = false,
   }) async {
-    state = const FinancialDashboardLoading();
+    if (showLoading) state = const FinancialDashboardLoading();
     try {
       final repo = ref.read(financialRepositoryProvider);
       final fmt = DateFormat('yyyy-MM-dd');

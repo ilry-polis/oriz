@@ -59,6 +59,13 @@ class _FinancialDashboardScreenState
         title: const Text('Financeiro'),
         bottom: TabBar(
           controller: _tabController,
+          labelColor: AppColors.neutral900,
+          unselectedLabelColor: AppColors.neutral400,
+          indicatorColor: AppColors.primary,
+          indicatorWeight: 2,
+          dividerColor: AppColors.neutral200,
+          labelStyle: AppTypography.bodySemibold.copyWith(fontSize: 14),
+          unselectedLabelStyle: AppTypography.body.copyWith(fontSize: 14),
           tabs: const [
             Tab(text: 'Resumo'),
             Tab(text: 'Comissões'),
