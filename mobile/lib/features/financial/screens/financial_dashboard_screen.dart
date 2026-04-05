@@ -231,18 +231,6 @@ class _ResumoTab extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // ── Revenue bar chart ──
-          Text(
-            'FATURAMENTO POR DIA',
-            style: AppTypography.micro.copyWith(
-              color: AppColors.neutral400,
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          RevenueBarChartCard(data: state.dailyRevenue),
-          const SizedBox(height: AppSpacing.md),
-
           // ── Payments list (max 5, with "Ver tudo" link) ──
           if (state.payments.isEmpty)
             Padding(
@@ -415,6 +403,18 @@ class _GraficosTab extends ConsumerWidget {
             onChanged: (p) =>
                 ref.read(financialDashboardProvider.notifier).changePeriod(p),
           ),
+          const SizedBox(height: AppSpacing.md),
+
+          // ── Revenue bar chart ──
+          Text(
+            'FATURAMENTO POR DIA',
+            style: AppTypography.micro.copyWith(
+              color: AppColors.neutral400,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          RevenueBarChartCard(data: state.dailyRevenue),
           const SizedBox(height: AppSpacing.md),
 
           // ── Donut: por método de pagamento ──
