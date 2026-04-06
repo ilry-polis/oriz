@@ -169,29 +169,37 @@ export class AppointmentController {
 	}
 
 	async complete(request: FastifyRequest, reply: FastifyReply) {
-		const { studioId } = request.authContext as StudioAuthContext;
+		const { studioId, role: userRole } =
+			request.authContext as StudioAuthContext;
 		const { id } = request.params as { id: string };
 		const body = request.body as {
-			payment?: {
+			package_subscription_id?: string;
+			payments?: Array<{
 				amount: number;
 				method: "cash" | "pix" | "debit" | "credit";
 				card_fee_percentage?: number;
-			};
+			}>;
+			discount_amount?: number;
+			discount_reason?: string;
 		};
 
-		const data = await this.service.completeAppointment(
-			studioId,
-			id,
-			body.payment
+		const result = await this.service.completeAppointment(studioId, id, {
+			packageSubscriptionId: body.package_subscription_id,
+			payment: body.payments
 				? {
-						amount: body.payment.amount,
-						method: body.payment.method,
-						cardFeePercentage: body.payment.card_fee_percentage,
+						payments: body.payments.map((p) => ({
+							amount: p.amount,
+							method: p.method,
+							cardFeePercentage: p.card_fee_percentage,
+						})),
+						discountAmount: body.discount_amount,
+						discountReason: body.discount_reason,
 					}
 				: undefined,
-		);
+			userRole,
+		});
 
-		return reply.send({ data });
+		return reply.send({ data: result });
 	}
 
 	async cancel(request: FastifyRequest, reply: FastifyReply) {

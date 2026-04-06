@@ -4,6 +4,11 @@ import type { AppointmentRepository, AppointmentRow } from '../../src/repositori
 import type { ProfessionalRepository, ProfessionalRow } from '../../src/repositories/professional.repository.js';
 import type { ServiceRepository, ServiceRow } from '../../src/repositories/service.repository.js';
 import type { PaymentRepository } from '../../src/repositories/payment.repository.js';
+import type { CommissionService } from '../../src/services/commission.service.js';
+import type { PackageSubscriptionRepository, PackageSubscriptionRow } from '../../src/repositories/package-subscription.repository.js';
+import type { PackageRepository } from '../../src/repositories/package.repository.js';
+import type { StudioRepository } from '../../src/repositories/studio.repository.js';
+import type { FinancialRefreshQueue } from '../../src/jobs/financial-refresh.job.js';
 import { BlockedSlotService } from '../../src/services/blocked-slot.service.js';
 import type { BlockedSlotRepository } from '../../src/repositories/blocked-slot.repository.js';
 import { ConflictError, NotFoundError, UnprocessableError } from '../../src/utils/errors.js';
@@ -75,6 +80,24 @@ function makeService(overrides: Partial<ServiceRow> = {}): ServiceRow {
   };
 }
 
+// ─── Additional Factories ────────────────────────────────────────────────────
+
+function makeSubscription(overrides: Partial<PackageSubscriptionRow> = {}): PackageSubscriptionRow {
+  return {
+    id: 'sub-1',
+    studio_id: 'studio-A',
+    package_id: 'pkg-1',
+    client_id: 'client-1',
+    sessions_used: 1,
+    sessions_total: 5,
+    expires_at: '2027-01-01T00:00:00Z',
+    status: 'active',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    ...overrides,
+  };
+}
+
 // ─── Setup ────────────────────────────────────────────────────────────────────
 
 describe('AppointmentService', () => {
@@ -83,6 +106,11 @@ describe('AppointmentService', () => {
   let professionalRepo: ProfessionalRepository;
   let serviceRepo: ServiceRepository;
   let paymentRepo: PaymentRepository;
+  let commissionService: CommissionService;
+  let packageSubRepo: PackageSubscriptionRepository;
+  let packageRepo: PackageRepository;
+  let studioRepo: StudioRepository;
+  let financialRefreshQueue: FinancialRefreshQueue;
   let blockedSlotRepo: BlockedSlotRepository;
   let blockedSlotService: BlockedSlotService;
 
@@ -112,6 +140,31 @@ describe('AppointmentService', () => {
       create: vi.fn(),
     } as unknown as PaymentRepository;
 
+    commissionService = {
+      calculateAndRecord: vi.fn().mockResolvedValue({ id: 'comm-1' }),
+    } as unknown as CommissionService;
+
+    packageSubRepo = {
+      deductSession: vi.fn(),
+      getActiveForClientService: vi.fn(),
+    } as unknown as PackageSubscriptionRepository;
+
+    packageRepo = {
+      getUnitPrice: vi.fn().mockResolvedValue(3000),
+      getById: vi.fn(),
+    } as unknown as PackageRepository;
+
+    studioRepo = {
+      findById: vi.fn().mockResolvedValue({
+        id: 'studio-A',
+        settings: { max_discount_percentage: 20 },
+      }),
+    } as unknown as StudioRepository;
+
+    financialRefreshQueue = {
+      add: vi.fn(),
+    } as unknown as FinancialRefreshQueue;
+
     blockedSlotRepo = {
       listByDateRange: vi.fn(),
       create: vi.fn(),
@@ -127,6 +180,11 @@ describe('AppointmentService', () => {
       serviceRepo,
       paymentRepo,
       blockedSlotService,
+      commissionService,
+      packageSubRepo,
+      packageRepo,
+      studioRepo,
+      financialRefreshQueue,
     );
   });
 
@@ -181,7 +239,7 @@ describe('AppointmentService', () => {
 
       const result = await service.completeAppointment('studio-A', 'appt-1');
 
-      expect(result.status).toBe('completed');
+      expect(result.appointment.status).toBe('completed');
     });
 
     it('markNoShow: confirmed -> no_show', async () => {
@@ -244,7 +302,7 @@ describe('AppointmentService', () => {
   // ─── completeAppointment with payment ─────────────────────────────────────
 
   describe('completeAppointment with payment', () => {
-    it('records payment when payment data provided', async () => {
+    it('records payment when payment data provided (new extended format)', async () => {
       const appt = makeAppointment({ status: 'confirmed' });
       (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
       (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -253,8 +311,9 @@ describe('AppointmentService', () => {
       (paymentRepo.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'pay-1' });
 
       await service.completeAppointment('studio-A', 'appt-1', {
-        amount: 5000,
-        method: 'pix',
+        payment: {
+          payments: [{ amount: 5000, method: 'pix' }],
+        },
       });
 
       expect(paymentRepo.create).toHaveBeenCalledWith(
@@ -268,7 +327,7 @@ describe('AppointmentService', () => {
       );
     });
 
-    it('does NOT record payment when no payment data provided', async () => {
+    it('does NOT record payment when no payload provided', async () => {
       const appt = makeAppointment({ status: 'confirmed' });
       (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
       (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -276,6 +335,248 @@ describe('AppointmentService', () => {
       );
 
       await service.completeAppointment('studio-A', 'appt-1');
+
+      expect(paymentRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('records commission on net amount (amount minus discountAmount)', async () => {
+      const appt = makeAppointment({ status: 'confirmed', date: '2026-04-07' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeAppointment({ status: 'completed' }),
+      );
+      (paymentRepo.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'pay-1' });
+
+      await service.completeAppointment('studio-A', 'appt-1', {
+        payment: {
+          payments: [{ amount: 5000, method: 'pix' }],
+          discountAmount: 500,
+        },
+      });
+
+      expect(commissionService.calculateAndRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 4500, // 5000 - 500 discount
+          studioId: 'studio-A',
+          appointmentId: 'appt-1',
+          professionalId: 'prof-1',
+        }),
+      );
+    });
+
+    it('split payment creates 2 payment rows', async () => {
+      const appt = makeAppointment({ status: 'confirmed' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeAppointment({ status: 'completed' }),
+      );
+      (paymentRepo.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'pay-1' });
+
+      await service.completeAppointment('studio-A', 'appt-1', {
+        payment: {
+          payments: [
+            { amount: 3000, method: 'pix' },
+            { amount: 2000, method: 'credit' },
+          ],
+        },
+      });
+
+      expect(paymentRepo.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('split payment: commission calculated on total net amount', async () => {
+      const appt = makeAppointment({ status: 'confirmed', date: '2026-04-07' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeAppointment({ status: 'completed' }),
+      );
+      (paymentRepo.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'pay-1' });
+
+      await service.completeAppointment('studio-A', 'appt-1', {
+        payment: {
+          payments: [
+            { amount: 3000, method: 'pix' },
+            { amount: 2000, method: 'cash' },
+          ],
+          discountAmount: 1000,
+        },
+      });
+
+      // total = 5000, discount = 1000, net = 4000
+      expect(commissionService.calculateAndRecord).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: 4000 }),
+      );
+    });
+
+    it('enqueues financial view refresh after payment', async () => {
+      const appt = makeAppointment({ status: 'confirmed' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeAppointment({ status: 'completed' }),
+      );
+      (paymentRepo.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'pay-1' });
+
+      await service.completeAppointment('studio-A', 'appt-1', {
+        payment: { payments: [{ amount: 5000, method: 'pix' }] },
+      });
+
+      expect(financialRefreshQueue.add).toHaveBeenCalledWith('studio-A');
+    });
+
+    it('discount limit enforcement: non-owner exceeding max_discount_percentage throws DISCOUNT_EXCEEDS_LIMIT', async () => {
+      const appt = makeAppointment({ status: 'confirmed' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeAppointment({ status: 'completed' }),
+      );
+      // max_discount_percentage = 20, discount = 30% (1500 / 5000 = 30%)
+      await expect(
+        service.completeAppointment('studio-A', 'appt-1', {
+          payment: {
+            payments: [{ amount: 5000, method: 'pix' }],
+            discountAmount: 1500,
+          },
+          userRole: 'professional',
+        }),
+      ).rejects.toThrow(UnprocessableError);
+    });
+
+    it('discount limit: owner can exceed max_discount_percentage', async () => {
+      const appt = makeAppointment({ status: 'confirmed' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeAppointment({ status: 'completed' }),
+      );
+      (paymentRepo.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'pay-1' });
+
+      // owner can exceed limit (1500 / 5000 = 30% > 20%)
+      await expect(
+        service.completeAppointment('studio-A', 'appt-1', {
+          payment: {
+            payments: [{ amount: 5000, method: 'pix' }],
+            discountAmount: 1500,
+          },
+          userRole: 'owner',
+        }),
+      ).resolves.toBeDefined();
+    });
+
+    it('discount within limit for professional succeeds', async () => {
+      const appt = makeAppointment({ status: 'confirmed' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeAppointment({ status: 'completed' }),
+      );
+      (paymentRepo.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'pay-1' });
+
+      // 500/5000 = 10% <= 20% max
+      await expect(
+        service.completeAppointment('studio-A', 'appt-1', {
+          payment: {
+            payments: [{ amount: 5000, method: 'pix' }],
+            discountAmount: 500,
+          },
+          userRole: 'professional',
+        }),
+      ).resolves.toBeDefined();
+    });
+  });
+
+  // ─── completeAppointment with package ─────────────────────────────────────
+
+  describe('completeAppointment with package', () => {
+    it('deducts session and returns sessionsRemaining when sessions still available', async () => {
+      const appt = makeAppointment({ status: 'confirmed' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeAppointment({ status: 'completed' }),
+      );
+      // 2 used out of 5 after deduction, status still active
+      (packageSubRepo.deductSession as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeSubscription({ sessions_used: 2, sessions_total: 5, status: 'active' }),
+      );
+
+      const result = await service.completeAppointment('studio-A', 'appt-1', {
+        packageSubscriptionId: 'sub-1',
+      });
+
+      expect(result.appointment.status).toBe('completed');
+      expect(result.lastSession).toBe(false);
+      expect(result.sessionsRemaining).toBe(3); // 5 - 2
+      expect(packageSubRepo.deductSession).toHaveBeenCalledWith('studio-A', 'sub-1');
+    });
+
+    it('returns lastSession=true when subscription transitions to completed', async () => {
+      const appt = makeAppointment({ status: 'confirmed' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeAppointment({ status: 'completed' }),
+      );
+      // Last session used (5/5), status=completed
+      (packageSubRepo.deductSession as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeSubscription({ sessions_used: 5, sessions_total: 5, status: 'completed' }),
+      );
+
+      const result = await service.completeAppointment('studio-A', 'appt-1', {
+        packageSubscriptionId: 'sub-1',
+      });
+
+      expect(result.lastSession).toBe(true);
+      expect(result.sessionsRemaining).toBe(0);
+    });
+
+    it('throws PACKAGE_UNAVAILABLE when deductSession returns null (expired/completed)', async () => {
+      const appt = makeAppointment({ status: 'confirmed' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (packageSubRepo.deductSession as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      await expect(
+        service.completeAppointment('studio-A', 'appt-1', {
+          packageSubscriptionId: 'sub-expired',
+        }),
+      ).rejects.toThrow(UnprocessableError);
+    });
+
+    it('records commission on package unit price when deducting session', async () => {
+      const appt = makeAppointment({ status: 'confirmed', date: '2026-04-07' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeAppointment({ status: 'completed' }),
+      );
+      (packageSubRepo.deductSession as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeSubscription({ sessions_used: 2, sessions_total: 5, status: 'active' }),
+      );
+      // unit price = 3000 (mocked in beforeEach)
+
+      await service.completeAppointment('studio-A', 'appt-1', {
+        packageSubscriptionId: 'sub-1',
+      });
+
+      expect(packageRepo.getUnitPrice).toHaveBeenCalledWith('studio-A', 'pkg-1');
+      expect(commissionService.calculateAndRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 3000,
+          method: 'package',
+          appointmentId: 'appt-1',
+          studioId: 'studio-A',
+          professionalId: 'prof-1',
+        }),
+      );
+    });
+
+    it('does NOT record payment row for package appointment', async () => {
+      const appt = makeAppointment({ status: 'confirmed' });
+      (appointmentRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(appt);
+      (appointmentRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeAppointment({ status: 'completed' }),
+      );
+      (packageSubRepo.deductSession as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeSubscription(),
+      );
+
+      await service.completeAppointment('studio-A', 'appt-1', {
+        packageSubscriptionId: 'sub-1',
+      });
 
       expect(paymentRepo.create).not.toHaveBeenCalled();
     });

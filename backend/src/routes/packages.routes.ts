@@ -6,10 +6,11 @@ import { z } from "zod";
 export const ListPackagesQuery = z.object({
 	cursor: z.string().uuid().optional(),
 	limit: z.coerce.number().int().min(1).max(100).default(20),
+	service_id: z.string().uuid().optional(),
 });
 
 export const CreatePackageBody = z.object({
-	service_id: z.string().uuid(),
+	service_ids: z.array(z.string().uuid()).min(1),
 	name: z.string().min(1),
 	total_sessions: z.number().int().min(1),
 	price: z.number().int().min(0),
@@ -47,9 +48,18 @@ export default async function packageRoutes(app: FastifyInstance) {
 	app.get("/", {
 		onRequest: [app.requireStudioMember],
 		schema: { querystring: ListPackagesQuery },
-		handler: async (_request, _reply) => {
-			// → PackageController.list
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.packageController.list(request, reply);
+		},
+	});
+
+	// GET /api/v1/packages/:id
+	// Auth: owner+professional
+	app.get("/:id", {
+		onRequest: [app.requireStudioMember],
+		schema: { params: UuidParam },
+		handler: async (request, reply) => {
+			return app.packageController.getById(request, reply);
 		},
 	});
 
@@ -58,21 +68,19 @@ export default async function packageRoutes(app: FastifyInstance) {
 	app.post("/", {
 		onRequest: [app.requireOwner],
 		schema: { body: CreatePackageBody },
-		handler: async (_request, _reply) => {
-			// → PackageController.create
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.packageController.create(request, reply);
 		},
 	});
 
 	// PATCH /api/v1/packages/:id
 	// Auth: owner
-	// Error: 422 CANNOT_REDUCE_SESSIONS if active subscriptions exist
+	// Error: 409 PACKAGE_HAS_SUBSCRIPTIONS
 	app.patch("/:id", {
 		onRequest: [app.requireOwner],
 		schema: { params: UuidParam, body: UpdatePackageBody },
-		handler: async (_request, _reply) => {
-			// → PackageController.update
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.packageController.update(request, reply);
 		},
 	});
 
@@ -82,9 +90,8 @@ export default async function packageRoutes(app: FastifyInstance) {
 	app.delete("/:id", {
 		onRequest: [app.requireOwner],
 		schema: { params: UuidParam },
-		handler: async (_request, _reply) => {
-			// → PackageController.delete
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.packageController.delete(request, reply);
 		},
 	});
 
@@ -95,9 +102,8 @@ export default async function packageRoutes(app: FastifyInstance) {
 	app.get("/:packageId/subscriptions", {
 		onRequest: [app.requireStudioMember],
 		schema: { params: PackageIdParam, querystring: ListSubscriptionsQuery },
-		handler: async (_request, _reply) => {
-			// → PackageSubscriptionController.listByPackage
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.packageController.listSubscriptions(request, reply);
 		},
 	});
 
@@ -107,9 +113,8 @@ export default async function packageRoutes(app: FastifyInstance) {
 	app.post("/:packageId/subscriptions", {
 		onRequest: [app.requireStudioMember],
 		schema: { params: PackageIdParam, body: CreateSubscriptionBody },
-		handler: async (_request, _reply) => {
-			// → PackageSubscriptionController.create
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.packageController.createSubscription(request, reply);
 		},
 	});
 }

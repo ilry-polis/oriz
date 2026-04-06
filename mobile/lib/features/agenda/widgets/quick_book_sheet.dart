@@ -10,6 +10,8 @@ import '../../../core/theme/app_typography.dart';
 import '../providers/agenda_provider.dart';
 import '../../../core/utils/phone_formatter.dart';
 import '../repositories/appointment_repository.dart';
+import '../../packages/models/package_subscription_model.dart';
+import '../../packages/repositories/package_repository.dart';
 
 /// Bottom sheet for booking a new appointment.
 ///
@@ -86,6 +88,11 @@ class _QuickBookSheetState extends ConsumerState<QuickBookSheet> {
   List<AvailableSlot> _slots = [];
   bool _loadingSlots = false;
   bool _slotConflict = false;
+
+  // ─── Package detection ────────────────────────────────────────────────────
+  PackageSubscriptionModel? _activeSubscription;
+  bool _checkingPackage = false;
+  bool _usePackage = true; // pre-checked when subscription found
 
   // ─── Notes ───────────────────────────────────────────────────────────────
   bool _showNotes = false;
@@ -180,6 +187,37 @@ class _QuickBookSheetState extends ConsumerState<QuickBookSheet> {
     }
   }
 
+  Future<void> _checkActivePackage() async {
+    final client = _selectedClient;
+    final service = _selectedService;
+    if (client == null || service == null) {
+      if (mounted) setState(() => _activeSubscription = null);
+      return;
+    }
+    setState(() {
+      _checkingPackage = true;
+      _activeSubscription = null;
+    });
+    try {
+      final repo = ref.read(packageRepositoryProvider);
+      final sub = await repo.getActiveForClientService(
+        clientId: client.id,
+        serviceId: service.id,
+      );
+      if (mounted) {
+        setState(() {
+          _activeSubscription = sub;
+          _usePackage = sub != null; // pre-check if found
+        });
+      }
+    } catch (_) {
+      // Ignore errors — package check is best-effort
+      if (mounted) setState(() => _activeSubscription = null);
+    } finally {
+      if (mounted) setState(() => _checkingPackage = false);
+    }
+  }
+
   void _validateSelectedTime() {
     if (_selectedHour == null) return;
     final selectedStr = _selectedTimeStr;
@@ -228,9 +266,13 @@ class _QuickBookSheetState extends ConsumerState<QuickBookSheet> {
       _clientResults = [];
       _showNewClientForm = false;
       _clientController.text = client.name;
+      _activeSubscription = null;
     });
     FocusScope.of(context).unfocus();
     HapticFeedback.selectionClick();
+    if (_selectedService != null) {
+      _checkActivePackage();
+    }
   }
 
   Future<void> _createAndSelectClient() async {
@@ -263,9 +305,13 @@ class _QuickBookSheetState extends ConsumerState<QuickBookSheet> {
     setState(() {
       _selectedService = service;
       _slots = [];
+      _activeSubscription = null;
     });
     HapticFeedback.selectionClick();
     _loadAvailableSlots();
+    if (_selectedClient != null) {
+      _checkActivePackage();
+    }
   }
 
   void _selectSlot(AvailableSlot slot) {
@@ -354,6 +400,7 @@ class _QuickBookSheetState extends ConsumerState<QuickBookSheet> {
               _buildClientSection(),
               _buildServiceSection(),
               _buildTimeSection(),
+              _buildPackageSection(),
               _buildNotesSection(),
               _buildConfirmButton(),
             ],
@@ -952,6 +999,79 @@ class _QuickBookSheetState extends ConsumerState<QuickBookSheet> {
               style: AppTypography.body,
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPackageSection() {
+    if (_checkingPackage) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          0,
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.primary,
+              ),
+            ),
+            SizedBox(width: AppSpacing.sm),
+            Text('Verificando pacote...'),
+          ],
+        ),
+      );
+    }
+
+    final sub = _activeSubscription;
+    if (sub == null) return const SizedBox.shrink();
+
+    final remaining = sub.sessionsTotal - sub.sessionsUsed;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        0,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _usePackage ? AppColors.accentSoft : AppColors.neutral100,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+            color: _usePackage ? AppColors.primary : AppColors.neutral200,
+          ),
+        ),
+        child: CheckboxListTile(
+          value: _usePackage,
+          onChanged: (v) => setState(() => _usePackage = v ?? true),
+          activeColor: AppColors.primary,
+          title: Text(
+            'Usar pacote (${sub.sessionsUsed + 1}/${ sub.sessionsTotal} sessoes)',
+            style: AppTypography.body.copyWith(
+              color: _usePackage ? AppColors.primary : AppColors.neutral900,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            '${sub.packageName ?? "Pacote"} — $remaining restante(s)',
+            style: AppTypography.caption.copyWith(
+              color: _usePackage ? AppColors.primary : AppColors.neutral600,
+            ),
+          ),
+          controlAffinity: ListTileControlAffinity.leading,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+          ),
+          dense: true,
+        ),
       ),
     );
   }

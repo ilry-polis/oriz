@@ -1,55 +1,60 @@
-import type { Pool } from 'pg';
-import { ConflictError } from '../utils/errors.js';
+import type { Pool } from "pg";
+import { ConflictError } from "../utils/errors.js";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
-export type AppointmentSource = 'app' | 'manual' | 'web_page' | 'whatsapp_ai';
+export type AppointmentStatus =
+	| "pending"
+	| "confirmed"
+	| "completed"
+	| "cancelled"
+	| "no_show";
+export type AppointmentSource = "app" | "manual" | "web_page" | "whatsapp_ai";
 
 export type AppointmentRow = {
-  id: string;
-  studio_id: string;
-  client_id: string;
-  professional_id: string;
-  service_id: string;
-  date: string;
-  start_time: string;
-  end_time: string;
-  status: AppointmentStatus;
-  source: AppointmentSource;
-  notes: string | null;
-  cancellation_reason: string | null;
-  created_at: string;
-  updated_at: string;
-  // Joined fields
-  client_name: string;
-  client_phone: string | null;
-  professional_name: string;
-  service_name: string;
-  duration_minutes: number;
-  price: number;
-  buffer_minutes: number;
+	id: string;
+	studio_id: string;
+	client_id: string;
+	professional_id: string;
+	service_id: string;
+	date: string;
+	start_time: string;
+	end_time: string;
+	status: AppointmentStatus;
+	source: AppointmentSource;
+	notes: string | null;
+	cancellation_reason: string | null;
+	created_at: string;
+	updated_at: string;
+	// Joined fields
+	client_name: string;
+	client_phone: string | null;
+	professional_name: string;
+	service_name: string;
+	duration_minutes: number;
+	price: number;
+	buffer_minutes: number;
 };
 
 export type CreateAppointmentInput = {
-  studioId: string;
-  clientId: string;
-  professionalId: string;
-  serviceId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  notes?: string;
-  source: AppointmentSource;
+	studioId: string;
+	clientId: string;
+	professionalId: string;
+	serviceId: string;
+	date: string;
+	startTime: string;
+	endTime: string;
+	notes?: string;
+	source: AppointmentSource;
 };
 
 export type UpdateAppointmentFields = {
-  professional_id?: string;
-  service_id?: string;
-  date?: string;
-  start_time?: string;
-  end_time?: string;
-  notes?: string;
+	professional_id?: string;
+	service_id?: string;
+	date?: string;
+	start_time?: string;
+	end_time?: string;
+	notes?: string;
 };
 
 // ─── Columns (SELECT fragment) ─────────────────────────────────────────────
@@ -87,122 +92,134 @@ const APPOINTMENT_JOINS = `
 // ─── Repository ────────────────────────────────────────────────────────────
 
 export class AppointmentRepository {
-  constructor(private pool: Pool) {}
+	constructor(private pool: Pool) {}
 
-  /**
-   * List appointments for a specific date with optional filters.
-   * Cursor-based pagination: cursor is the id of the last seen appointment.
-   */
-  async listByDate(
-    studioId: string,
-    date: string,
-    options: {
-      professionalId?: string;
-      status?: AppointmentStatus;
-      cursor?: string;
-      limit?: number;
-    } = {},
-  ): Promise<AppointmentRow[]> {
-    const { professionalId, status, cursor, limit = 20 } = options;
+	/**
+	 * List appointments for a specific date with optional filters.
+	 * Cursor-based pagination: cursor is the id of the last seen appointment.
+	 */
+	async listByDate(
+		studioId: string,
+		date: string,
+		options: {
+			professionalId?: string;
+			status?: AppointmentStatus;
+			cursor?: string;
+			limit?: number;
+		} = {},
+	): Promise<AppointmentRow[]> {
+		const { professionalId, status, cursor, limit = 20 } = options;
 
-    const params: unknown[] = [studioId, date];
-    const conditions: string[] = ['a.studio_id = $1', 'a.date = $2'];
-    let idx = 3;
+		const params: unknown[] = [studioId, date];
+		const conditions: string[] = ["a.studio_id = $1", "a.date = $2"];
+		let idx = 3;
 
-    if (professionalId) { conditions.push(`a.professional_id = $${idx++}`); params.push(professionalId); }
-    if (status)         { conditions.push(`a.status = $${idx++}`);          params.push(status); }
-    if (cursor) {
-      conditions.push(
-        `(a.start_time, a.id) > (SELECT start_time, id FROM appointments WHERE id = $${idx++} AND studio_id = $1)`,
-      );
-      params.push(cursor);
-    }
-    params.push(limit);
+		if (professionalId) {
+			conditions.push(`a.professional_id = $${idx++}`);
+			params.push(professionalId);
+		}
+		if (status) {
+			conditions.push(`a.status = $${idx++}`);
+			params.push(status);
+		}
+		if (cursor) {
+			conditions.push(
+				`(a.start_time, a.id) > (SELECT start_time, id FROM appointments WHERE id = $${idx++} AND studio_id = $1)`,
+			);
+			params.push(cursor);
+		}
+		params.push(limit);
 
-    const { rows } = await this.pool.query<AppointmentRow>(
-      `SELECT ${APPOINTMENT_COLUMNS}
+		const { rows } = await this.pool.query<AppointmentRow>(
+			`SELECT ${APPOINTMENT_COLUMNS}
        FROM appointments a
        ${APPOINTMENT_JOINS}
-       WHERE ${conditions.join(' AND ')}
+       WHERE ${conditions.join(" AND ")}
        ORDER BY a.start_time ASC, a.id ASC
        LIMIT $${params.length}`,
-      params,
-    );
-    return rows;
-  }
+			params,
+		);
+		return rows;
+	}
 
-  /**
-   * List appointments across a date range with optional filters.
-   */
-  async listByDateRange(
-    studioId: string,
-    dateFrom: string,
-    dateTo: string,
-    options: {
-      professionalId?: string;
-      status?: AppointmentStatus;
-      cursor?: string;
-      limit?: number;
-    } = {},
-  ): Promise<AppointmentRow[]> {
-    const { professionalId, status, cursor, limit = 20 } = options;
+	/**
+	 * List appointments across a date range with optional filters.
+	 */
+	async listByDateRange(
+		studioId: string,
+		dateFrom: string,
+		dateTo: string,
+		options: {
+			professionalId?: string;
+			status?: AppointmentStatus;
+			cursor?: string;
+			limit?: number;
+		} = {},
+	): Promise<AppointmentRow[]> {
+		const { professionalId, status, cursor, limit = 20 } = options;
 
-    const params: unknown[] = [studioId, dateFrom, dateTo];
-    let idx = 4;
+		const params: unknown[] = [studioId, dateFrom, dateTo];
+		let idx = 4;
 
-    const extra: string[] = [];
-    if (professionalId) { extra.push(`a.professional_id = $${idx++}`); params.push(professionalId); }
-    if (status)         { extra.push(`a.status = $${idx++}`);          params.push(status); }
-    if (cursor) {
-      extra.push(
-        `(a.date, a.start_time, a.id) > (SELECT date, start_time, id FROM appointments WHERE id = $${idx++} AND studio_id = $1)`,
-      );
-      params.push(cursor);
-    }
-    params.push(limit);
+		const extra: string[] = [];
+		if (professionalId) {
+			extra.push(`a.professional_id = $${idx++}`);
+			params.push(professionalId);
+		}
+		if (status) {
+			extra.push(`a.status = $${idx++}`);
+			params.push(status);
+		}
+		if (cursor) {
+			extra.push(
+				`(a.date, a.start_time, a.id) > (SELECT date, start_time, id FROM appointments WHERE id = $${idx++} AND studio_id = $1)`,
+			);
+			params.push(cursor);
+		}
+		params.push(limit);
 
-    const where = [
-      'a.studio_id = $1',
-      'a.date >= $2',
-      'a.date <= $3',
-      ...extra,
-    ].join(' AND ');
+		const where = [
+			"a.studio_id = $1",
+			"a.date >= $2",
+			"a.date <= $3",
+			...extra,
+		].join(" AND ");
 
-    const { rows } = await this.pool.query<AppointmentRow>(
-      `SELECT ${APPOINTMENT_COLUMNS}
+		const { rows } = await this.pool.query<AppointmentRow>(
+			`SELECT ${APPOINTMENT_COLUMNS}
        FROM appointments a
        ${APPOINTMENT_JOINS}
        WHERE ${where}
        ORDER BY a.date ASC, a.start_time ASC, a.id ASC
        LIMIT $${params.length}`,
-      params,
-    );
-    return rows;
-  }
+			params,
+		);
+		return rows;
+	}
 
-  /**
-   * Returns appointment counts grouped by date and status for a month range.
-   * Lightweight aggregation — no joins, no full rows.
-   */
-  async monthSummary(
-    studioId: string,
-    dateFrom: string,
-    dateTo: string,
-    professionalId?: string,
-  ): Promise<{ date: string; status: AppointmentStatus; count: number }[]> {
-    const params: unknown[] = [studioId, dateFrom, dateTo];
-    let professionalClause = "";
-    if (professionalId) {
-      params.push(professionalId);
-      professionalClause = `AND a.professional_id = $${params.length}`;
-    }
+	/**
+	 * Returns appointment counts grouped by date and status for a month range.
+	 * Lightweight aggregation — no joins, no full rows.
+	 */
+	async monthSummary(
+		studioId: string,
+		dateFrom: string,
+		dateTo: string,
+		professionalId?: string,
+	): Promise<{ date: string; status: AppointmentStatus; count: number }[]> {
+		const params: unknown[] = [studioId, dateFrom, dateTo];
+		let professionalClause = "";
+		if (professionalId) {
+			params.push(professionalId);
+			professionalClause = `AND a.professional_id = $${params.length}`;
+		}
 
-    const { rows } = await this.pool.query<{
-      date: string;
-      status: AppointmentStatus;
-      count: string;
-    }>(
-      `SELECT a.date::text, a.status, COUNT(*)::text AS count
+		const { rows } = await this.pool.query<{
+			date: string;
+			status: AppointmentStatus;
+			count: string;
+		}>(
+			`SELECT a.date::text, a.status, COUNT(*)::text AS count
        FROM appointments a
        WHERE a.studio_id = $1
          AND a.date >= $2
@@ -210,27 +227,27 @@ export class AppointmentRepository {
          ${professionalClause}
        GROUP BY a.date, a.status
        ORDER BY a.date ASC`,
-      params,
-    );
+			params,
+		);
 
-    return rows.map((r) => ({
-      date: r.date,
-      status: r.status,
-      count: Number.parseInt(r.count),
-    }));
-  }
+		return rows.map((r) => ({
+			date: r.date,
+			status: r.status,
+			count: Number.parseInt(r.count),
+		}));
+	}
 
-  /**
-   * Returns non-cancelled, non-no_show appointments for a professional on a date.
-   * Used by slot availability calculation — day-bounded, no pagination needed.
-   */
-  async listByProfessionalDate(
-    studioId: string,
-    professionalId: string,
-    date: string,
-  ): Promise<AppointmentRow[]> {
-    const { rows } = await this.pool.query<AppointmentRow>(
-      `SELECT ${APPOINTMENT_COLUMNS}
+	/**
+	 * Returns non-cancelled, non-no_show appointments for a professional on a date.
+	 * Used by slot availability calculation — day-bounded, no pagination needed.
+	 */
+	async listByProfessionalDate(
+		studioId: string,
+		professionalId: string,
+		date: string,
+	): Promise<AppointmentRow[]> {
+		const { rows } = await this.pool.query<AppointmentRow>(
+			`SELECT ${APPOINTMENT_COLUMNS}
        FROM appointments a
        ${APPOINTMENT_JOINS}
        WHERE a.studio_id = $1
@@ -238,33 +255,36 @@ export class AppointmentRepository {
          AND a.date = $3
          AND a.status NOT IN ('cancelled', 'no_show')
        ORDER BY a.start_time ASC`,
-      [studioId, professionalId, date],
-    );
-    return rows;
-  }
+			[studioId, professionalId, date],
+		);
+		return rows;
+	}
 
-  /**
-   * Get single appointment with joined fields.
-   */
-  async getById(studioId: string, appointmentId: string): Promise<AppointmentRow | null> {
-    const { rows } = await this.pool.query<AppointmentRow>(
-      `SELECT ${APPOINTMENT_COLUMNS}
+	/**
+	 * Get single appointment with joined fields.
+	 */
+	async getById(
+		studioId: string,
+		appointmentId: string,
+	): Promise<AppointmentRow | null> {
+		const { rows } = await this.pool.query<AppointmentRow>(
+			`SELECT ${APPOINTMENT_COLUMNS}
        FROM appointments a
        ${APPOINTMENT_JOINS}
        WHERE a.studio_id = $1 AND a.id = $2
        LIMIT 1`,
-      [studioId, appointmentId],
-    );
-    return rows[0] ?? null;
-  }
+			[studioId, appointmentId],
+		);
+		return rows[0] ?? null;
+	}
 
-  /**
-   * Create appointment. Throws ConflictError on time slot overlap (exclusion constraint violation).
-   */
-  async create(input: CreateAppointmentInput): Promise<AppointmentRow> {
-    try {
-      const { rows } = await this.pool.query<AppointmentRow>(
-        `WITH inserted AS (
+	/**
+	 * Create appointment. Throws ConflictError on time slot overlap (exclusion constraint violation).
+	 */
+	async create(input: CreateAppointmentInput): Promise<AppointmentRow> {
+		try {
+			const { rows } = await this.pool.query<AppointmentRow>(
+				`WITH inserted AS (
           INSERT INTO appointments
             (id, studio_id, client_id, professional_id, service_id, date,
              start_time, end_time, notes, source)
@@ -278,39 +298,42 @@ export class AppointmentRepository {
         SELECT ${APPOINTMENT_COLUMNS}
         FROM inserted a
         ${APPOINTMENT_JOINS}`,
-        [
-          input.studioId,
-          input.clientId,
-          input.professionalId,
-          input.serviceId,
-          input.date,
-          input.startTime,
-          input.endTime,
-          input.notes ?? null,
-          input.source,
-        ],
-      );
-      return rows[0]!;
-    } catch (err: unknown) {
-      // PostgreSQL exclusion constraint violation: error code 23P01
-      if (isPostgresError(err) && err.code === '23P01') {
-        throw new ConflictError('TIME_SLOT_TAKEN', 'This time slot is already booked');
-      }
-      throw err;
-    }
-  }
+				[
+					input.studioId,
+					input.clientId,
+					input.professionalId,
+					input.serviceId,
+					input.date,
+					input.startTime,
+					input.endTime,
+					input.notes ?? null,
+					input.source,
+				],
+			);
+			return rows[0]!;
+		} catch (err: unknown) {
+			// PostgreSQL exclusion constraint violation: error code 23P01
+			if (isPostgresError(err) && err.code === "23P01") {
+				throw new ConflictError(
+					"TIME_SLOT_TAKEN",
+					"This time slot is already booked",
+				);
+			}
+			throw err;
+		}
+	}
 
-  /**
-   * Update appointment status (and optionally cancellation reason).
-   */
-  async updateStatus(
-    studioId: string,
-    appointmentId: string,
-    status: AppointmentStatus,
-    cancellationReason?: string,
-  ): Promise<AppointmentRow | null> {
-    const { rows } = await this.pool.query<AppointmentRow>(
-      `WITH updated AS (
+	/**
+	 * Update appointment status (and optionally cancellation reason).
+	 */
+	async updateStatus(
+		studioId: string,
+		appointmentId: string,
+		status: AppointmentStatus,
+		cancellationReason?: string,
+	): Promise<AppointmentRow | null> {
+		const { rows } = await this.pool.query<AppointmentRow>(
+			`WITH updated AS (
         UPDATE appointments
         SET status = $3,
             cancellation_reason = COALESCE($4, cancellation_reason),
@@ -321,88 +344,124 @@ export class AppointmentRepository {
       SELECT ${APPOINTMENT_COLUMNS}
       FROM updated a
       ${APPOINTMENT_JOINS}`,
-      [studioId, appointmentId, status, cancellationReason ?? null],
-    );
-    return rows[0] ?? null;
-  }
+			[studioId, appointmentId, status, cancellationReason ?? null],
+		);
+		return rows[0] ?? null;
+	}
 
-  /**
-   * Partial update for rescheduling (professional, service, date, start/end time, notes).
-   * Throws ConflictError on overlap if new time slot is taken.
-   */
-  async update(
-    studioId: string,
-    appointmentId: string,
-    fields: UpdateAppointmentFields,
-  ): Promise<AppointmentRow | null> {
-    const allowed: Array<keyof UpdateAppointmentFields> = [
-      'professional_id',
-      'service_id',
-      'date',
-      'start_time',
-      'end_time',
-      'notes',
-    ];
+	/**
+	 * Partial update for rescheduling (professional, service, date, start/end time, notes).
+	 * Throws ConflictError on overlap if new time slot is taken.
+	 */
+	async update(
+		studioId: string,
+		appointmentId: string,
+		fields: UpdateAppointmentFields,
+	): Promise<AppointmentRow | null> {
+		const allowed: Array<keyof UpdateAppointmentFields> = [
+			"professional_id",
+			"service_id",
+			"date",
+			"start_time",
+			"end_time",
+			"notes",
+		];
 
-    const setClauses: string[] = [];
-    const params: unknown[] = [studioId, appointmentId];
-    let idx = 3;
+		const setClauses: string[] = [];
+		const params: unknown[] = [studioId, appointmentId];
+		let idx = 3;
 
-    // Time fields need date+time cast to timestamptz
-    const timeFields = new Set(['start_time', 'end_time']);
-    // Use provided date or fallback to existing appointment date
-    const dateExpr = fields.date !== undefined ? `$${idx}::date` : 'date';
-    if (fields.date !== undefined) {
-      setClauses.push(`date = $${idx++}`);
-      params.push(fields.date);
-    }
+		// Time fields need date+time cast to timestamptz
+		const timeFields = new Set(["start_time", "end_time"]);
+		// Use provided date or fallback to existing appointment date
+		const dateExpr = fields.date !== undefined ? `$${idx}::date` : "date";
+		if (fields.date !== undefined) {
+			setClauses.push(`date = $${idx++}`);
+			params.push(fields.date);
+		}
 
-    for (const key of allowed) {
-      if (key === 'date') continue; // handled above
-      if (fields[key] !== undefined) {
-        if (timeFields.has(key)) {
-          setClauses.push(`${key} = ((${dateExpr} || ' ' || $${idx}::text)::timestamp AT TIME ZONE (SELECT timezone FROM studios WHERE id = $1))`);
-        } else {
-          setClauses.push(`${key} = $${idx}`);
-        }
-        idx++;
-        params.push(fields[key] ?? null);
-      }
-    }
+		for (const key of allowed) {
+			if (key === "date") continue; // handled above
+			if (fields[key] !== undefined) {
+				if (timeFields.has(key)) {
+					setClauses.push(
+						`${key} = ((${dateExpr} || ' ' || $${idx}::text)::timestamp AT TIME ZONE (SELECT timezone FROM studios WHERE id = $1))`,
+					);
+				} else {
+					setClauses.push(`${key} = $${idx}`);
+				}
+				idx++;
+				params.push(fields[key] ?? null);
+			}
+		}
 
-    if (setClauses.length === 0) return this.getById(studioId, appointmentId);
+		if (setClauses.length === 0) return this.getById(studioId, appointmentId);
 
-    setClauses.push('updated_at = now()');
+		setClauses.push("updated_at = now()");
 
-    try {
-      const { rows } = await this.pool.query<AppointmentRow>(
-        `WITH updated AS (
+		try {
+			const { rows } = await this.pool.query<AppointmentRow>(
+				`WITH updated AS (
           UPDATE appointments
-          SET ${setClauses.join(', ')}
+          SET ${setClauses.join(", ")}
           WHERE studio_id = $1 AND id = $2
           RETURNING *
         )
         SELECT ${APPOINTMENT_COLUMNS}
         FROM updated a
         ${APPOINTMENT_JOINS}`,
-        params,
-      );
-      return rows[0] ?? null;
-    } catch (err: unknown) {
-      if (isPostgresError(err) && err.code === '23P01') {
-        throw new ConflictError('TIME_SLOT_TAKEN', 'This time slot is already booked');
-      }
-      throw err;
-    }
-  }
+				params,
+			);
+			return rows[0] ?? null;
+		} catch (err: unknown) {
+			if (isPostgresError(err) && err.code === "23P01") {
+				throw new ConflictError(
+					"TIME_SLOT_TAKEN",
+					"This time slot is already booked",
+				);
+			}
+			throw err;
+		}
+	}
+
+	/**
+	 * List completed appointments with only duration_minutes field.
+	 * Used by FinancialService.occupancyRate to sum used minutes.
+	 * Lightweight query: no JOINs needed beyond what's already on the appointment.
+	 */
+	async listCompletedByDateRange(
+		studioId: string,
+		dateFrom: string,
+		dateTo: string,
+		professionalId?: string,
+	): Promise<{ duration_minutes: number }[]> {
+		const params: unknown[] = [studioId, dateFrom, dateTo];
+		let professionalClause = "";
+		if (professionalId) {
+			params.push(professionalId);
+			professionalClause = `AND a.professional_id = $${params.length}`;
+		}
+
+		const { rows } = await this.pool.query<{ duration_minutes: number }>(
+			`SELECT s.duration_minutes
+       FROM appointments a
+       JOIN services s ON s.id = a.service_id
+       WHERE a.studio_id = $1
+         AND a.date BETWEEN $2 AND $3
+         AND a.status = 'completed'
+         ${professionalClause}`,
+			params,
+		);
+		return rows;
+	}
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 interface PostgresError extends Error {
-  code: string;
+	code: string;
 }
 
 function isPostgresError(err: unknown): err is PostgresError {
-  return err instanceof Error && 'code' in err;
+	return err instanceof Error && "code" in err;
 }

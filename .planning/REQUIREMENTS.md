@@ -19,9 +19,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **SERV-01**: Owner can create services with name, duration, price, and category
 - [x] **SERV-02**: Owner can set buffer time between appointments per service
-- [ ] **SERV-03**: Owner can create session packages with special pricing
-- [ ] **SERV-04**: Sessions deducted automatically when appointment is completed (not on booking)
-- [ ] **SERV-05**: Packages have configurable expiration date
+- [x] **SERV-03**: Owner can create session packages with special pricing
+- [x] **SERV-04**: Sessions deducted automatically when appointment is completed (not on booking)
+- [x] **SERV-05**: Packages have configurable expiration date
 
 ### Scheduling
 
@@ -50,11 +50,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Financial
 
-- [ ] **FINC-01**: Owner views revenue dashboard by day/week/month
-- [ ] **FINC-02**: Owner views revenue breakdown by professional and by service
-- [ ] **FINC-03**: Owner views average ticket value
-- [ ] **FINC-04**: Owner views agenda occupancy rate
-- [ ] **FINC-05**: Owner records payment method per appointment (cash, PIX, debit, credit)
+- [x] **FINC-01**: Owner views revenue dashboard by day/week/month
+- [x] **FINC-02**: Owner views revenue breakdown by professional and by service
+- [x] **FINC-03**: Owner views average ticket value
+- [x] **FINC-04**: Owner views agenda occupancy rate
+- [x] **FINC-05**: Owner records payment method per appointment (cash, PIX, debit, credit)
 
 ### Public Page
 
@@ -146,9 +146,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-05 | Phase 1 | Pending |
 | SERV-01 | Phase 2 | Complete |
 | SERV-02 | Phase 2 | Complete |
-| SERV-03 | Phase 4 | Pending |
-| SERV-04 | Phase 4 | Pending |
-| SERV-05 | Phase 4 | Pending |
+| SERV-03 | Phase 4 | Complete |
+| SERV-04 | Phase 4 | Complete |
+| SERV-05 | Phase 4 | Complete |
 | SCHD-01 | Phase 3 | Complete |
 | SCHD-02 | Phase 3 | Complete |
 | SCHD-03 | Phase 3 | Complete |
@@ -165,11 +165,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEAM-03 | Phase 2 | Pending |
 | TEAM-04 | Phase 2 | Pending |
 | TEAM-05 | Phase 2 | Pending |
-| FINC-01 | Phase 4 | Pending |
-| FINC-02 | Phase 4 | Pending |
-| FINC-03 | Phase 4 | Pending |
-| FINC-04 | Phase 4 | Pending |
-| FINC-05 | Phase 4 | Pending |
+| FINC-01 | Phase 4 | Complete |
+| FINC-02 | Phase 4 | Complete |
+| FINC-03 | Phase 4 | Complete |
+| FINC-04 | Phase 4 | Complete |
+| FINC-05 | Phase 4 | Complete |
 | PAGE-01 | Phase 5 | Pending |
 | PAGE-02 | Phase 5 | Pending |
 | PAGE-03 | Phase 5 | Pending |

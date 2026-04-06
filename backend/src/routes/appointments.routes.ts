@@ -27,7 +27,7 @@ export const CreateAppointmentBody = z.object({
 	professional_id: z.string().uuid(),
 	service_id: z.string().uuid(),
 	date: z.string().date(),
-	start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Expected HH:mm format'),
+	start_time: z.string().regex(/^\d{2}:\d{2}$/, "Expected HH:mm format"),
 	notes: z.string().optional(),
 	source: z.enum(["app", "manual", "web_page", "whatsapp"]).default("app"),
 });
@@ -36,19 +36,34 @@ export const UpdateAppointmentBody = z.object({
 	professional_id: z.string().uuid().optional(),
 	service_id: z.string().uuid().optional(),
 	date: z.string().date().optional(),
-	start_time: z.string().regex(/^\d{2}:\d{2}$/, 'Expected HH:mm format').optional(),
+	start_time: z
+		.string()
+		.regex(/^\d{2}:\d{2}$/, "Expected HH:mm format")
+		.optional(),
 	notes: z.string().optional(),
 });
 
-export const CompleteAppointmentBody = z.object({
-	payment: z
-		.object({
-			amount: z.number().int().min(0),
-			method: z.enum(["cash", "pix", "debit", "credit"]),
-			card_fee_percentage: z.number().min(0).optional(),
-		})
-		.optional(),
-});
+export const CompleteAppointmentBody = z
+	.object({
+		package_subscription_id: z.string().uuid().optional(),
+		payments: z
+			.array(
+				z.object({
+					amount: z.number().int().min(0),
+					method: z.enum(["cash", "pix", "debit", "credit"]),
+					card_fee_percentage: z.number().min(0).max(100).optional(),
+				}),
+			)
+			.min(1)
+			.max(2)
+			.optional(),
+		discount_amount: z.number().int().min(0).optional(),
+		discount_reason: z.string().max(200).optional(),
+	})
+	.refine((d) => !d.package_subscription_id || !d.payments, {
+		message: "Cannot provide both package_subscription_id and payments",
+		path: ["payments"],
+	});
 
 export const CancelAppointmentBody = z.object({
 	cancellation_reason: z.string().optional(),

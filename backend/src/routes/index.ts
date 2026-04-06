@@ -1,29 +1,29 @@
 import type { FastifyInstance } from "fastify";
 
-import aiRoutes from "./ai.routes";
-import appointmentRoutes from "./appointments.routes";
-import auditLogRoutes from "./audit-logs.routes";
-import authRoutes from "./auth.routes";
-import billingRoutes from "./billing.routes";
-import blockedSlotRoutes from "./blocked-slots.routes";
-import campaignRoutes from "./campaigns.routes";
-import clientRoutes from "./clients.routes";
-import commissionRoutes from "./commissions.routes";
-import conversationRoutes from "./conversations.routes";
-import financialRoutes from "./financial.routes";
-import notificationRoutes from "./notifications.routes";
-import packageSubscriptionRoutes from "./package-subscriptions.routes";
-import packageRoutes from "./packages.routes";
-import paymentRoutes from "./payments.routes";
-import professionalRoutes from "./professionals.routes";
-import profileRoutes from "./profile.routes";
+import aiRoutes from "./ai.routes.js";
+import appointmentRoutes from "./appointments.routes.js";
+import auditLogRoutes from "./audit-logs.routes.js";
+import authRoutes from "./auth.routes.js";
+import billingRoutes from "./billing.routes.js";
+import blockedSlotRoutes from "./blocked-slots.routes.js";
+import campaignRoutes from "./campaigns.routes.js";
+import clientRoutes from "./clients.routes.js";
+import commissionRoutes from "./commissions.routes.js";
+import conversationRoutes from "./conversations.routes.js";
+import financialRoutes from "./financial.routes.js";
+import notificationRoutes from "./notifications.routes.js";
+import packageSubscriptionRoutes from "./package-subscriptions.routes.js";
+import packageRoutes from "./packages.routes.js";
+import paymentRoutes from "./payments.routes.js";
+import professionalRoutes from "./professionals.routes.js";
+import profileRoutes from "./profile.routes.js";
 // webhookRoutes requires validateWhatsAppSignature/validateBillingSignature
 // middlewares that are not yet implemented. Re-enable when they exist.
-// import webhookRoutes from './webhooks.routes';
-import publicStudioRoutes from "./public/studios.routes";
-import serviceCategoryRoutes from "./service-categories.routes";
-import serviceRoutes from "./services.routes";
-import studioRoutes from "./studios.routes";
+// import webhookRoutes from './webhooks.routes.js';
+import publicStudioRoutes from "./public/studios.routes.js";
+import serviceCategoryRoutes from "./service-categories.routes.js";
+import serviceRoutes from "./services.routes.js";
+import studioRoutes from "./studios.routes.js";
 
 // autoPrefix is NOT supported by manual app.register() — it requires @fastify/autoload.
 // Prefixes must be passed explicitly as the second argument.

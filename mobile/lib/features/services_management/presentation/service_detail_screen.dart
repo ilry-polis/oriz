@@ -8,6 +8,8 @@ import '../../../core/theme/app_typography.dart';
 import '../data/service_mgmt_repository.dart';
 import '../domain/service_model.dart';
 import '../providers/service_mgmt_provider.dart';
+import '../../packages/providers/package_provider.dart';
+import '../../packages/widgets/create_package_sheet.dart';
 
 class ServiceDetailScreen extends ConsumerStatefulWidget {
   final String serviceId;
@@ -289,6 +291,16 @@ class _ServiceDetailScreenState extends ConsumerState<ServiceDetailScreen> {
             '${service.bufferMinutes} min',
           ),
         ],
+
+        const SizedBox(height: AppSpacing.xl),
+        const Divider(color: AppColors.neutral200),
+        const SizedBox(height: AppSpacing.md),
+
+        // Packages section
+        _PackagesSection(
+          serviceId: service.id,
+          serviceName: service.name,
+        ),
       ],
     );
   }
@@ -320,6 +332,152 @@ class _ServiceDetailScreenState extends ConsumerState<ServiceDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Packages Section ─────────────────────────────────────────────────────────
+
+class _PackagesSection extends ConsumerWidget {
+  final String serviceId;
+  final String serviceName;
+
+  const _PackagesSection({
+    required this.serviceId,
+    required this.serviceName,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncState = ref.watch(packageProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Pacotes', style: AppTypography.bodySemibold),
+            TextButton.icon(
+              onPressed: () async {
+                HapticFeedback.lightImpact();
+                final created = await CreatePackageSheet.show(
+                  context,
+                  serviceId: serviceId,
+                  serviceName: serviceName,
+                );
+                if (created == true) {
+                  ref.read(packageProvider.notifier).refresh();
+                }
+              },
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Novo pacote'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                textStyle: AppTypography.caption
+                    .copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        asyncState.when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+          error: (e, _) => Text(
+            'Erro ao carregar pacotes',
+            style: AppTypography.caption.copyWith(color: AppColors.neutral400),
+          ),
+          data: (listState) {
+            if (listState is! PackageListLoaded) {
+              return const SizedBox.shrink();
+            }
+            final packages = listState.items
+                .where((p) => p.serviceIds.contains(serviceId))
+                .toList();
+
+            if (packages.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.neutral100,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(color: AppColors.neutral200),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.card_giftcard_outlined,
+                        color: AppColors.neutral300, size: 20),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'Nenhum pacote criado para este servico',
+                      style: AppTypography.caption
+                          .copyWith(color: AppColors.neutral400),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return Container(
+              decoration: BoxDecoration(
+                color: AppColors.neutral100,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.neutral200),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (int i = 0; i < packages.length; i++) ...[
+                    if (i > 0)
+                      const Divider(
+                        color: AppColors.neutral200,
+                        height: 1,
+                        indent: AppSpacing.md,
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  packages[i].name,
+                                  style: AppTypography.body,
+                                ),
+                                Text(
+                                  '${packages[i].totalSessions} sessoes · ${packages[i].validityLabel}',
+                                  style: AppTypography.caption
+                                      .copyWith(color: AppColors.neutral400),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            packages[i].formattedPrice,
+                            style: AppTypography.bodySemibold
+                                .copyWith(color: AppColors.primary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

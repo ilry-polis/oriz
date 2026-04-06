@@ -14,8 +14,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Identity and Foundation** - Auth, studio onboarding, and multi-tenant infrastructure (completed 2026-04-02; social login deferred)
 - [x] **Phase 2: Core Domain** - Services, clients, and team management (completed 2026-04-03)
-- [ ] **Phase 3: Scheduling Engine** - Agenda, conflict detection, and appointment workflows
-- [ ] **Phase 4: Financial and Packages** - Revenue dashboard, payment recording, and session packages
+- [x] **Phase 3: Scheduling Engine** - Agenda, conflict detection, and appointment workflows (completed 2026-04-05; UAT 15/15 passed)
+- [x] **Phase 4: Financial and Packages** - Revenue dashboard, payment recording, and session packages (completed 2026-04-05)
 - [ ] **Phase 5: External Channels** - Public booking page and push notifications
 - [ ] **Phase 5.1: Billing and Subscription** - INSERTED — SaaS plans, payment gateway, feature gating
 - [ ] **Phase 6: WhatsApp and AI Assistant** - AI scheduling agent and WhatsApp integration
@@ -85,7 +85,15 @@ Plans:
   2. Owner can see revenue broken down by professional and by service, plus average ticket value and agenda occupancy rate
   3. Professional can record the payment method (cash, PIX, debit, credit) for each completed appointment
   4. Owner can create a session package with special pricing and an expiration date; sessions are deducted only when the appointment is marked completed, not on booking
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — DB migrations + Package/Subscription backend (repos, service, controllers, route wiring, payment on sale)
+- [ ] 04-02-PLAN.md — Financial + Commission backend (repos, services, controllers, route wiring)
+- [ ] 04-03-PLAN.md — Extend completeAppointment with package deduction, commission, discount, split payment
+- [ ] 04-04-PLAN.md — Flutter financial dashboard + commission tab screens
+- [ ] 04-05-PLAN.md — Flutter packages UI: models, management screen, client/service integration
+- [ ] 04-06-PLAN.md — Flutter QuickBookSheet/PaymentSheet extensions + end-to-end human verification
 
 ### Phase 5: External Channels
 **Goal**: Clients can discover and self-book at the studio via a public web page; professionals receive push alerts for bookings
@@ -139,10 +147,10 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 5.1 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Identity and Foundation | — | ✅ Completed | 2026-04-02 |
-| 2. Core Domain | 6/6 | ✅ Completed | 2026-04-03 |
-| 3. Scheduling Engine | 0/6 | Planning complete | - |
-| 4. Financial and Packages | 0/TBD | Not started | - |
+| 1. Identity and Foundation | — | Completed | 2026-04-02 |
+| 2. Core Domain | 6/6 | Completed | 2026-04-03 |
+| 3. Scheduling Engine | 6/6 | Completed | 2026-04-05 |
+| 4. Financial and Packages | 6/6 | Complete   | 2026-04-05 |
 | 5. External Channels | 0/TBD | Not started | - |
 | 5.1. Billing and Subscription | 0/TBD | Not started | - |
 | 6. WhatsApp and AI Assistant | 0/TBD | Not started | - |

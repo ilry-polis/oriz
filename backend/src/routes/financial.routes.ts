@@ -3,30 +3,66 @@ import { z } from "zod";
 
 // ─── Zod Schemas ───────────────────────────────────────────
 
-export const FinancialSummaryQuery = z
-	.object({
-		year: z.coerce.number().int().optional(),
-		month: z.coerce.number().int().min(1).max(12).optional(),
-	})
-	.refine((d) => !(d.month && !d.year), {
-		message: "year is required when month is provided",
-		path: ["year"],
-	});
+export const FinancialSummaryQuery = z.object({
+	period: z.enum(["day", "week", "month"]).default("month"),
+	date: z.string().date().optional(),
+});
+
+export const FinancialBreakdownQuery = z.object({
+	date_from: z.string().date().optional(),
+	date_to: z.string().date().optional(),
+});
 
 // ─── Route Plugin ──────────────────────────────────────────
 
 export default async function financialRoutes(app: FastifyInstance) {
 	app.addHook("onRequest", app.authenticate);
-	app.addHook("onRequest", app.requireOwner);
+	// requireStudioMember: both owners and professionals can see financial data
+	// Controller applies role-based filtering
+	app.addHook("onRequest", app.requireStudioMember);
 
 	// GET /api/v1/financial/summary
-	// Auth: owner
-	// Data from materialized view financial_summaries, refreshed via BullMQ
+	// Auth: owner or professional (collaborator sees studio-wide data for now)
 	app.get("/summary", {
 		schema: { querystring: FinancialSummaryQuery },
-		handler: async (_request, _reply) => {
-			// → FinancialController.summary
-			throw new Error("Not implemented");
+		handler: async (request, reply) => {
+			return app.financialController.summary(request, reply);
+		},
+	});
+
+	// GET /api/v1/financial/breakdown/professionals
+	// Auth: owner or professional
+	app.get("/breakdown/professionals", {
+		schema: { querystring: FinancialBreakdownQuery },
+		handler: async (request, reply) => {
+			return app.financialController.breakdownByProfessional(request, reply);
+		},
+	});
+
+	// GET /api/v1/financial/breakdown/services
+	// Auth: owner or professional
+	app.get("/breakdown/services", {
+		schema: { querystring: FinancialBreakdownQuery },
+		handler: async (request, reply) => {
+			return app.financialController.breakdownByService(request, reply);
+		},
+	});
+
+	// GET /api/v1/financial/breakdown/methods
+	// Auth: owner or professional
+	app.get("/breakdown/methods", {
+		schema: { querystring: FinancialBreakdownQuery },
+		handler: async (request, reply) => {
+			return app.financialController.breakdownByMethod(request, reply);
+		},
+	});
+
+	// GET /api/v1/financial/chart/revenue
+	// Auth: owner or professional
+	app.get("/chart/revenue", {
+		schema: { querystring: FinancialBreakdownQuery },
+		handler: async (request, reply) => {
+			return app.financialController.chartRevenue(request, reply);
 		},
 	});
 }

@@ -9,11 +9,12 @@ import '../providers/agenda_provider.dart';
 import 'cancel_dialog.dart';
 import 'payment_sheet.dart';
 import 'status_badge.dart';
+import '../../packages/repositories/package_repository.dart';
 
 /// Bottom sheet showing appointment details and contextual action buttons.
 ///
 /// Opened by tapping on an appointment card.
-class AppointmentDetailSheet extends ConsumerWidget {
+class AppointmentDetailSheet extends ConsumerStatefulWidget {
   final Appointment appointment;
 
   const AppointmentDetailSheet({super.key, required this.appointment});
@@ -33,6 +34,15 @@ class AppointmentDetailSheet extends ConsumerWidget {
     );
   }
 
+  @override
+  ConsumerState<AppointmentDetailSheet> createState() =>
+      _AppointmentDetailSheetState();
+}
+
+class _AppointmentDetailSheetState
+    extends ConsumerState<AppointmentDetailSheet> {
+  bool _completingWithPackage = false;
+
   String _formatTime(DateTime dt) {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
@@ -47,9 +57,129 @@ class AppointmentDetailSheet extends ConsumerWidget {
     return '${dt.day} de ${months[dt.month - 1]}';
   }
 
+  /// Complete appointment: auto-detect active package or show PaymentSheet
+  Future<void> _completeAppointment(BuildContext ctx) async {
+    final appt = widget.appointment;
+    Navigator.pop(ctx);
+
+    // Check for active package subscription for this client+service
+    try {
+      final repo = ref.read(packageRepositoryProvider);
+      final sub = await repo.getActiveForClientService(
+        clientId: appt.clientId,
+        serviceId: appt.serviceId,
+      );
+
+      if (!mounted) return;
+
+      if (sub != null) {
+        // Package path: skip payment sheet, complete directly
+        setState(() => _completingWithPackage = true);
+        try {
+          final result =
+              await ref.read(agendaNotifierProvider.notifier).completeAppointmentFull(
+                    appt.id,
+                    packageSubscriptionId: sub.id,
+                  );
+
+          if (!mounted) return;
+
+          // Show toast feedback
+          final sessionsRemaining = result['data']?['sessionsRemaining'] as int?;
+          final lastSession = result['data']?['lastSession'] as bool? ?? false;
+          final packageName = sub.packageName ?? 'Pacote';
+
+          if (lastSession) {
+            _showLastSessionDialog(ctx, appt, sub.packageId, packageName, appt.clientName);
+          } else {
+            ScaffoldMessenger.of(ctx).showSnackBar(
+              SnackBar(
+                content: Text(
+                  sessionsRemaining != null
+                      ? 'Sessao deduzida — $packageName: $sessionsRemaining restante(s)'
+                      : 'Sessao deduzida do pacote $packageName',
+                ),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+              ),
+            );
+          }
+        } finally {
+          if (mounted) setState(() => _completingWithPackage = false);
+        }
+      } else {
+        // No package: show payment sheet
+        if (mounted) {
+          PaymentSheet.show(ctx, appointment: appt);
+        }
+      }
+    } catch (_) {
+      // On error checking package, fall back to payment sheet
+      if (mounted) {
+        PaymentSheet.show(ctx, appointment: appt);
+      }
+    }
+  }
+
+  void _showLastSessionDialog(
+    BuildContext ctx,
+    Appointment appt,
+    String packageId,
+    String packageName,
+    String clientName,
+  ) {
+    showDialog<void>(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: Text(
+          'Ultima sessao do pacote',
+          style: AppTypography.title,
+        ),
+        content: Text(
+          'Ultima sessao do pacote "$packageName" de $clientName foi concluida.',
+          style: AppTypography.body.copyWith(color: AppColors.neutral600),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: Text(
+              'Fechar',
+              style: AppTypography.body.copyWith(color: AppColors.neutral600),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              // TODO: implement renewal (creates new subscription for same package)
+              ScaffoldMessenger.of(ctx).showSnackBar(
+                const SnackBar(
+                  content: Text('Funcionalidade de renovacao em breve'),
+                ),
+              );
+            },
+            child: Text(
+              'Renovar pacote',
+              style: AppTypography.body.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final appt = appointment;
+  Widget build(BuildContext context) {
+    final appt = widget.appointment;
+    // ref is available from ConsumerState
 
     return SafeArea(
       child: Column(
@@ -243,12 +373,11 @@ class AppointmentDetailSheet extends ConsumerWidget {
             width: double.infinity,
             height: 48,
             child: _primaryButton(
-              label: 'Concluir',
+              label: _completingWithPackage ? 'Concluindo...' : 'Concluir',
               color: AppColors.success,
-              onPressed: () {
-                Navigator.pop(context);
-                PaymentSheet.show(context, appointment: appt);
-              },
+              onPressed: _completingWithPackage
+                  ? () {}
+                  : () => _completeAppointment(context),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
